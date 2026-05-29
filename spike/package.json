@@ -1,0 +1,21 @@
+{
+  "name": "mandate-spike",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "D1-D3 go/no-go spike for the Mandate hackathon concept (governance redelegation + cascade-revoke + 1Shot relay).",
+  "scripts": {
+    "spike:gov": "tsx src/governance-delegation-spike.ts",
+    "spike:1shot": "tsx src/oneshot-relay-spike.ts"
+  },
+  "dependencies": {
+    "@metamask/smart-accounts-kit": "^1.6.0",
+    "viem": "^2.21.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "comment": "Pin @metamask/smart-accounts-kit to the version whose docs you build against; verify exports on first run. Foundry (forge) needed once to deploy contracts/MockGovernor.sol."
+}

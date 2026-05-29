@@ -1,0 +1,38 @@
+# --- secrets / env (NEVER commit) ---
+.env
+**/.env
+.env.*
+!.env.example
+!**/.env.example
+*.key
+*.pem
+
+# --- dependencies / build artifacts ---
+node_modules/
+**/node_modules/
+dist/
+build/
+out/
+coverage/
+# Foundry / Hardhat
+cache/
+artifacts/
+.foundry/
+broadcast/
+typechain-types/
+
+# --- editor / OS / tooling ---
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+.playwright-mcp/
+
+# --- internal research & strategy: NOT part of the project repo ---
+# (kept locally as reference; contains scraped third-party docs + internal analysis)
+hackathon-*.md
+hackathon-docs/
+redteam-*.md
+adversarial-*.md
+.codegraph/
