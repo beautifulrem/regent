@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { mapAttestation, parseDecision, resolveTeeModel, type VeniceModel } from './venice.js';
+import { VeniceTraceSchema } from './api.js';
+import {
+  mapAttestation,
+  parseDecision,
+  resolveTeeModel,
+  toVeniceTrace,
+  type AnalysisResult,
+  type TeeAttestation,
+  type VeniceModel,
+} from './venice.js';
 
 describe('parseDecision', () => {
   it('maps For/Against/Abstain to OZ support codes', () => {
@@ -80,5 +89,34 @@ describe('mapAttestation', () => {
 
   it('treats a non-true verified flag as unverified', () => {
     expect(mapAttestation({ verified: 'yes', signing_address: '0xabc', nonce: 'n' }).verified).toBe(false);
+  });
+});
+
+describe('toVeniceTrace', () => {
+  const result: AnalysisResult = {
+    decision: { decision: 'Against', support: 0, rationale: 'too risky' },
+    model: 'e2ee-qwen3-5-122b-a10b',
+    tee: { verified: true, provider: 'near-ai' },
+  };
+  const attestation: TeeAttestation = {
+    model: 'e2ee-qwen3-5-122b-a10b',
+    verified: true,
+    signingAddress: '0x6525e128afcffebf7eed05d485d7be983cdae934',
+    nonce: 'abc123',
+    teeProvider: 'near-ai',
+    teeHardware: 'intel-tdx',
+  };
+
+  it('produces a VeniceTrace that satisfies the app contract', () => {
+    const trace = toVeniceTrace(result, attestation);
+    expect(VeniceTraceSchema.parse(trace)).toBeTruthy();
+    expect(trace.support).toBe(0);
+    expect(trace.decision).toBe('Against');
+    expect(trace.attestation.verified).toBe(true);
+    expect(trace.signature.signingAddress).toBe('0x6525e128afcffebf7eed05d485d7be983cdae934');
+  });
+
+  it('still validates without an attestation (header-only TEE proof)', () => {
+    expect(() => VeniceTraceSchema.parse(toVeniceTrace(result))).not.toThrow();
   });
 });

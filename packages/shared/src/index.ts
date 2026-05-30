@@ -38,6 +38,7 @@ export {
   parseDecision,
   resolveModel,
   resolveTeeModel,
+  toVeniceTrace,
 } from './venice.js';
 export type {
   CapabilitiesResult,

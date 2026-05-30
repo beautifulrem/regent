@@ -6,7 +6,7 @@
  * Pure parsing/model-selection is unit-tested; the HTTP calls are exercised live.
  */
 import type { Address } from 'viem';
-import { SUPPORT, type Decision, type Support } from './api.js';
+import { SUPPORT, type Decision, type Support, type VeniceTrace } from './api.js';
 
 export const GOVERNANCE_SYSTEM_PROMPT =
   'You are an impartial DAO governance analyst. Weigh the proposal on alignment, risk, cost, ' +
@@ -144,6 +144,27 @@ export function mapAttestation(json: Record<string, unknown>): TeeAttestation {
 export async function fetchAttestation(cfg: VeniceConfig, model: string): Promise<TeeAttestation> {
   const res = await veniceFetch(cfg, `/tee/attestation?model=${encodeURIComponent(model)}`);
   return mapAttestation((await res.json()) as Record<string, unknown>);
+}
+
+/**
+ * Pure: project an analysis result (+ optional attestation) onto the app-facing VeniceTrace
+ * contract. decision/support stay consistent (parseDecision guarantees it).
+ */
+export function toVeniceTrace(result: AnalysisResult, attestation?: TeeAttestation): VeniceTrace {
+  return {
+    model: result.model,
+    support: result.decision.support,
+    decision: result.decision.decision,
+    rationale: result.decision.rationale,
+    attestation: {
+      verified: result.tee.verified || (attestation?.verified ?? false),
+      nonce: attestation?.nonce,
+    },
+    signature: {
+      recovered: attestation?.verified ?? false,
+      signingAddress: attestation?.signingAddress,
+    },
+  };
 }
 
 /** Run the private TEE analysis and return the decision + per-completion TEE proof. */

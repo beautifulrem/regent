@@ -12,6 +12,7 @@
     "proposal": "tsx packages/shared/scripts/proposal.ts",
     "vote:2hop": "tsx packages/shared/scripts/vote-2hop.ts",
     "revoke:2hop": "tsx packages/shared/scripts/revoke-2hop.ts",
+    "orchestrate": "tsx packages/shared/scripts/orchestrate.ts",
     "dev": "echo \"dev orchestration lands in a later task\""
   },
   "devDependencies": {
