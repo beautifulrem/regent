@@ -1,0 +1,16 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+libs = ["lib"]
+optimizer = true
+optimizer_runs = 200
+# OpenZeppelin 5.6.1 + forge-std are vendored as git submodules under lib/ (canonical
+# Foundry layout; avoids pnpm's out-of-root symlinks that solc's allow-paths rejects).
+remappings = [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "forge-std/=lib/forge-std/src/",
+]
+
+[fmt]
+line_length = 100

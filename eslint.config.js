@@ -6,6 +6,10 @@ export default [
       '**/build/**',
       '**/coverage/**',
       '.pnpm-store/**',
+      // Foundry: vendored submodules + build artifacts (not our source).
+      '**/lib/**',
+      '**/out/**',
+      '**/cache/**',
     ],
   },
   {

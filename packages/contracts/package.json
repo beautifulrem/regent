@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "echo \"No tests for @mandate/contracts yet\""
+    "test": "forge test",
+    "test:forge": "forge test -vvv"
   }
 }
