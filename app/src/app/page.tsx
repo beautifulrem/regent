@@ -12,6 +12,17 @@ const reached = (s: string | undefined, target: string) =>
   s != null && (ORDER.indexOf(s) >= ORDER.indexOf(target) || s === 'revoked');
 const decisionClass = (d?: string) => (d === 'For' ? 'green' : d === 'Against' ? 'red' : 'amber');
 
+const STATUS_LABEL: Record<string, string> = {
+  granted: 'Granted',
+  redelegated: 'Redelegated',
+  analyzing: 'Deciding in TEE…',
+  decided: 'Decided',
+  voting: 'Casting…',
+  voted: 'Voted',
+  failed: 'Failed',
+  revoked: 'Revoked',
+};
+
 export default function Home() {
   const [cfg, setCfg] = useState<DemoConfig | null>(null);
   const [conn, setConn] = useState<Connection | null>(null);
@@ -103,151 +114,178 @@ export default function Home() {
   const orchAddr = parts?.orchestrator ?? cfg?.orchestratorSA;
   const analystAddr = parts?.analyst ?? cfg?.analyst;
   const killed = !!recallTx;
+  const chainLive = reached(s, 'redelegated');
+
+  const steps = [
+    { done: reached(s, 'granted'), label: 'Root delegation signed', node: null as React.ReactNode },
+    { done: reached(s, 'redelegated'), label: 'Orchestrator redelegated with tighter scope', node: null as React.ReactNode },
+    {
+      done: reached(s, 'decided'),
+      label: 'Venice TEE decision verified',
+      node: venice ? (
+        <div className="mt-sm">
+          <span className={`pill ${decisionClass(venice.decision)}`}>{venice.decision}</span>{' '}
+          {venice.attestation.verified && <span className="pill green">TEE attested ✓</span>}{' '}
+          <span className="mono label">{venice.model}</span>
+          <div className="rationale">“{venice.rationale}”</div>
+        </div>
+      ) : null,
+    },
+    {
+      done: reached(s, 'voted'),
+      fail: s === 'failed',
+      label: 'Analyst cast vote on Base',
+      node: run?.vote ? (
+        <a className="mono mt-sm" href={`${BASESCAN}/tx/${run.vote.txHash}`} target="_blank" rel="noreferrer">
+          castVote tx {shortHex(run.vote.txHash, 5)} ↗
+        </a>
+      ) : null,
+    },
+  ];
+  const terminal = ['voted', 'failed', 'revoked'].includes(s ?? '');
+  const currentIdx = run && !terminal ? steps.findIndex((st) => !st.done) : -1;
 
   return (
-    <div className="wrap">
-      <h1 className="title">Mandate</h1>
-      <p className="sub">Revocable, scoped delegation of governance voting to an AI agent — on Base.</p>
+    <div className="app-shell">
+      <div className="topbar">
+        <div className="brand">
+          <span className="fox">🦊</span>
+          <span><span className="mark">Mandate</span></span>
+        </div>
+        <span className="chain-badge">Base Sepolia</span>
+      </div>
 
-      <div className="panel row spread">
+      <div className="hero">
+        <h1 className="title">Revocable AI governance delegation</h1>
+        <p className="sub">
+          Grant an agent a scoped, revocable right to cast one vote on your behalf — then kill the
+          whole delegation chain on-chain in one click.
+        </p>
+      </div>
+
+      {/* connect */}
+      <div className={`card connect-bar ${conn ? 'live' : ''} row spread`}>
         <div>
-          <div className="label">Your wallet (root delegator)</div>
+          <div className="label">Your wallet · root delegator</div>
           <div className="mono">{conn ? conn.address : 'not connected'}</div>
-          {conn && (
-            <div className="label">
-              smart account&nbsp;<span className="mono">{shortHex(conn.userSA.address, 6)}</span>
-            </div>
-          )}
+          {conn && <div className="label mt-sm">MetaMask smart account derived&nbsp;<span className="mono">{shortHex(conn.userSA.address, 6)}</span></div>}
         </div>
         {!conn && <button onClick={onConnect}>Connect MetaMask</button>}
       </div>
 
-      <div className="panel">
+      {/* proposal */}
+      <div className="card">
         <div className="row spread">
-          <div className="label">
-            Active proposal {cfg && <span className="mono">#{shortHex(cfg.proposalId, 5)}</span>}
-          </div>
+          <div className="card-title">Active proposal {cfg && <span className="mono label">#{shortHex(cfg.proposalId, 5)}</span>}</div>
           {cfg && (
             <a className="mono" href={`${BASESCAN}/address/${cfg.governor}`} target="_blank" rel="noreferrer">
               Governor {shortHex(cfg.governor, 4)} ↗
             </a>
           )}
         </div>
-        <p style={{ marginBottom: 0 }}>{DEMO_PROPOSAL}</p>
+        <p className="mt-sm mb-0">{DEMO_PROPOSAL}</p>
+        <div className="row gap-sm mt-md">
+          <span className="pill">Base Sepolia</span>
+          <span className="pill">Governor.castVote</span>
+          <span className="pill brand">Proposal ID locked</span>
+          <span className="pill brand">Support choice private</span>
+        </div>
       </div>
 
-      <div className="panel">
-        <div className="label" style={{ marginBottom: 10 }}>Authority chain</div>
-        <div className="graph">
-          <GraphNode who="You" role="root delegator" addr={youAddr} active={!!conn} link />
-          <div className="arrow">→</div>
-          <GraphNode who="Orchestrator" role="attenuates & redelegates" addr={orchAddr} active={reached(s, 'redelegated')} link />
-          <div className="arrow">→</div>
-          <GraphNode who="Analyst" role="Venice TEE · casts vote" addr={analystAddr} active={reached(s, 'analyzing')} link />
+      {/* authority graph */}
+      <div className="card">
+        <div className="label mb-0">Authority chain</div>
+        <div className="graph mt-md">
+          <GraphNode who="Root delegator" role="you (MetaMask)" addr={youAddr} active={!!conn} />
+          <div className={`arrow ${chainLive ? 'live' : ''}`}>→</div>
+          <GraphNode who="Orchestrator" role="attenuates &amp; redelegates" addr={orchAddr} active={reached(s, 'redelegated')} />
+          <div className={`arrow ${reached(s, 'analyzing') ? 'live' : ''}`}>→</div>
+          <GraphNode who="Analyst" role="Venice TEE · casts vote" addr={analystAddr} active={reached(s, 'analyzing')} />
         </div>
-        <div className="row" style={{ marginTop: 12, gap: 8 }}>
+        <div className="row gap-sm mt-md">
           <span className="pill">2 signed delegations</span>
           <span className="pill">3 participants</span>
-          <span className="pill">caveat: target = Governor</span>
-          <span className="pill">caveat: selector = castVote</span>
-          <span className="pill">caveat: proposalId locked · support free</span>
-          <span className="pill">revocable</span>
+          <span className="pill brand">revocable</span>
         </div>
       </div>
 
-      <div className="panel row spread">
-        <div className="label">
-          Grant scoped authority to vote on this proposal. You can revoke the whole chain anytime.
-        </div>
+      {/* action */}
+      <div className="card row spread">
+        <div className="label">Scope: Governor.castVote only · Proposal ID locked · Support choice private.</div>
         <button onClick={onGrant} disabled={busy || !cfg || (!!s && s !== 'failed') || killed}>
-          {busy ? 'Signing…' : 'Grant & run'}
+          {busy ? 'Signing…' : 'Grant one-vote authority'}
         </button>
       </div>
 
-      {error && <div className="panel err">⚠ {error}</div>}
+      {error && <div className="card err">⚠ {error}</div>}
 
+      {/* run */}
       {run && (
-        <div className="panel">
-          <div className="row spread" style={{ marginBottom: 12 }}>
+        <div className="card">
+          <div className="row spread mb-0">
             <div className="label">Run <span className="mono">{shortHex(run.runId, 6)}</span></div>
             <StatusPill status={killed ? 'revoked' : run.status} />
           </div>
 
-          <div className="steps">
-            <Step done={reached(s, 'granted')} label="You signed the root delegation (MetaMask)" extra={`hash ${shortHex(run.delegations.rootHash, 5)}`} />
-            <Step
-              done={reached(s, 'redelegated')}
-              label="Orchestrator attenuated-redelegated to the analyst"
-              extra={run.delegations.redelegationHash ? `hash ${shortHex(run.delegations.redelegationHash, 5)}` : undefined}
-            />
-            <Step done={reached(s, 'decided')} label="Analyst analysed the proposal in a Venice TEE">
-              {venice && (
-                <div>
-                  <span className={`pill ${decisionClass(venice.decision)}`}>{venice.decision}</span>{' '}
-                  {venice.attestation.verified && <span className="pill green">TEE attested ✓</span>}{' '}
-                  <span className="mono label">{venice.model}</span>
-                  <div className="rationale">“{venice.rationale}”</div>
-                </div>
-              )}
-            </Step>
-            <Step done={reached(s, 'voted')} fail={s === 'failed'} label="Analyst cast the vote on-chain">
-              {run.vote && (
-                <a className="mono" href={`${BASESCAN}/tx/${run.vote.txHash}`} target="_blank" rel="noreferrer">
-                  castVote tx {shortHex(run.vote.txHash, 5)} ↗
-                </a>
-              )}
-            </Step>
+          <div className="steps mt-md">
+            {steps.map((st, i) => (
+              <Step key={i} done={st.done} current={i === currentIdx} fail={st.fail} label={st.label}>
+                {st.node}
+              </Step>
+            ))}
           </div>
 
-          {run.error && <div className="err" style={{ marginTop: 10 }}>⚠ {run.error.code}: {run.error.message}</div>}
-
-          <div className="row spread" style={{ marginTop: 16 }}>
-            <div className="label">
-              {killed
-                ? 'Root delegation disabled — every redemption of this chain now reverts.'
-                : 'Kill the chain: disable the root delegation; the next redemption reverts.'}
+          {/* the two delegation hashes */}
+          <div className="hashes">
+            <div className="hrow">
+              <span className="label">Root delegation hash</span>
+              <span className="mono">{shortHex(run.delegations.rootHash, 6)}</span>
             </div>
-            <button
-              className="danger"
-              onClick={onRecall}
-              disabled={recalling || killed || run.status !== 'voted' || !rootDel || !conn}
-            >
-              {recalling ? 'Recalling…' : killed ? 'Chain killed 🔪' : 'Recall'}
+            <div className="hrow">
+              <span className="label">Redelegation hash</span>
+              <span className="mono">{run.delegations.redelegationHash ? shortHex(run.delegations.redelegationHash, 6) : '—'}</span>
+            </div>
+          </div>
+
+          {run.error && <div className="err mt-md">⚠ {run.error.code}: {run.error.message}</div>}
+
+          {/* recall */}
+          <div className="row spread mt-lg">
+            <div className="label">
+              {killed ? 'Root delegation disabled — every redemption now reverts.' : 'Kill the chain: disable the root; the next redemption reverts.'}
+            </div>
+            <button className="danger" onClick={onRecall} disabled={recalling || killed || run.status !== 'voted' || !rootDel || !conn}>
+              {recalling ? 'Recalling…' : killed ? 'Chain killed' : 'Recall root delegation'}
             </button>
           </div>
 
           {killed && (
-            <div className="panel" style={{ marginTop: 12, background: 'var(--panel-2)' }}>
-              🔪 <strong>Chain killed.</strong> Root delegation disabled via your smart account.{' '}
+            <div className="recall-confirmation">
+              🔪 <strong>Chain killed — next redemption reverts.</strong>{' '}
               <a className="mono" href={`${BASESCAN}/tx/${recallTx}`} target="_blank" rel="noreferrer">
                 disable tx {shortHex(recallTx ?? undefined, 5)} ↗
               </a>
-              <div className="label" style={{ marginTop: 4 }}>The agents can no longer vote with this grant — the next redeemDelegations reverts.</div>
             </div>
           )}
         </div>
       )}
 
-      <p className="label" style={{ marginTop: 24 }}>
+      <p className="label mt-lg">
         Demo wallet must be the seeded voter. Start the orchestrator (<span className="mono">pnpm --filter @mandate/orchestrator serve</span>) and refresh a proposal (<span className="mono">pnpm proposal --reseed</span>) before granting.
       </p>
     </div>
   );
 }
 
-function GraphNode({ who, role, addr, active, link }: { who: string; role: string; addr?: string; active?: boolean; link?: boolean }) {
+function GraphNode({ who, role, addr, active }: { who: string; role: string; addr?: string; active?: boolean }) {
   return (
     <div className={`node ${active ? 'active' : ''}`}>
       <div className="who">{who}</div>
       <div className="label">{role}</div>
       {addr && (
-        link ? (
-          <a className="mono label" href={`${BASESCAN}/address/${addr}`} target="_blank" rel="noreferrer">
-            {shortHex(addr, 4)}
-          </a>
-        ) : (
-          <span className="mono label">{shortHex(addr, 4)}</span>
-        )
+        <a className="mono label" href={`${BASESCAN}/address/${addr}`} target="_blank" rel="noreferrer">
+          {shortHex(addr, 4)}
+        </a>
       )}
     </div>
   );
@@ -255,29 +293,30 @@ function GraphNode({ who, role, addr, active, link }: { who: string; role: strin
 
 function StatusPill({ status }: { status: string }) {
   const cls = status === 'voted' ? 'green' : status === 'failed' || status === 'revoked' ? 'red' : 'amber';
-  return <span className={`pill ${cls}`}>{status}</span>;
+  return <span className={`pill ${cls}`}>{STATUS_LABEL[status] ?? status}</span>;
 }
 
 function Step({
   done,
+  current,
   fail,
   label,
-  extra,
   children,
 }: {
   done?: boolean;
+  current?: boolean;
   fail?: boolean;
   label: string;
-  extra?: string;
   children?: React.ReactNode;
 }) {
   return (
-    <div className={`step ${fail ? 'fail' : done ? 'done' : ''}`}>
-      <div className="dot" />
+    <div className={`step ${fail ? 'fail' : done ? 'done' : current ? 'current' : ''}`}>
+      <div className="rail">
+        <div className="dot" />
+        <div className="line" />
+      </div>
       <div>
-        <div>
-          {label} {extra && <span className="mono label">· {extra}</span>}
-        </div>
+        <div>{label}</div>
         {children}
       </div>
     </div>
