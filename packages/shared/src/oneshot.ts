@@ -8,7 +8,7 @@
  *
  * Method shapes verified against the 1Shot openrpc + the canonical relayer example.
  */
-import crypto from 'node:crypto';
+import type { webcrypto } from 'node:crypto'; // type-only → erased at compile (browser-safe)
 import type { Address, Hex } from 'viem';
 
 export const ONESHOT_RELAYER_URL = 'https://relayer.1shotapi.com/relayers';
@@ -166,12 +166,23 @@ export interface Ed25519Jwk {
 /**
  * Verify a relayer webhook's Ed25519 signature over the raw payload bytes. Returns true iff the
  * signature is valid for the given JWKS public key — reject any event that fails before acting.
+ * Uses Web Crypto (works in Node 18+ and the browser).
  */
-export function verifyWebhookSignature(payload: string | Uint8Array, signature: Uint8Array, jwk: Ed25519Jwk): boolean {
+export async function verifyWebhookSignature(
+  payload: string | Uint8Array,
+  signature: Uint8Array,
+  jwk: Ed25519Jwk,
+): Promise<boolean> {
   try {
-    const key = crypto.createPublicKey({ key: jwk as crypto.JsonWebKey, format: 'jwk' });
-    const data = typeof payload === 'string' ? Buffer.from(payload) : Buffer.from(payload);
-    return crypto.verify(null, data, key, Buffer.from(signature));
+    const key = await globalThis.crypto.subtle.importKey(
+      'jwk',
+      jwk as unknown as webcrypto.JsonWebKey,
+      { name: 'Ed25519' },
+      false,
+      ['verify'],
+    );
+    const data = new Uint8Array(typeof payload === 'string' ? new TextEncoder().encode(payload) : payload);
+    return await globalThis.crypto.subtle.verify({ name: 'Ed25519' }, key, new Uint8Array(signature), data);
   } catch {
     return false;
   }

@@ -1,0 +1,33 @@
+import type { RunStatus } from '@mandate/shared';
+import { ORCHESTRATOR_URL } from './config';
+
+export interface DemoConfig {
+  chainId: number;
+  governor: `0x${string}`;
+  token: `0x${string}`;
+  proposalId: string;
+  orchestratorSA: `0x${string}`;
+  analyst: `0x${string}`;
+}
+
+export async function getConfig(): Promise<DemoConfig> {
+  const res = await fetch(`${ORCHESTRATOR_URL}/config`);
+  if (!res.ok) throw new Error('orchestrator /config unavailable — is the service running?');
+  return res.json();
+}
+
+export async function postGrant(grant: unknown): Promise<{ runId: string }> {
+  const res = await fetch(`${ORCHESTRATOR_URL}/grant`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(grant),
+  });
+  if (!res.ok) throw new Error(`grant rejected: ${await res.text()}`);
+  return res.json();
+}
+
+export async function getRun(runId: string): Promise<RunStatus> {
+  const res = await fetch(`${ORCHESTRATOR_URL}/run/${runId}`);
+  if (!res.ok) throw new Error('run not found');
+  return res.json();
+}

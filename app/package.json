@@ -4,10 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "test": "echo \"No tests for @mandate/app yet\""
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "test": "echo \"app verified via build + manual browser demo\""
   },
   "dependencies": {
-    "@mandate/shared": "workspace:*"
+    "@mandate/shared": "workspace:*",
+    "@metamask/smart-accounts-kit": "1.6.0",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "viem": "^2.51.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
   }
 }

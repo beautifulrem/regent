@@ -4,6 +4,7 @@ export default [
       '**/node_modules/**',
       '**/dist/**',
       '**/build/**',
+      '**/.next/**',
       '**/coverage/**',
       '.pnpm-store/**',
       // Foundry: vendored submodules + build artifacts (not our source).

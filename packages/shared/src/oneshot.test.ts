@@ -80,15 +80,15 @@ describe('verifyWebhookSignature (Ed25519)', () => {
   const payload = JSON.stringify({ taskId: '0xabc', status: 200 });
   const sig = crypto.sign(null, Buffer.from(payload), privateKey);
 
-  it('accepts a valid signature', () => {
-    expect(verifyWebhookSignature(payload, sig, jwk)).toBe(true);
+  it('accepts a valid signature', async () => {
+    expect(await verifyWebhookSignature(payload, sig, jwk)).toBe(true);
   });
-  it('rejects a tampered payload', () => {
-    expect(verifyWebhookSignature(payload + ' ', sig, jwk)).toBe(false);
+  it('rejects a tampered payload', async () => {
+    expect(await verifyWebhookSignature(payload + ' ', sig, jwk)).toBe(false);
   });
-  it('rejects a signature from a different key', () => {
+  it('rejects a signature from a different key', async () => {
     const other = crypto.generateKeyPairSync('ed25519');
     const otherJwk = other.publicKey.export({ format: 'jwk' }) as unknown as Ed25519Jwk;
-    expect(verifyWebhookSignature(payload, sig, otherJwk)).toBe(false);
+    expect(await verifyWebhookSignature(payload, sig, otherJwk)).toBe(false);
   });
 });

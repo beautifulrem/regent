@@ -14,6 +14,7 @@ import { config as loadDotenv } from 'dotenv';
 import { privateKeyToAccount } from 'viem/accounts';
 import type { Address, Hex } from 'viem';
 import {
+  ADDRESSES,
   delegationHash,
   delegationManagerAddress,
   GrantRequestSchema,
@@ -94,6 +95,16 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && url.pathname.startsWith('/run/')) {
     const run = store.get(url.pathname.slice('/run/'.length));
     return run ? send(res, 200, run) : send(res, 404, { error: 'run not found' });
+  }
+  if (req.method === 'GET' && url.pathname === '/config') {
+    return send(res, 200, {
+      chainId: 84532,
+      governor: ADDRESSES.baseSepolia.governor,
+      token: ADDRESSES.baseSepolia.token,
+      proposalId: ADDRESSES.baseSepolia.proposalId,
+      orchestratorSA: ADDRESSES.accounts.orchestrator,
+      analyst: privateKeyToAccount(cfg.analystPk).address,
+    });
   }
   if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true });
   send(res, 404, { error: 'not found' });
