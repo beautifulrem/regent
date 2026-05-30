@@ -19,8 +19,13 @@ contract VotesToken is ERC20, ERC20Permit, ERC20Votes, Ownable {
     {}
 
     /// @notice Seed voting power. Owner-only; call BEFORE a proposal snapshot.
+    /// @dev Auto self-delegates the recipient on first seed so a smart-account voter
+    ///      gets active voting power without sending a separate `delegate` UserOp.
     function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
+        if (delegates(to) == address(0)) {
+            _delegate(to, to);
+        }
     }
 
     // --- IERC6372 timestamp clock ---------------------------------------------
