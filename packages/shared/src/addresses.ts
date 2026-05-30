@@ -6,13 +6,24 @@ export interface MandateAddresses {
   /** Demo accounts on Base Sepolia: SA address for smart-account roles, EOA otherwise. Keyed by role id. */
   accounts: Partial<Record<string, Address>>;
   /** Base Sepolia governance contracts (filled by the deploy task). */
-  baseSepolia: { token?: Address; governor?: Address };
+  baseSepolia: { token?: Address; governor?: Address; proposalId?: string };
   /** Base mainnet governance contracts (filled by the mainnet task). */
-  baseMainnet: { token?: Address; governor?: Address };
+  baseMainnet: { token?: Address; governor?: Address; proposalId?: string };
 }
 
 export const ADDRESSES: MandateAddresses = {
-  accounts: {},
-  baseSepolia: {},
-  baseMainnet: {},
+  "accounts": {
+    "userDemo": "0xEb35F7b58EB654383092569Adc527220A7E89383",
+    "orchestrator": "0x2caa4D4583015F418F2d962e2E38F7D5E724d16e",
+    "analyst": "0x31f898937F29c089b748750b00668Cf8ED5a5F28",
+    "veniceWallet": "0xA073D0223d8D47d021203366C72Abf1d3922AC3A",
+    "oneShotBurner": "0x83cA7AF35e85Db90938391290Cdb6A3e6FfaA991",
+    "deployer": "0xf1a6b2ddCeb90f570d28B0FDd52ccb1eACE0c95E"
+  },
+  "baseSepolia": {
+    "token": "0x56FC5fA996f9D0e15e40fE7D738C6cA055d1Ad55",
+    "governor": "0x1BC00C1c14bE7eaC46237C4bcBD0530bb9655FD5",
+    "proposalId": "106296627712169873648697063861165976356628259510502745275582835453458530154600"
+  },
+  "baseMainnet": {}
 };

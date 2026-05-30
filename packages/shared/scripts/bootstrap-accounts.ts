@@ -110,9 +110,9 @@ export interface MandateAddresses {
   /** Demo accounts on Base Sepolia: SA address for smart-account roles, EOA otherwise. Keyed by role id. */
   accounts: Partial<Record<string, Address>>;
   /** Base Sepolia governance contracts (filled by the deploy task). */
-  baseSepolia: { token?: Address; governor?: Address };
+  baseSepolia: { token?: Address; governor?: Address; proposalId?: string };
   /** Base mainnet governance contracts (filled by the mainnet task). */
-  baseMainnet: { token?: Address; governor?: Address };
+  baseMainnet: { token?: Address; governor?: Address; proposalId?: string };
 }
 
 export const ADDRESSES: MandateAddresses = ${JSON.stringify(data, null, 2)};
