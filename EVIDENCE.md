@@ -23,7 +23,7 @@ On-chain receipts proving each hackathon track. All testnet artifacts are on **B
 | 3 | **Best 1Shot relayer** — mainnet castVote via 7702 upgrade + 7710 (USDC gas) | ◑ client live | read-only verified vs the live relayer (caps/feeData, minFee $0.01); actual mainnet send = T16 |
 | 4 | **Best Venice AI** — TEE model decides `support`; attestation verified | ✅ | live decisions discriminate (risky→Against, sound→For); `x-venice-tee:true`; attestation `verified:true` (see below) |
 | 5 | **x402 + ERC-7710** (secondary) — analyst pays per-query via scoped delegation | ⏳ T17 | — |
-| 6 | **Best Agent** — autonomous analyze→decide→vote after one grant | ⏳ T10/T11 | — |
+| 6 | **Best Agent** — autonomous analyze→decide→vote after one grant | ✅ | `pnpm orchestrate`: one grant → Venice TEE decision → real castVote; on-chain tally bucket == the decision (see below) |
 | 7 | **Kill-the-chain** (wow) — recall disables root; next redeem reverts | ✅ | disable UserOp + cause-proven revert below |
 | 8 | **Compliance** — open-source repo, addresses, video | ⏳ T20 | repo + this file |
 
@@ -48,3 +48,11 @@ On-chain receipts proving each hackathon track. All testnet artifacts are on **B
 - **Attestation** `GET /tee/attestation?model=…` → `verified: true`, `server_verification.tdx`
   all-valid, enclave `signing_address 0x6525e128afcffebf7eed05d485d7be983cdae934`, fresh nonce,
   Intel TDX quote + NVIDIA Hopper evidence. Reproduce via `analyzeProposal` / `fetchAttestation`.
+
+## Best Agent — autonomous loop (live)
+
+- **`pnpm orchestrate`**: one signed grant → orchestrator attenuated-redelegates → analyst decides
+  in the Venice TEE → analyst redeems the chain → real `castVote`. The cast `support` is whatever
+  Venice decided, with **NO hardcoding** — proven on-chain by which tally bucket receives the votes
+  (e.g. Venice "For" → `proposalVotes.For = 1000e18`, redeem tx
+  [`0xd8303a62b68b21e8f9578e054061de64fcab5880084973feb30026326b6c1356`](https://sepolia.basescan.org/tx/0xd8303a62b68b21e8f9578e054061de64fcab5880084973feb30026326b6c1356)).
