@@ -21,7 +21,7 @@ On-chain receipts proving each hackathon track. All testnet artifacts are on **B
 | 1 | **General qualification** — SAK smart account + ERC-7710 in the main flow | ✅ | the redeem tx below casts a real vote via `@metamask/smart-accounts-kit` |
 | 2 | **Best A2A coordination** (anchor) — 2-hop attenuated redelegation, redeemed on-chain | ✅ | vote + revoke txs below; 3 participants, 2 signed delegations, leaf→root redemption |
 | 3 | **Best 1Shot relayer** — mainnet castVote via 7702 upgrade + 7710 (USDC gas) | ⏳ T16 | — |
-| 4 | **Best Venice AI** — TEE model decides `support`; attestation+signature verified | ⏳ T8 | — |
+| 4 | **Best Venice AI** — TEE model decides `support`; attestation verified | ✅ | live decisions discriminate (risky→Against, sound→For); `x-venice-tee:true`; attestation `verified:true` (see below) |
 | 5 | **x402 + ERC-7710** (secondary) — analyst pays per-query via scoped delegation | ⏳ T17 | — |
 | 6 | **Best Agent** — autonomous analyze→decide→vote after one grant | ⏳ T10/T11 | — |
 | 7 | **Kill-the-chain** (wow) — recall disables root; next redeem reverts | ✅ | disable UserOp + cause-proven revert below |
@@ -39,3 +39,12 @@ On-chain receipts proving each hackathon track. All testnet artifacts are on **B
 
 > Each demo run reseeds a fresh proposal (votingPeriod=300s), so proposal ids and exact
 > tx hashes differ per run; the txs above are representative proof from a live run.
+
+## Best Venice AI (live)
+
+- **TEE model decides `support`** (not hardcoded): on `e2ee-qwen3-5-122b-a10b` (Phala/NEAR-AI
+  TEE, Intel TDX) — a risky anonymous-no-audit proposal → **Against (support 0)**, an audited
+  milestone+clawback grant → **For (support 1)**. Each completion returns `x-venice-tee: true`.
+- **Attestation** `GET /tee/attestation?model=…` → `verified: true`, `server_verification.tdx`
+  all-valid, enclave `signing_address 0x6525e128afcffebf7eed05d485d7be983cdae934`, fresh nonce,
+  Intel TDX quote + NVIDIA Hopper evidence. Reproduce via `analyzeProposal` / `fetchAttestation`.
