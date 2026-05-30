@@ -13,6 +13,7 @@ import { getConfig, getRun, postGrant, type DemoConfig } from '../lib/orchestrat
 import { recall } from '../lib/recall';
 import { fireSever } from '../lib/sever';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useAccount, useWalletClient } from 'wagmi';
 import { deriveSmartAccount, signGrant, type SmartAccount } from '../lib/wallet';
 
@@ -206,7 +207,13 @@ export default function Home() {
         <div>
           <div className="label">{t.walletLabel}</div>
           <div className="mono">{address ?? t.notConnected}</div>
-          {userSA && <div className="label mt-sm">{t.smartAccount}&nbsp;<span className="mono">{shortHex(userSA.address, 6)}</span></div>}
+          {userSA && (
+            <div className="label mt-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {t.smartAccount}&nbsp;
+              <Jazzicon diameter={16} seed={jsNumberForAddress(userSA.address)} />
+              <span className="mono">{shortHex(userSA.address, 6)}</span>
+            </div>
+          )}
         </div>
         <ConnectButton showBalance={false} accountStatus="address" chainStatus="icon" />
       </div>
@@ -315,7 +322,12 @@ function ChainNode({ nodeRef, avatar, who, role, addr, active, working, tee, thi
       <div className="who">{who}</div>
       <div className="role">{role}</div>
       {tee && !killed && <div className="tee"><span className="sweep" />{thinking}</div>}
-      {addr && <a className="mono label" style={{ display: 'inline-block', marginTop: 6 }} href={`${BASESCAN}/address/${addr}`} target="_blank" rel="noreferrer">{shortHex(addr, 4)}</a>}
+      {addr && (
+        <a className="mono label" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 6 }} href={`${BASESCAN}/address/${addr}`} target="_blank" rel="noreferrer">
+          <Jazzicon diameter={15} seed={jsNumberForAddress(addr)} />
+          {shortHex(addr, 4)} ↗
+        </a>
+      )}
     </div>
   );
 }
