@@ -8,6 +8,7 @@
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "lint": "eslint .",
+    "bootstrap:accounts": "tsx packages/shared/scripts/bootstrap-accounts.ts",
     "dev": "echo \"dev orchestration lands in a later task\""
   },
   "devDependencies": {

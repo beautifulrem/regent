@@ -13,10 +13,13 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.scripts.json",
     "test": "vitest run"
   },
   "dependencies": {
+    "@metamask/smart-accounts-kit": "1.6.0",
     "dotenv": "^16.4.7",
+    "viem": "^2.51.3",
     "zod": "^3.24.1"
   }
 }
