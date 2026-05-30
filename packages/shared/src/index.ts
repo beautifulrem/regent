@@ -21,6 +21,24 @@ export {
   redelegateVote,
   revokeRootCalldata,
 } from './delegation.js';
+export type {
+  AnalysisResult,
+  TeeAttestation,
+  TeeProof,
+  VeniceConfig,
+  VeniceDecision,
+  VeniceModel,
+} from './venice.js';
+export {
+  analyzeProposal,
+  fetchAttestation,
+  fetchModels,
+  GOVERNANCE_SYSTEM_PROMPT,
+  mapAttestation,
+  parseDecision,
+  resolveModel,
+  resolveTeeModel,
+} from './venice.js';
 export type { ProposalPhase, ProposalWindow } from './proposal.js';
 export {
   assertUsableWindow,
