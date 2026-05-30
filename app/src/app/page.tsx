@@ -7,11 +7,14 @@ import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BASESCAN, shortHex } from '../lib/config';
+import { grantDisabled } from '../lib/flow';
 import { getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
 import { getConfig, getRun, postGrant, type DemoConfig } from '../lib/orchestrator';
 import { recall } from '../lib/recall';
 import { fireSever } from '../lib/sever';
-import { connect, signGrant, type Connection } from '../lib/wallet';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount, useWalletClient } from 'wagmi';
+import { deriveSmartAccount, signGrant, type SmartAccount } from '../lib/wallet';
 
 const ORDER = ['granted', 'redelegated', 'analyzing', 'decided', 'voting', 'voted'];
 const reached = (s: string | undefined, target: string) =>
@@ -23,7 +26,9 @@ const statusClass = (status: string) =>
 export default function Home() {
   const [lang, setLang] = useState<Lang>('en');
   const [cfg, setCfg] = useState<DemoConfig | null>(null);
-  const [conn, setConn] = useState<Connection | null>(null);
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const [userSA, setUserSA] = useState<SmartAccount | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
   const [run, setRun] = useState<RunStatus | null>(null);
   const [rootDel, setRootDel] = useState<Delegation | null>(null);
@@ -65,6 +70,19 @@ export default function Home() {
     getConfig().then(setCfg).catch((e) => setError(String(e.message ?? e)));
   }, []);
 
+  // Derive the MetaMask smart account whenever the connected EOA wallet changes.
+  useEffect(() => {
+    if (!walletClient) {
+      setUserSA(null);
+      return;
+    }
+    let cancelled = false;
+    deriveSmartAccount(walletClient)
+      .then((sa) => { if (!cancelled) setUserSA(sa); })
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)));
+    return () => { cancelled = true; };
+  }, [walletClient]);
+
   useEffect(() => {
     if (!runId) return;
     const tick = async () => {
@@ -91,24 +109,13 @@ export default function Home() {
     if (recallTx) void fireSever(chainRef.current);
   }, [recallTx]);
 
-  async function onConnect() {
-    setError(null);
-    try {
-      setConn(await connect());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  }
-
   async function onGrant() {
-    if (!cfg) return;
+    if (!cfg || !userSA) return;
     setBusy(true);
     setError(null);
     setRecallTx(null);
     try {
-      const c = conn ?? (await connect());
-      setConn(c);
-      const grant = await signGrant(c.userSA, { governor: cfg.governor, proposalId: cfg.proposalId, orchestratorSA: cfg.orchestratorSA });
+      const grant = await signGrant(userSA, { governor: cfg.governor, proposalId: cfg.proposalId, orchestratorSA: cfg.orchestratorSA });
       setRootDel(grant.rootDelegation);
       const { runId: id } = await postGrant(grant);
       setRun(null);
@@ -121,11 +128,11 @@ export default function Home() {
   }
 
   async function onRecall() {
-    if (!conn || !rootDel) return;
+    if (!userSA || !rootDel) return;
     setRecalling(true);
     setError(null);
     try {
-      const { txHash } = await recall(conn.userSA, rootDel);
+      const { txHash } = await recall(userSA, rootDel);
       setRecallTx(txHash);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -137,7 +144,7 @@ export default function Home() {
   const s = run?.status;
   const venice = run?.venice;
   const parts = run?.delegations.participants;
-  const youAddr = parts?.user ?? conn?.userSA.address;
+  const youAddr = parts?.user ?? userSA?.address;
   const orchAddr = parts?.orchestrator ?? cfg?.orchestratorSA;
   const analystAddr = parts?.analyst ?? cfg?.analyst;
   const killed = !!recallTx;
@@ -194,14 +201,14 @@ export default function Home() {
         ))}
       </div>
 
-      {/* connect */}
-      <div className={`card connect-bar ${conn ? 'live' : ''} row spread`}>
+      {/* connect — RainbowKit owns wallet selection (EIP-6963) + chain switching */}
+      <div className={`card connect-bar ${isConnected ? 'live' : ''} row spread`}>
         <div>
           <div className="label">{t.walletLabel}</div>
-          <div className="mono">{conn ? conn.address : t.notConnected}</div>
-          {conn && <div className="label mt-sm">{t.smartAccount}&nbsp;<span className="mono">{shortHex(conn.userSA.address, 6)}</span></div>}
+          <div className="mono">{address ?? t.notConnected}</div>
+          {userSA && <div className="label mt-sm">{t.smartAccount}&nbsp;<span className="mono">{shortHex(userSA.address, 6)}</span></div>}
         </div>
-        {!conn && <button onClick={onConnect}>{t.connect}</button>}
+        <ConnectButton showBalance={false} accountStatus="address" chainStatus="icon" />
       </div>
 
       {/* proposal */}
@@ -222,7 +229,7 @@ export default function Home() {
       <div className="card">
         <div className="label mb-0">{t.chainTitle}</div>
         <div className={`chain ${killed ? 'killed' : ''} mt-md`} ref={chainRef}>
-          <ChainNode nodeRef={youRef} avatar="🧑" who={t.nodes.you.who} role={t.nodes.you.role} addr={youAddr} active={!!conn} killed={killed} />
+          <ChainNode nodeRef={youRef} avatar="🧑" who={t.nodes.you.who} role={t.nodes.you.role} addr={youAddr} active={isConnected} killed={killed} />
           <ChainNode nodeRef={orchRef} avatar="🤖" who={t.nodes.orch.who} role={t.nodes.orch.role} addr={orchAddr} active={reached(s, 'redelegated')} working={s === 'granted'} killed={killed} />
           <ChainNode nodeRef={analystRef} avatar="🔎" who={t.nodes.analyst.who} role={t.nodes.analyst.role} addr={analystAddr} active={reached(s, 'analyzing')} working={s === 'redelegated' || s === 'analyzing'} tee={s === 'analyzing'} thinking={t.thinking} killed={killed} />
           <AnimatedBeam containerRef={chainRef} fromRef={youRef} toRef={orchRef} live={reached(s, 'redelegated')} killed={killed} />
@@ -266,9 +273,9 @@ export default function Home() {
       <div className="card row spread">
         <div className="label">{killed ? t.actionDeadHint : t.actionLiveHint}</div>
         {run && run.status === 'voted' && !killed ? (
-          <button className="danger big" onClick={onRecall} disabled={recalling || !rootDel || !conn}>{recalling ? t.severing : t.recall}</button>
+          <button className="danger big" onClick={onRecall} disabled={recalling || !rootDel || !userSA}>{recalling ? t.severing : t.recall}</button>
         ) : (
-          <button className="big" onClick={onGrant} disabled={busy || !cfg || (!!s && s !== 'failed') || killed}>{busy ? t.signing : t.grant}</button>
+          <button className="big" onClick={onGrant} disabled={grantDisabled({ busy, hasConfig: !!cfg, connected: isConnected && !!userSA, status: s, killed })}>{busy ? t.signing : t.grant}</button>
         )}
       </div>
 
