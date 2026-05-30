@@ -61,6 +61,8 @@ export const GrantRequestSchema = z.object({
   chainId: z.number().int().positive(),
   governor: AddressSchema,
   proposalId: UintStringSchema,
+  /** the proposal text the analyst should privately evaluate. */
+  proposalText: z.string().min(1),
   rootDelegation: DelegationSchema,
 });
 export type GrantRequest = z.infer<typeof GrantRequestSchema>;

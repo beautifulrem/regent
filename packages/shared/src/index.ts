@@ -15,6 +15,7 @@ export {
   buildVoteDelegation,
   canRedeem,
   CASTVOTE_SIGNATURE,
+  delegationHash,
   delegationManagerAddress,
   freshSalt,
   redeemVoteCalldata,

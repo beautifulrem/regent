@@ -19,6 +19,7 @@ const grantFixture: GrantRequest = {
   chainId: 84532,
   governor: GOVERNOR,
   proposalId: '12345678901234567890',
+  proposalText: 'Fund an audited public-goods grant with milestones and clawback.',
   rootDelegation: {
     delegate: ORCH,
     delegator: USER,

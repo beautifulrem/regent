@@ -32,12 +32,27 @@ importers:
       '@mandate/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      viem:
+        specifier: ^2.51.3
+        version: 2.51.3(typescript@5.9.3)(zod@3.25.76)
 
   agent/orchestrator:
     dependencies:
+      '@mandate/analyst':
+        specifier: workspace:*
+        version: link:../analyst
       '@mandate/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@metamask/smart-accounts-kit':
+        specifier: 1.6.0
+        version: 1.6.0(typescript@5.9.3)(viem@2.51.3(typescript@5.9.3)(zod@3.25.76))(zod@3.25.76)
+      dotenv:
+        specifier: ^16.4.7
+        version: 16.6.1
+      viem:
+        specifier: ^2.51.3
+        version: 2.51.3(typescript@5.9.3)(zod@3.25.76)
 
   app:
     dependencies:

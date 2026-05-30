@@ -2,6 +2,7 @@ import { getSmartAccountsEnvironment } from '@metamask/smart-accounts-kit';
 import { describe, expect, it } from 'vitest';
 import {
   buildVoteDelegation,
+  delegationHash,
   delegationManagerAddress,
   freshSalt,
   redeemVoteCalldata,
@@ -108,5 +109,25 @@ describe('redeem / revoke encodings', () => {
 describe('delegationManagerAddress', () => {
   it('resolves the Base Sepolia DelegationManager', () => {
     expect(delegationManagerAddress(84532)).toBe('0xdb9B1e94B5b69Df7e401DDbedE43491141047dB3');
+  });
+});
+
+describe('delegationHash', () => {
+  const dm = delegationManagerAddress(84532);
+  const root = buildVoteDelegation({
+    governor: GOVERNOR, proposalId: PROPOSAL, delegate: ORCH, delegator: USER, environment: ENV, salt: '0x01',
+  });
+
+  it('is a deterministic 32-byte EIP-712 hash', () => {
+    const h = delegationHash(root, 84532, dm);
+    expect(h).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(delegationHash(root, 84532, dm)).toBe(h); // deterministic
+  });
+
+  it('differs when the delegation differs', () => {
+    const other = buildVoteDelegation({
+      governor: GOVERNOR, proposalId: PROPOSAL, delegate: ANALYST, delegator: USER, environment: ENV, salt: '0x01',
+    });
+    expect(delegationHash(other, 84532, dm)).not.toBe(delegationHash(root, 84532, dm));
   });
 });

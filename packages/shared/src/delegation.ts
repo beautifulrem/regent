@@ -20,6 +20,7 @@ import {
 import {
   encodeAbiParameters,
   encodeFunctionData,
+  hashTypedData,
   parseAbi,
   type Address,
   type Hex,
@@ -143,6 +144,36 @@ export function revokeRootCalldata(rootDelegation: Delegation): Hex {
 /** The DelegationManager address for a chain. */
 export function delegationManagerAddress(chainId: number): Address {
   return getSmartAccountsEnvironment(chainId).DelegationManager;
+}
+
+const DELEGATION_EIP712_TYPES = {
+  Caveat: [
+    { name: 'enforcer', type: 'address' },
+    { name: 'terms', type: 'bytes' },
+  ],
+  Delegation: [
+    { name: 'delegate', type: 'address' },
+    { name: 'delegator', type: 'address' },
+    { name: 'authority', type: 'bytes32' },
+    { name: 'caveats', type: 'Caveat[]' },
+    { name: 'salt', type: 'uint256' },
+  ],
+} as const;
+
+/** The EIP-712 hash that identifies a delegation on the DelegationManager (for display/tracking). */
+export function delegationHash(delegation: Delegation, chainId: number, delegationManager: Address): Hex {
+  return hashTypedData({
+    domain: { name: 'DelegationManager', version: '1', chainId, verifyingContract: delegationManager },
+    types: DELEGATION_EIP712_TYPES,
+    primaryType: 'Delegation',
+    message: {
+      delegate: delegation.delegate,
+      delegator: delegation.delegator,
+      authority: delegation.authority,
+      caveats: delegation.caveats.map((c) => ({ enforcer: c.enforcer, terms: c.terms })),
+      salt: BigInt(delegation.salt),
+    },
+  });
 }
 
 /**

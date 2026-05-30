@@ -1,9 +1,12 @@
 /**
- * @mandate/orchestrator — holds the root delegation context and serves the run-status API.
- * The redelegation + autonomous loop land in later tasks; for now it validates grants
- * against the shared contract so the seam is type-checked.
+ * @mandate/orchestrator — holds the root delegation context, attenuated-redelegates to the
+ * analyst, drives the run state machine, and serves the shared run-status contract over HTTP
+ * (see server.ts). Public API below.
  */
 import { GrantRequestSchema, RunStatusEnum, type GrantRequest, type RunState } from '@mandate/shared';
+
+export { RunStore, type CreateRunInput, type RunPatch } from './runStore.js';
+export { runVote, type OrchestratorConfig } from './runVote.js';
 
 /** Parse + validate an incoming grant from the app. */
 export function parseGrant(payload: unknown): GrantRequest {

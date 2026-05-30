@@ -3,11 +3,21 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "echo \"No tests for @mandate/orchestrator yet\""
+    "test": "vitest run",
+    "serve": "tsx src/server.ts"
   },
   "dependencies": {
-    "@mandate/shared": "workspace:*"
+    "@mandate/analyst": "workspace:*",
+    "@mandate/shared": "workspace:*",
+    "@metamask/smart-accounts-kit": "1.6.0",
+    "dotenv": "^16.4.7",
+    "viem": "^2.51.3"
   }
 }
