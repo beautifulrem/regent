@@ -1,5 +1,51 @@
 @import 'tailwindcss';
 
+/* ===================================================================
+   Design tokens (Tailwind v4 CSS-first @theme) — the redesign system.
+   Generates utilities: bg-surface, text-ink, border-hairline, rounded-panel,
+   ease-fluid, font-display, shadow-glow, animate-shimmer, etc.
+   Cinema-dark surfaces + MetaMask brand glow + premium spring easing.
+   =================================================================== */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: var(--font-space), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  --color-void: #050506;
+  --color-base: #0a0d13;
+  --color-surface: #141925;
+  --color-surface-2: #1b2231;
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-line: #283145;
+
+  --color-brand: #f6851b;
+  --color-brand-soft: #ffb15c;
+  --color-brand-deep: #e2761b;
+
+  --color-ink: #e6e9ef;
+  --color-ink-soft: #b8c0cc;
+  --color-ink-mute: #8b95a7;
+
+  --color-ok: #4ade80;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+  --color-info: #6ea8fe;
+  --color-eth: #627eea;
+
+  --radius-panel: 1rem;
+  --radius-chip: 999px;
+
+  --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snappy: cubic-bezier(0.2, 0, 0, 1);
+
+  --shadow-glow: 0 0 40px -8px rgba(246, 133, 27, 0.45);
+  --shadow-panel: 0 24px 60px -28px rgba(0, 0, 0, 0.7);
+
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-glow: glow 2.8s ease-in-out infinite;
+  --animate-float: floaty 6s ease-in-out infinite;
+}
+
 :root {
   /* MetaMask-branded dark palette (fox orange on dark neutrals) */
   --color-brand-primary: #f6851b;
@@ -162,6 +208,77 @@ input:focus-visible {
 }
 @keyframes beamFlow {
   to { stroke-dashoffset: -22; }
+}
+
+/* ===================================================================
+   Ambient animated field — the living background (Slice 1).
+   Deep void + drifting brand/ETH glow blobs + a masked dot grid.
+   Transform/opacity only (60fps); frozen under prefers-reduced-motion.
+   =================================================================== */
+.aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(125% 80% at 50% -12%, rgba(246, 133, 27, 0.1), transparent 60%),
+    radial-gradient(90% 60% at 88% 4%, rgba(110, 168, 254, 0.06), transparent 55%);
+}
+.aurora::before {
+  content: '';
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  left: -14vmax;
+  top: -22vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(246, 133, 27, 0.16), transparent 62%);
+  filter: blur(44px);
+  will-change: transform;
+  animation: drift1 26s ease-in-out infinite;
+}
+.aurora::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(130% 90% at 50% 0%, #000 28%, transparent 78%);
+  mask-image: radial-gradient(130% 90% at 50% 0%, #000 28%, transparent 78%);
+}
+.aurora-orb {
+  position: absolute;
+  width: 52vmax;
+  height: 52vmax;
+  right: -16vmax;
+  bottom: -20vmax;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(98, 126, 234, 0.14), transparent 62%);
+  filter: blur(52px);
+  will-change: transform;
+  animation: drift2 32s ease-in-out infinite;
+}
+@keyframes drift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(18vmax, 12vmax) scale(1.12); }
+  66% { transform: translate(7vmax, 24vmax) scale(0.95); }
+}
+@keyframes drift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-17vmax, -13vmax) scale(1.16); }
+}
+@keyframes shimmer {
+  0% { background-position: -160% 0; }
+  100% { background-position: 260% 0; }
+}
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 0 1px var(--color-hairline), 0 0 22px -10px var(--color-brand); }
+  50% { box-shadow: 0 0 0 1px var(--color-brand), 0 0 34px -6px var(--color-brand); }
+}
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 /* ---------- top bar / hero ---------- */
@@ -814,6 +931,8 @@ button.big {
 
 /* respect reduced-motion: keep state legible, drop the looping/oscillating motion */
 @media (prefers-reduced-motion: reduce) {
+  .aurora::before,
+  .aurora-orb { animation: none; }
   .beam-pulse { animation: none; opacity: 0.9; }
   .cnode.working { animation: none; }
   .cnode.working .avatar { transform: none; }

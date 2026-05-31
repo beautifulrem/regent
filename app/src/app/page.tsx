@@ -10,7 +10,6 @@ import { PermissionInspector } from '../components/PermissionInspector';
 import { ScopeChip } from '../components/ScopeChip';
 import { TamperProbe } from '../components/TamperProbe';
 import { TeeReasoningStream } from '../components/TeeReasoningStream';
-import { ThemeToggle } from '../components/ThemeToggle';
 import { BASESCAN, CHAIN_ID, shortHex } from '../lib/config';
 import { grantDisabled } from '../lib/flow';
 import { formatMessage, getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
@@ -186,7 +185,6 @@ export default function Home() {
         <div className="brand"><span className="fox">🦊</span><span><span className="mark">Mandate</span></span></div>
         <div className="topbar-controls">
           <LangToggle lang={lang} onToggle={toggleLang} />
-          <ThemeToggle labels={t.themeLabels} />
           <span className="chain-badge">Base Sepolia</span>
         </div>
       </div>
