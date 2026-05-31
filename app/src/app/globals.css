@@ -231,6 +231,7 @@ input:focus-visible {
   align-items: stretch;
   gap: 56px;
   position: relative;
+  padding-top: 30px; /* band above the nodes for the floating scope token */
 }
 .chain.killed {
   animation: shake 0.5s;
@@ -275,11 +276,16 @@ input:focus-visible {
   pointer-events: none;
 }
 
-/* A2A attenuation chip — rides the authority spine from hop 1 to hop 2 */
-.scope-chip {
+/* A2A attenuation token — floats in the band ABOVE whichever node holds the permission.
+   Anchor does horizontal centring (static translateX) + position (motion left/top); the inner
+   pill does the scale (motion) — split across two elements so neither transform clobbers the other. */
+.scope-chip-anchor {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   z-index: 3;
+  pointer-events: none;
+}
+.scope-chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -291,11 +297,6 @@ input:focus-visible {
   color: #1a0f02;
   background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-accent));
   box-shadow: 0 4px 14px -4px var(--color-brand-glow);
-  pointer-events: none;
-}
-.scope-chip-hash {
-  font-weight: 600;
-  opacity: 0.85;
 }
 
 /* monospace addresses/hashes inside the bespoke SVG chip */

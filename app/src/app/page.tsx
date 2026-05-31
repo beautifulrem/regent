@@ -404,7 +404,7 @@ export default function Home() {
           <AnimatedBeam containerRef={chainRef} fromRef={youRef} toRef={orchRef} live={reached(s, 'redelegated')} killed={killed} />
           <AnimatedBeam containerRef={chainRef} fromRef={orchRef} toRef={analystRef} live={reached(s, 'analyzing')} killed={killed} />
           {run && !killed && (
-            <ScopeChip containerRef={chainRef} youRef={youRef} orchRef={orchRef} analystRef={analystRef} redelegated={reached(s, 'redelegated')} t={t} />
+            <ScopeChip containerRef={chainRef} orchRef={orchRef} analystRef={analystRef} redelegated={reached(s, 'redelegated')} t={t} />
           )}
         </div>
 

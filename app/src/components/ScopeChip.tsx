@@ -3,50 +3,46 @@
 import { useEffect, useState, type RefObject } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Lock } from 'lucide-react';
-import { anchorPoint, type Point } from '../lib/beam';
 import type { Dict } from '../lib/i18n';
 
-const CURV = 22; // matches AnimatedBeam's default curvature
+const BAND_Y = 4; // sits in the chain's top padding band, clear of the node content below
 
-function beamMid(container: HTMLElement, a: HTMLElement, b: HTMLElement): Point {
+/** X of a node's centre, relative to the chain container. */
+function centerX(container: HTMLElement, node: HTMLElement): number {
   const cr = container.getBoundingClientRect();
-  const start = anchorPoint(cr, a.getBoundingClientRect(), 'right');
-  const end = anchorPoint(cr, b.getBoundingClientRect(), 'left');
-  return { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 - CURV / 2 };
+  const nr = node.getBoundingClientRect();
+  return nr.left - cr.left + nr.width / 2;
 }
 
 /**
- * The A2A attenuation made visible: a "4 caveats" chip rides the authority spine. On
- * granted→redelegated it travels from the You→Orchestrator beam midpoint to the
- * Orchestrator→Analyst midpoint, shrinks, and re-stamps "· attenuated" with the real
- * redelegationHash — so a judge SEES the orchestrator narrow + pass on the permission.
+ * The A2A attenuation made visible: a small token floats in the band ABOVE the chain, over whichever
+ * node currently holds the permission — the orchestrator before the redelegation, the analyst after.
+ * Floating above the node row (not in the cramped inter-node gap) keeps it clear of node content at
+ * any viewport width; it shrinks + slides to the analyst to show the scope being narrowed and passed.
  */
 export function ScopeChip({
   containerRef,
-  youRef,
   orchRef,
   analystRef,
   redelegated,
   t,
 }: {
   containerRef: RefObject<HTMLDivElement | null>;
-  youRef: RefObject<HTMLDivElement | null>;
   orchRef: RefObject<HTMLDivElement | null>;
   analystRef: RefObject<HTMLDivElement | null>;
   redelegated: boolean;
   t: Dict;
 }) {
   const reduce = useReducedMotion();
-  const [mids, setMids] = useState<{ a: Point; b: Point } | null>(null);
+  const [xs, setXs] = useState<{ orch: number; analyst: number } | null>(null);
 
   useEffect(() => {
     const compute = () => {
       const c = containerRef.current;
-      const y = youRef.current;
       const o = orchRef.current;
       const an = analystRef.current;
-      if (!c || !y || !o || !an) return;
-      setMids({ a: beamMid(c, y, o), b: beamMid(c, o, an) });
+      if (!c || !o || !an) return;
+      setXs({ orch: centerX(c, o), analyst: centerX(c, an) });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -56,19 +52,17 @@ export function ScopeChip({
       ro.disconnect();
       window.removeEventListener('resize', compute);
     };
-  }, [containerRef, youRef, orchRef, analystRef]);
+  }, [containerRef, orchRef, analystRef]);
 
-  if (!mids) return null;
-  const pos = redelegated ? mids.b : mids.a;
+  if (!xs) return null;
+  const x = redelegated ? xs.analyst : xs.orch;
+  const spring = reduce ? { duration: 0 } : { type: 'spring' as const, stiffness: 210, damping: 26 };
 
   return (
-    <motion.div
-      className="scope-chip"
-      initial={false}
-      animate={{ left: pos.x, top: pos.y, scale: redelegated ? 0.84 : 1 }}
-      transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 210, damping: 26 }}
-    >
-      <Lock className="size-3" /> {redelegated ? t.scopeChipAttenuated : t.scopeChip}
+    <motion.div className="scope-chip-anchor" initial={false} animate={{ left: x, top: BAND_Y }} transition={spring}>
+      <motion.div className="scope-chip" initial={false} animate={{ scale: redelegated ? 0.92 : 1 }} transition={spring}>
+        <Lock className="size-3" /> {redelegated ? t.scopeChipAttenuated : t.scopeChip}
+      </motion.div>
     </motion.div>
   );
 }
