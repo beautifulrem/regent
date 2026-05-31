@@ -6,6 +6,7 @@ import { AnimatedBeam } from '../components/AnimatedBeam';
 import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
 import { PermissionInspector } from '../components/PermissionInspector';
+import { ScopeChip } from '../components/ScopeChip';
 import { TamperProbe } from '../components/TamperProbe';
 import { TeeReasoningStream } from '../components/TeeReasoningStream';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -265,6 +266,9 @@ export default function Home() {
           <ChainNode nodeRef={analystRef} avatar="🔎" who={t.nodes.analyst.who} role={t.nodes.analyst.role} addr={analystAddr} active={reached(s, 'analyzing')} working={s === 'redelegated' || s === 'analyzing'} tee={s === 'analyzing'} thinking={t.thinking} killed={killed} />
           <AnimatedBeam containerRef={chainRef} fromRef={youRef} toRef={orchRef} live={reached(s, 'redelegated')} killed={killed} />
           <AnimatedBeam containerRef={chainRef} fromRef={orchRef} toRef={analystRef} live={reached(s, 'analyzing')} killed={killed} />
+          {run && !killed && (
+            <ScopeChip containerRef={chainRef} youRef={youRef} orchRef={orchRef} analystRef={analystRef} redelegated={reached(s, 'redelegated')} redelegationHash={run.delegations.redelegationHash} t={t} />
+          )}
         </div>
 
         {/* agent-authority meter — full while the grant is live, snaps to 0 on sever */}

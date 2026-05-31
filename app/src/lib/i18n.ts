@@ -57,6 +57,8 @@ const en = {
   scopeRevocable: '↩︎ revocable',
 
   chainTitle: 'Live authority chain',
+  scopeChip: '4 caveats',
+  scopeChipAttenuated: 'attenuated',
   nodes: {
     you: { who: 'You', role: 'grant the permission' },
     orch: { who: 'Orchestrator', role: 'narrows the permission' },
@@ -163,6 +165,8 @@ const zh: Dict = {
   scopeRevocable: '↩︎ 可撤销',
 
   chainTitle: '实时授权链',
+  scopeChip: '4 条 caveat',
+  scopeChipAttenuated: '已收窄',
   nodes: {
     you: { who: '你', role: '授予权限' },
     orch: { who: '编排器', role: '收窄权限' },
