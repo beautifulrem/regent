@@ -1,6 +1,7 @@
 import { getSmartAccountsEnvironment } from '@metamask/smart-accounts-kit';
 import { describe, expect, it } from 'vitest';
 import {
+  buildStandingVoteDelegation,
   buildVoteDelegation,
   delegationHash,
   delegationManagerAddress,
@@ -58,6 +59,43 @@ describe('buildVoteDelegation (root)', () => {
       salt: '0x01',
     });
     expect(d.caveats.map((c) => c.terms)).not.toEqual(other.caveats.map((c) => c.terms));
+  });
+});
+
+describe('buildStandingVoteDelegation (standing root)', () => {
+  const EXPIRY = 1_800_000_000; // fixed unix ts (deterministic)
+  const d = buildStandingVoteDelegation({
+    governor: GOVERNOR,
+    delegate: ORCH,
+    delegator: USER,
+    environment: ENV,
+    maxVotes: 10,
+    expiry: EXPIRY,
+    salt: '0x01',
+  });
+  const enforcers = d.caveats.map((c) => c.enforcer.toLowerCase());
+  const ce = ENV.caveatEnforcers;
+
+  it('is a root delegation from the user to the orchestrator', () => {
+    expect(d.delegator).toBe(USER);
+    expect(d.delegate).toBe(ORCH);
+    expect(d.authority.toLowerCase()).toBe(ROOT_AUTHORITY);
+  });
+
+  it('does NOT lock proposalId (no AllowedCalldata) — any proposal is votable', () => {
+    expect(enforcers).not.toContain(ce.AllowedCalldataEnforcer.toLowerCase());
+    // contrast: the single-proposal builder DOES lock it
+    const single = buildVoteDelegation({
+      governor: GOVERNOR, proposalId: PROPOSAL, delegate: ORCH, delegator: USER, environment: ENV, salt: '0x01',
+    });
+    expect(single.caveats.map((c) => c.enforcer.toLowerCase())).toContain(ce.AllowedCalldataEnforcer.toLowerCase());
+  });
+
+  it('bounds the standing authority: targets + methods + timestamp + limitedCalls', () => {
+    expect(enforcers).toContain(ce.AllowedTargetsEnforcer.toLowerCase());
+    expect(enforcers).toContain(ce.AllowedMethodsEnforcer.toLowerCase());
+    expect(enforcers).toContain(ce.TimestampEnforcer.toLowerCase());
+    expect(enforcers).toContain(ce.LimitedCallsEnforcer.toLowerCase());
   });
 });
 

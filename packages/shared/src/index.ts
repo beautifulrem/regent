@@ -12,6 +12,7 @@ export type { MandateAddresses } from './addresses.js';
 export { ADDRESSES } from './addresses.js';
 export type { Caveat, Delegation, SmartAccountsEnvironment } from './delegation.js';
 export {
+  buildStandingVoteDelegation,
   buildVoteDelegation,
   canRedeem,
   CASTVOTE_SIGNATURE,
@@ -19,6 +20,7 @@ export {
   delegationManagerAddress,
   freshSalt,
   redeemVoteCalldata,
+  redelegateStandingVote,
   redelegateVote,
   revokeRootCalldata,
 } from './delegation.js';

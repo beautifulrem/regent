@@ -17,6 +17,7 @@ import {
   getSmartAccountsEnvironment,
   ScopeType,
 } from '@metamask/smart-accounts-kit';
+import { createCaveatBuilder } from '@metamask/smart-accounts-kit/utils';
 import {
   encodeAbiParameters,
   encodeFunctionData,
@@ -104,6 +105,68 @@ export function redelegateVote(args: {
 }): Delegation {
   return createDelegation({
     scope: castVoteScope(args.governor, args.proposalId),
+    to: args.delegate,
+    from: args.delegator,
+    environment: args.environment,
+    parentDelegation: args.parentDelegation,
+    salt: args.salt ?? freshSalt(),
+  } as CreateDelegationParams) as Delegation;
+}
+
+// ---------------------------------------------------------------------------
+// STANDING delegation: any proposal on `governor`, vote-only, bounded by votes + expiry.
+// Used by the VoteBoard judge flow (the single-proposal builders above stay for the CLI
+// scripts that vote on the real Governor). proposalId is NO LONGER locked — the agent may
+// vote on any current/future proposal — so revoking the grant has real teeth, while the
+// scope is still "castVote only, this board only, ≤maxVotes, until expiry, revocable".
+// ---------------------------------------------------------------------------
+
+/** FunctionCall scope: `castVote` on `governor`, ANY proposalId (no calldata lock) — vote-only,
+ *  this board only. AllowedTargets + AllowedMethods caveats, but NOT AllowedCalldata. */
+function voteOnlyScope(governor: Address) {
+  return { type: ScopeType.FunctionCall, targets: [governor], selectors: [CASTVOTE_SIGNATURE] };
+}
+
+/** timestamp(valid until expiry) + limitedCalls(≤ maxVotes) — the standing-authority guardrails. */
+function standingBounds(environment: SmartAccountsEnvironment, maxVotes: number, expiry: number) {
+  return createCaveatBuilder(environment)
+    .addCaveat('timestamp', { afterThreshold: 0, beforeThreshold: expiry })
+    .addCaveat('limitedCalls', { limit: maxVotes });
+}
+
+/** ROOT (standing): grant `delegate` the right to cast ANY proposal's vote on `governor`, vote-only,
+ *  for up to `maxVotes` redemptions and until `expiry` (unix seconds). Revocable anytime. */
+export function buildStandingVoteDelegation(args: {
+  governor: Address;
+  delegate: Address;
+  delegator: Address;
+  environment: SmartAccountsEnvironment;
+  maxVotes: number;
+  expiry: number;
+  salt?: Hex;
+}): Delegation {
+  return createDelegation({
+    scope: voteOnlyScope(args.governor),
+    caveats: standingBounds(args.environment, args.maxVotes, args.expiry),
+    to: args.delegate,
+    from: args.delegator,
+    environment: args.environment,
+    salt: args.salt ?? freshSalt(),
+  } as CreateDelegationParams) as Delegation;
+}
+
+/** REDELEGATION (standing, attenuated): same vote-only scope on `governor`, linked to its parent.
+ *  The root's timestamp + limitedCalls bound the whole chain, so the leaf only needs target+method. */
+export function redelegateStandingVote(args: {
+  governor: Address;
+  delegate: Address;
+  delegator: Address;
+  environment: SmartAccountsEnvironment;
+  parentDelegation: Delegation;
+  salt?: Hex;
+}): Delegation {
+  return createDelegation({
+    scope: voteOnlyScope(args.governor),
     to: args.delegate,
     from: args.delegator,
     environment: args.environment,
