@@ -11,10 +11,10 @@ export const DEMO_PROPOSAL_ID =
   99019252316370500923492472570053420635813165261460609212982482510530266843538n;
 
 /**
- * Deployed VoteBoard on Base Sepolia — set after running script/DeployVoteBoard.s.sol.
- * Until then it is the zero address and UIs treat the board as "not live yet".
+ * Deployed VoteBoard on Base Sepolia (script/DeployVoteBoard.s.sol broadcast 2026-05-31).
+ * Seeded with 5 persona votes — 3 For, 1 Against, 1 Abstain.
  */
-export const VOTE_BOARD_ADDRESS: Address = '0x0000000000000000000000000000000000000000';
+export const VOTE_BOARD_ADDRESS: Address = '0x4E0CA4E2c45a94bC5974Fab93c3F1Df55F0c3e2B';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
 export function isVoteBoardLive(addr: Address = VOTE_BOARD_ADDRESS): boolean {
