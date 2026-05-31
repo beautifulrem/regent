@@ -6,6 +6,7 @@ import { AnimatedBeam } from '../components/AnimatedBeam';
 import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
 import { OneShotFinale } from '../components/OneShotFinale';
+import { X402TollGate } from '../components/X402TollGate';
 import { PermissionInspector } from '../components/PermissionInspector';
 import { ScopeChip } from '../components/ScopeChip';
 import { TamperProbe } from '../components/TamperProbe';
@@ -489,6 +490,7 @@ export default function Home() {
         </Panel>
       )}
 
+      {cfg && <X402TollGate cfg={cfg} t={t} />}
       <OneShotFinale t={t} />
 
       <p className="mt-10 text-center text-[11px] leading-relaxed text-ink-mute">
