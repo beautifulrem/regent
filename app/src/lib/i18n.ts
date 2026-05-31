@@ -37,6 +37,7 @@ const en = {
   permissionInspectorTitle: 'What you actually signed (decoded from the delegation bytes)',
   permissionInspectorProvenance: 'signature {signature} · hash {hash}',
   permissionInspectorPosted: 'this exact object was POSTed to /grant',
+  tamperProbeTitle: 'Tamper probe · on-chain enforcement',
   tamperProbeButton: 'Run on-chain check',
   tamperProbeChecking: 'Checking…',
   tamperProbeTimeout:
@@ -162,6 +163,7 @@ const zh: Dict = {
   permissionInspectorTitle: '你实际签署的内容(从 delegation 字节解码)',
   permissionInspectorProvenance: '签名 {signature} · 哈希 {hash}',
   permissionInspectorPosted: '这个确切对象已 POST 到 /grant',
+  tamperProbeTitle: '篡改探针 · 链上强制执行',
   tamperProbeButton: '运行链上检查',
   tamperProbeChecking: '检查中…',
   tamperProbeTimeout:
