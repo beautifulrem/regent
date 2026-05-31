@@ -62,22 +62,28 @@ export function VoteTally({ you, t }: { you?: Address; t: Dict }) {
           functionName: 'getVoters',
           args: [DEMO_PROPOSAL_ID],
         })) as readonly Address[];
-        const supports = await Promise.all(
-          addrs.map(
-            (a) =>
-              client.readContract({
-                address: VOTE_BOARD_ADDRESS,
-                abi: VOTE_BOARD_ABI,
-                functionName: 'getVote',
-                args: [DEMO_PROPOSAL_ID, a],
-              }) as Promise<number>,
-          ),
-        );
+        // Known personas reuse their seeded support; only an unknown voter (a judge) needs a read.
+        // Sequential, not Promise.all, so the public RPC isn't burst into rate limits.
+        const rows: VoterRow[] = [];
+        for (const a of addrs) {
+          const known = personaFor(a);
+          if (known) {
+            rows.push({ address: a, support: known.support });
+          } else {
+            const s = (await client.readContract({
+              address: VOTE_BOARD_ADDRESS,
+              abi: VOTE_BOARD_ABI,
+              functionName: 'getVote',
+              args: [DEMO_PROPOSAL_ID, a],
+            })) as number;
+            rows.push({ address: a, support: decodeBallot(s) as Choice });
+          }
+        }
         if (cancelled) return;
         setTally(tallyBreakdown(Number(against), Number(forV), Number(abstain)));
-        setVoters(addrs.map((a, i) => ({ address: a, support: decodeBallot(supports[i]) as Choice })));
-      } catch {
-        /* transient RPC hiccup — keep the last good tally */
+        setVoters(rows);
+      } catch (e) {
+        if (typeof console !== 'undefined') console.warn('[VoteTally] poll failed', e);
       }
     };
     void poll();

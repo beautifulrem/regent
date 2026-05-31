@@ -87,6 +87,13 @@ export const VOTE_BOARD_ABI = [
   },
   {
     type: 'function',
+    name: 'voterCount',
+    stateMutability: 'view',
+    inputs: [{ name: 'proposalId', type: 'uint256' }],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
     name: 'getVote',
     stateMutability: 'view',
     inputs: [
