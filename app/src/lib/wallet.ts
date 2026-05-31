@@ -39,6 +39,8 @@ export interface GrantTarget {
   governor: Address;
   proposalId: string;
   orchestratorSA: Address;
+  /** The proposal text the analyst privately evaluates in the Venice TEE (defaults to DEMO_PROPOSAL). */
+  proposalText?: string;
 }
 
 /**
@@ -60,7 +62,7 @@ export async function signGrant(userSA: SmartAccount, target: GrantTarget) {
     chainId: CHAIN_ID,
     governor: target.governor,
     proposalId: target.proposalId,
-    proposalText: DEMO_PROPOSAL,
+    proposalText: target.proposalText ?? DEMO_PROPOSAL,
     rootDelegation,
   };
 }

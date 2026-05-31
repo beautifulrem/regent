@@ -8,7 +8,6 @@ import { Users, Vote } from 'lucide-react';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import {
   DEMO_PERSONAS,
-  DEMO_PROPOSAL_ID,
   VOTE_BOARD_ABI,
   VOTE_BOARD_ADDRESS,
   decodeBallot,
@@ -17,7 +16,7 @@ import {
 } from '@mandate/shared';
 import { BASESCAN, RPC_URL, shortHex } from '../lib/config';
 import { cn } from '../lib/cn';
-import { personaTally, tallyBreakdown, type TallyBreakdown } from '../lib/voteboard-view';
+import { tallyBreakdown, tallyFromSeed, type TallyBreakdown } from '../lib/voteboard-view';
 import { NumberTicker } from './NumberTicker';
 import { Panel, PanelHeader } from './ui/Panel';
 import { Badge, TrackTag } from './ui/Badge';
@@ -31,21 +30,41 @@ interface VoterRow {
   support: Choice;
 }
 
+const personaIndex = (addr: string) =>
+  DEMO_PERSONAS.findIndex((p) => p.address.toLowerCase() === addr.toLowerCase());
+
+const seedVoters = (seed: readonly number[]): VoterRow[] =>
+  DEMO_PERSONAS.map((p, i) => ({ address: p.address, support: (seed[i] ?? null) as Choice }));
+
 /**
- * The multi-voter DAO scene: a live For/Against/Abstain tally + voter list for the SHARED
- * VoteBoard proposal. Before the board is deployed it shows the seeded personas; once live it
- * polls the chain so a judge watches their own vote land in the same tally.
+ * Live For/Against/Abstain tally + voter list for the ACTIVE proposal. Reads that proposal's
+ * on-chain tally every 3s; until live (or between rotations) it shows the proposal's seeded
+ * distribution, so each rotating proposal visibly carries a different DAO vote.
  */
-export function VoteTally({ you, t }: { you?: Address; t: Dict }) {
+export function VoteTally({
+  proposalId,
+  seed,
+  you,
+  t,
+}: {
+  proposalId: bigint;
+  seed: readonly number[];
+  you?: Address;
+  t: Dict;
+}) {
   const reduce = useReducedMotion();
   const live = isVoteBoardLive(VOTE_BOARD_ADDRESS);
-  const [tally, setTally] = useState<TallyBreakdown>(() => personaTally());
-  const [voters, setVoters] = useState<VoterRow[]>(() =>
-    DEMO_PERSONAS.map((p) => ({ address: p.address, support: p.support })),
-  );
+  const [tally, setTally] = useState<TallyBreakdown>(() => tallyFromSeed(seed));
+  const [voters, setVoters] = useState<VoterRow[]>(() => seedVoters(seed));
+
+  // Snap to the new proposal's seeded fallback the instant the active proposal changes.
+  useEffect(() => {
+    setTally(tallyFromSeed(seed));
+    setVoters(seedVoters(seed));
+  }, [proposalId, seed]);
 
   useEffect(() => {
-    if (!live) return; // keep the seeded fallback already in initial state
+    if (!live) return;
     const client = createPublicClient({ chain: baseSepolia, transport: http(RPC_URL) });
     let cancelled = false;
     const poll = async () => {
@@ -54,27 +73,26 @@ export function VoteTally({ you, t }: { you?: Address; t: Dict }) {
           address: VOTE_BOARD_ADDRESS,
           abi: VOTE_BOARD_ABI,
           functionName: 'getTally',
-          args: [DEMO_PROPOSAL_ID],
+          args: [proposalId],
         })) as [bigint, bigint, bigint];
         const addrs = (await client.readContract({
           address: VOTE_BOARD_ADDRESS,
           abi: VOTE_BOARD_ABI,
           functionName: 'getVoters',
-          args: [DEMO_PROPOSAL_ID],
+          args: [proposalId],
         })) as readonly Address[];
-        // Known personas reuse their seeded support; only an unknown voter (a judge) needs a read.
-        // Sequential, not Promise.all, so the public RPC isn't burst into rate limits.
+        // Personas reuse this proposal's seeded support; only an unknown voter (a judge) needs a read.
         const rows: VoterRow[] = [];
         for (const a of addrs) {
-          const known = personaFor(a);
-          if (known) {
-            rows.push({ address: a, support: known.support });
+          const idx = personaIndex(a);
+          if (idx >= 0) {
+            rows.push({ address: a, support: (seed[idx] ?? null) as Choice });
           } else {
             const s = (await client.readContract({
               address: VOTE_BOARD_ADDRESS,
               abi: VOTE_BOARD_ABI,
               functionName: 'getVote',
-              args: [DEMO_PROPOSAL_ID, a],
+              args: [proposalId, a],
             })) as number;
             rows.push({ address: a, support: decodeBallot(s) as Choice });
           }
@@ -92,7 +110,7 @@ export function VoteTally({ you, t }: { you?: Address; t: Dict }) {
       cancelled = true;
       clearInterval(id);
     };
-  }, [live]);
+  }, [live, proposalId, seed]);
 
   return (
     <Panel pad="lg" className="mb-3.5">

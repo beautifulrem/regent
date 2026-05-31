@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Delegation, RunStatus } from '@mandate/shared';
-import { DEMO_PROPOSAL_ID, VOTE_BOARD_ADDRESS, isVoteBoardLive } from '@mandate/shared';
+import { PROPOSALS, VOTE_BOARD_ADDRESS, isVoteBoardLive } from '@mandate/shared';
 import { AnimatedBeam } from '../components/AnimatedBeam';
 import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
@@ -10,6 +10,7 @@ import { OneShotFinale } from '../components/OneShotFinale';
 import { X402TollGate } from '../components/X402TollGate';
 import { ScoreCard } from '../components/ScoreCard';
 import { VoteTally } from '../components/VoteTally';
+import { ProposalFeed } from '../components/ProposalFeed';
 import { PermissionInspector } from '../components/PermissionInspector';
 import { ScopeChip } from '../components/ScopeChip';
 import { TamperProbe } from '../components/TamperProbe';
@@ -25,7 +26,7 @@ import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useAccount, useWalletClient } from 'wagmi';
 import { deriveSmartAccount, signGrant, type SmartAccount } from '../lib/wallet';
 import { motion, useReducedMotion } from 'motion/react';
-import { Activity, AlertTriangle, Award, Ban, Bot, CheckCircle2, Coins, FileText, Gauge, GitBranch, KeyRound, Lock, Network, ScanSearch, Scissors, ShieldCheck, Sparkles, Ticket, Undo2, User, Wallet, Workflow } from 'lucide-react';
+import { Activity, AlertTriangle, Award, Bot, CheckCircle2, Coins, Gauge, GitBranch, KeyRound, Lock, Network, ScanSearch, Scissors, ShieldCheck, Sparkles, Ticket, User, Wallet, Workflow } from 'lucide-react';
 import { Panel, PanelHeader } from '../components/ui/Panel';
 import { Badge, StatusDot, TrackTag } from '../components/ui/Badge';
 import { Stat } from '../components/ui/Stat';
@@ -48,6 +49,7 @@ const HOW_ICONS = [Ticket, Lock, Scissors];
 export default function Home() {
   const [lang, setLang] = useState<Lang>('en');
   const [cfg, setCfg] = useState<DemoConfig | null>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const [userSA, setUserSA] = useState<SmartAccount | null>(null);
@@ -66,6 +68,7 @@ export default function Home() {
 
   const t = getDict(lang);
   const reduce = useReducedMotion();
+  const activeProposal = PROPOSALS[activeIdx];
 
   // Pick language after mount (stored choice, else browser locale) so the first
   // client render matches the server's 'en' default — no hydration mismatch.
@@ -132,6 +135,14 @@ export default function Home() {
     if (recallTx) void fireSever(chainRef.current);
   }, [recallTx]);
 
+  // Rotate the active proposal so new ones "open"; pause while a grant/run is in flight.
+  const rotationPaused = busy || (run != null && !['voted', 'failed', 'revoked'].includes(run.status));
+  useEffect(() => {
+    if (rotationPaused) return;
+    const id = setInterval(() => setActiveIdx((i) => (i + 1) % PROPOSALS.length), 24000);
+    return () => clearInterval(id);
+  }, [rotationPaused, activeIdx]);
+
   async function onGrant() {
     if (!cfg || !userSA || !address) return;
     setBusy(true);
@@ -145,8 +156,9 @@ export default function Home() {
       await provision(address);
       const grant = await signGrant(userSA, {
         governor: VOTE_BOARD_ADDRESS,
-        proposalId: DEMO_PROPOSAL_ID.toString(),
+        proposalId: activeProposal.id.toString(),
         orchestratorSA: cfg.orchestratorSA,
+        proposalText: activeProposal.body.en,
       });
       setRootDel(grant.rootDelegation);
       const { runId: id } = await postGrant(grant);
@@ -332,34 +344,10 @@ export default function Home() {
         )}
       </Panel>
 
-      {/* proposal */}
-      <Panel pad="lg" className="mb-3.5">
-        <PanelHeader
-          icon={FileText}
-          title={t.proposalTitle}
-          right={
-            cfg ? (
-              <a
-                className="font-mono text-xs text-info hover:underline"
-                href={`${BASESCAN}/address/${cfg.governor}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t.governor} {shortHex(cfg.governor, 4)} ↗
-              </a>
-            ) : undefined
-          }
-        />
-        {cfg && <div className="-mt-2 mb-3 font-mono text-xs text-ink-mute">#{shortHex(cfg.proposalId, 5)}</div>}
-        <p className="text-[14px] leading-relaxed text-ink-soft">{t.proposalBody}</p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Badge tone="brand"><Lock className="size-3" /> {t.scopeVote}</Badge>
-          <Badge tone="brand"><Ban className="size-3" /> {t.scopeFunds}</Badge>
-          <Badge tone="brand"><Undo2 className="size-3" /> {t.scopeRevocable}</Badge>
-        </div>
-      </Panel>
+      {/* rotating live governance feed — a new proposal opens every ~24s */}
+      <ProposalFeed activeIdx={activeIdx} onSelect={setActiveIdx} lang={lang} t={t} />
 
-      {cfg && <VoteTally you={userSA?.address} t={t} />}
+      {cfg && <VoteTally proposalId={activeProposal.id} seed={activeProposal.seed} you={userSA?.address} t={t} />}
 
       {rootDel && cfg && userSA && (
         <>

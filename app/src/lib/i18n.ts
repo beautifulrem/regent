@@ -39,6 +39,7 @@ const en = {
     you: 'You',
     pending: 'VoteBoard not deployed yet — showing the seeded delegates',
   },
+  feed: { live: 'Live proposals', voting: 'Voting now', open: 'open' },
 
   how: [
     { ic: '🎟️', h: '1 · Hand over a locked permission', p: "You sign one permission: an AI may cast this one vote — and nothing else. It can't touch your funds or vote elsewhere." },
@@ -199,6 +200,7 @@ const zh: Dict = {
     you: '你',
     pending: 'VoteBoard 尚未部署 —— 先展示已播种的代表',
   },
+  feed: { live: '实时提案', voting: '正在投票', open: '开放中' },
 
   how: [
     { ic: '🎟️', h: '1 · 交出一项锁定权限', p: '你签下一项权限:AI 只能投这一票 —— 别的都不行。它碰不了你的资金,也不能在别处投票。' },
