@@ -4,9 +4,13 @@ import { useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
+import { AlertTriangle, CheckCircle2, Cpu, ExternalLink, Play, Radio, Rocket } from 'lucide-react';
 import { MAINNET_PROOF, RELAY_PHASES, parse7702Code } from '../lib/oneshot-finale';
 import { shortHex } from '../lib/config';
+import { cn } from '../lib/cn';
 import type { Dict } from '../lib/i18n';
+import { Panel, PanelHeader } from './ui/Panel';
+import { Badge, TrackTag } from './ui/Badge';
 
 type Phase = 'idle' | 'running' | 'done';
 
@@ -44,66 +48,96 @@ export function OneShotFinale({ t }: { t: Dict }) {
 
   if (phase === 'idle') {
     return (
-      <div className="card oneshot-cta row spread">
-        <div className="label">{t.oneShotCtaHint}</div>
-        <button onClick={run}>{t.oneShotCtaBtn}</button>
-      </div>
+      <Panel tone="eth" pad="lg" className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-[13px] text-ink-soft">
+          <Radio className="size-4 text-[#8aa0f0]" /> {t.oneShotCtaHint}
+        </div>
+        <button onClick={run} className="inline-flex items-center gap-2">
+          <Play className="size-4" /> {t.oneShotCtaBtn}
+        </button>
+      </Panel>
     );
   }
 
   const parsed = parse7702Code(code);
 
   return (
-    <div className="card oneshot-finale">
-      <div className="row spread mb-0">
-        <div className="card-title">{t.oneShotTitle}</div>
-        <span className="chain-badge oneshot-mainnet">{t.oneShotMainnet}</span>
+    <Panel tone="eth" pad="lg" className="mb-3.5">
+      <PanelHeader
+        icon={Rocket}
+        title={t.oneShotTitle}
+        track={<TrackTag tone="eth" icon={Cpu}>1Shot · mainnet 7710 + 7702</TrackTag>}
+        right={<Badge tone="eth">{t.oneShotMainnet}</Badge>}
+      />
+
+      {/* relay stepper */}
+      <div className="flex flex-wrap gap-4">
+        {RELAY_PHASES.map((p, i) => {
+          const state = step > i ? 'done' : step === i ? 'current' : 'idle';
+          return (
+            <div key={p.key} className={cn('inline-flex items-center gap-2 transition-opacity', state === 'idle' ? 'opacity-45' : 'opacity-100')}>
+              <span className={cn('size-2.5 rounded-full', state === 'done' ? 'bg-ok' : state === 'current' ? 'bg-brand motion-safe:animate-glow' : 'bg-line')} />
+              <span className="text-[13px] text-ink-soft">
+                {t.relayPhases[p.key]} <span className="font-mono text-[11px] text-ink-mute">· {p.code}</span>
+              </span>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="relay-steps mt-md">
-        {RELAY_PHASES.map((p, i) => (
-          <div key={p.key} className={`relay-step ${step > i ? 'done' : step === i ? 'current' : ''}`}>
-            <span className="relay-dot" />
-            <span className="label">
-              {t.relayPhases[p.key]} <span className="mono">· {p.code}</span>
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className={`burner-upgrade mt-md ${parsed.upgraded ? 'upgraded' : ''}`}>
-        <div className="label">
-          {t.oneShotBurner}{' '}
-          <a className="mono" href={`${MAINNET_PROOF.basescan}/address/${MAINNET_PROOF.burner}`} target="_blank" rel="noreferrer">
+      {/* burner 7702 upgrade — genuinely live read-only eth_getCode on Base mainnet */}
+      <div className={cn('mt-4 rounded-xl border bg-surface-2/60 px-4 py-3.5 transition-colors', parsed.upgraded ? 'border-brand/40' : 'border-hairline')}>
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-mute">
+          {t.oneShotBurner}
+          <a className="font-mono text-info hover:underline" href={`${MAINNET_PROOF.basescan}/address/${MAINNET_PROOF.burner}`} target="_blank" rel="noreferrer">
             {shortHex(MAINNET_PROOF.burner, 4)} ↗
           </a>
         </div>
-        {phase === 'running' && !code && <div className="mono label mt-sm">{t.oneShotChecking}</div>}
+        {phase === 'running' && !code && (
+          <div className="mt-2 font-mono text-[11px] text-ink-mute motion-safe:animate-pulse">{t.oneShotChecking}</div>
+        )}
         {parsed.upgraded && (
-          <motion.div className="mt-sm" initial={reduce ? false : { opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}>
-            <span className="pill brand">{t.oneShot7702}</span>
-            <div className="mono oneshot-code mt-sm">
-              0xef0100<span className="oneshot-impl">{parsed.implementation?.slice(2)}</span>
+          <motion.div
+            className="mt-2"
+            initial={reduce ? false : { opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 20 }}
+          >
+            <Badge tone="brand">
+              <CheckCircle2 className="size-3" /> {t.oneShot7702}
+            </Badge>
+            <div className="mt-2 break-all font-mono text-[11.5px] text-ink-mute">
+              0xef0100<span className="text-brand">{parsed.implementation?.slice(2)}</span>
             </div>
-            <div className="label mt-sm">
-              {t.oneShotImpl} <span className="mono">{shortHex(parsed.implementation, 5)}</span>
+            <div className="mt-1.5 text-[11px] text-ink-mute">
+              {t.oneShotImpl} <span className="font-mono text-ink-soft">{shortHex(parsed.implementation, 5)}</span>
             </div>
           </motion.div>
         )}
-        {code && !parsed.upgraded && <div className="err mt-sm">{t.oneShotNotUpgraded}</div>}
-        {err && <div className="err mt-sm">⚠ {err}</div>}
+        {code && !parsed.upgraded && <div className="mt-2 text-[12px] text-bad">{t.oneShotNotUpgraded}</div>}
+        {err && (
+          <div className="mt-2 flex items-center gap-1.5 text-[12px] text-bad">
+            <AlertTriangle className="size-3.5" /> {err}
+          </div>
+        )}
       </div>
 
-      <div className="proof-wall mt-md">
-        <div className="row gap-sm">
-          <span className="pill green">{t.oneShotGasUsdc}</span>
-          <span className="pill">{t.oneShotBurnerNoEth}</span>
+      {/* proof wall — pinned real on-chain artifacts */}
+      <div className="mt-4 rounded-xl border border-hairline bg-surface-2/60 px-4 py-3.5">
+        <div className="flex flex-wrap gap-2">
+          <Badge tone="ok">{t.oneShotGasUsdc}</Badge>
+          <Badge tone="neutral">{t.oneShotBurnerNoEth}</Badge>
         </div>
-        <a className="mono mt-sm" style={{ display: 'inline-block' }} href={`${MAINNET_PROOF.basescan}/tx/${MAINNET_PROOF.castVoteTx}`} target="_blank" rel="noreferrer">
-          {t.oneShotCastVoteTx} {shortHex(MAINNET_PROOF.castVoteTx, 6)} ↗
+        <a
+          className="mt-3 inline-flex items-center gap-1.5 font-mono text-[12px] text-info hover:underline"
+          href={`${MAINNET_PROOF.basescan}/tx/${MAINNET_PROOF.castVoteTx}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t.oneShotCastVoteTx} {shortHex(MAINNET_PROOF.castVoteTx, 6)} <ExternalLink className="size-3" />
         </a>
-        <div className="label mt-sm">{t.oneShotBundle}</div>
+        <div className="mt-2 text-[11px] leading-relaxed text-ink-mute">{t.oneShotBundle}</div>
       </div>
-    </div>
+    </Panel>
   );
 }

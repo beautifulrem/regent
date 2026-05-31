@@ -112,7 +112,7 @@ const en = {
   },
 
   oneShotCtaHint: 'The vote above ran on Base Sepolia. The 1Shot mainnet relay is the finale.',
-  oneShotCtaBtn: '▶ Replay the live mainnet 1Shot relay',
+  oneShotCtaBtn: 'Replay the live mainnet 1Shot relay',
   oneShotTitle: '1Shot permissionless relay',
   oneShotMainnet: 'Base Mainnet · 8453',
   relayPhases: { pending: 'Pending', submitted: 'Submitted', confirmed: 'Confirmed' },
@@ -238,7 +238,7 @@ const zh: Dict = {
   },
 
   oneShotCtaHint: '上面的投票跑在 Base Sepolia。1Shot 主网中继是压轴。',
-  oneShotCtaBtn: '▶ 回放真实主网 1Shot 中继',
+  oneShotCtaBtn: '回放真实主网 1Shot 中继',
   oneShotTitle: '1Shot 无许可中继',
   oneShotMainnet: 'Base 主网 · 8453',
   relayPhases: { pending: '待处理', submitted: '已提交', confirmed: '已确认' },
