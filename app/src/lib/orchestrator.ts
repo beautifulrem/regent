@@ -31,3 +31,21 @@ export async function getRun(runId: string): Promise<RunStatus> {
   if (!res.ok) throw new Error('run not found');
   return res.json();
 }
+
+export interface ProvisionResult {
+  sa: `0x${string}`;
+  deployed: boolean;
+  alreadyDeployed: boolean;
+  txHash?: `0x${string}`;
+}
+
+/** Deploy the connecting wallet's smart account so the agent can vote AS it on the VoteBoard. */
+export async function provision(eoa: string): Promise<ProvisionResult> {
+  const res = await fetch(`${ORCHESTRATOR_URL}/provision`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ eoa }),
+  });
+  if (!res.ok) throw new Error(`provision failed: ${await res.text()}`);
+  return res.json();
+}

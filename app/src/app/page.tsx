@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Delegation, RunStatus } from '@mandate/shared';
+import { DEMO_PROPOSAL_ID, VOTE_BOARD_ADDRESS, isVoteBoardLive } from '@mandate/shared';
 import { AnimatedBeam } from '../components/AnimatedBeam';
 import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
@@ -16,7 +17,7 @@ import { TeeReasoningStream } from '../components/TeeReasoningStream';
 import { BASESCAN, CHAIN_ID, shortHex } from '../lib/config';
 import { grantDisabled } from '../lib/flow';
 import { formatMessage, getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
-import { getConfig, getRun, postGrant, type DemoConfig } from '../lib/orchestrator';
+import { getConfig, getRun, postGrant, provision, type DemoConfig } from '../lib/orchestrator';
 import { recall } from '../lib/recall';
 import { fireSever } from '../lib/sever';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -132,12 +133,21 @@ export default function Home() {
   }, [recallTx]);
 
   async function onGrant() {
-    if (!cfg || !userSA) return;
+    if (!cfg || !userSA || !address) return;
     setBusy(true);
     setError(null);
     setRecallTx(null);
     try {
-      const grant = await signGrant(userSA, { governor: cfg.governor, proposalId: cfg.proposalId, orchestratorSA: cfg.orchestratorSA });
+      if (!isVoteBoardLive(VOTE_BOARD_ADDRESS)) {
+        throw new Error('VoteBoard not deployed yet — run script/DeployVoteBoard.s.sol, then set VOTE_BOARD_ADDRESS.');
+      }
+      // deploy the judge's smart account on-chain so the agent can vote AS it on the shared board
+      await provision(address);
+      const grant = await signGrant(userSA, {
+        governor: VOTE_BOARD_ADDRESS,
+        proposalId: DEMO_PROPOSAL_ID.toString(),
+        orchestratorSA: cfg.orchestratorSA,
+      });
       setRootDel(grant.rootDelegation);
       const { runId: id } = await postGrant(grant);
       setRun(null);
