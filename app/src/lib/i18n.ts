@@ -29,6 +29,16 @@ const en = {
       { name: '1Shot · mainnet 7710 + 7702', proof: 'Permissionless relay + live 7702 upgrade proof' },
     ],
   },
+  tally: {
+    title: 'DAO proposal · live tally',
+    track: 'multi-voter DAO',
+    for: 'For',
+    against: 'Against',
+    abstain: 'Abstain',
+    voters: 'voters',
+    you: 'You',
+    pending: 'VoteBoard not deployed yet — showing the seeded delegates',
+  },
 
   how: [
     { ic: '🎟️', h: '1 · Hand over a locked permission', p: "You sign one permission: an AI may cast this one vote — and nothing else. It can't touch your funds or vote elsewhere." },
@@ -178,6 +188,16 @@ const zh: Dict = {
       { name: 'x402 按次付费', proof: '受限 ERC-7710 通行费 + 实时 balanceOf' },
       { name: '1Shot · 主网 7710 + 7702', proof: '无许可中继 + 实时 7702 升级证明' },
     ],
+  },
+  tally: {
+    title: 'DAO 提案 · 实时计票',
+    track: '多人 DAO',
+    for: '赞成',
+    against: '反对',
+    abstain: '弃权',
+    voters: '位投票人',
+    you: '你',
+    pending: 'VoteBoard 尚未部署 —— 先展示已播种的代表',
   },
 
   how: [

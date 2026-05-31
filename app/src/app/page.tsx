@@ -8,6 +8,7 @@ import { NumberTicker } from '../components/NumberTicker';
 import { OneShotFinale } from '../components/OneShotFinale';
 import { X402TollGate } from '../components/X402TollGate';
 import { ScoreCard } from '../components/ScoreCard';
+import { VoteTally } from '../components/VoteTally';
 import { PermissionInspector } from '../components/PermissionInspector';
 import { ScopeChip } from '../components/ScopeChip';
 import { TamperProbe } from '../components/TamperProbe';
@@ -347,6 +348,8 @@ export default function Home() {
           <Badge tone="brand"><Undo2 className="size-3" /> {t.scopeRevocable}</Badge>
         </div>
       </Panel>
+
+      {cfg && <VoteTally you={userSA?.address} t={t} />}
 
       {rootDel && cfg && userSA && (
         <>
