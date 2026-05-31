@@ -15,7 +15,7 @@ import {
   isVoteBoardLive,
   personaFor,
 } from '@mandate/shared';
-import { RPC_URL, shortHex } from '../lib/config';
+import { BASESCAN, RPC_URL, shortHex } from '../lib/config';
 import { cn } from '../lib/cn';
 import { personaTally, tallyBreakdown, type TallyBreakdown } from '../lib/voteboard-view';
 import { NumberTicker } from './NumberTicker';
@@ -135,7 +135,18 @@ export function VoteTally({ you, t }: { you?: Address; t: Dict }) {
         })}
       </div>
 
-      {!live && <div className="mt-3 text-[11px] text-ink-mute">{t.tally.pending}</div>}
+      {live ? (
+        <a
+          className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-mute transition-colors hover:text-info"
+          href={`${BASESCAN}/address/${VOTE_BOARD_ADDRESS}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          VoteBoard {shortHex(VOTE_BOARD_ADDRESS, 4)} ↗
+        </a>
+      ) : (
+        <div className="mt-3 text-[11px] text-ink-mute">{t.tally.pending}</div>
+      )}
     </Panel>
   );
 }

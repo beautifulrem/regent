@@ -160,7 +160,7 @@ const en = {
     phases: { require: '402 Required', sign: 'Sign scope', settle: 'Seller redeems', data: '200 Data' },
   },
   footer: {
-    a: 'Demo wallet must be the seeded voter. Start the orchestrator (',
+    a: 'Connect any wallet — your smart account is auto-deployed so your agent can join the vote. Start the orchestrator (',
     b: ') and refresh a proposal (',
     c: ') before granting.',
   },
@@ -320,7 +320,7 @@ const zh: Dict = {
     phases: { require: '402 需付款', sign: '签署范围', settle: '卖方 redeem', data: '200 数据' },
   },
   footer: {
-    a: '演示钱包必须是已播种的投票人。授权前请先启动编排器(',
+    a: '连接任意钱包——会自动为你部署智能账户,让你的代理加入投票。先启动编排器(',
     b: '),并刷新提案(',
     c: ')。',
   },
