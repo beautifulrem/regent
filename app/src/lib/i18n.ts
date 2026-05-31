@@ -55,9 +55,9 @@ const en = {
   governor: 'Governor',
   proposalBody:
     'Proposal: renew the core-dev team budget at 12,000 USDC/quarter, released against public monthly milestone reports via a 2-of-3 multisig, with an unspent-funds clawback. Should the DAO approve?',
-  scopeVote: '🔒 only this vote',
-  scopeFunds: "🚫 can't move funds",
-  scopeRevocable: '↩︎ revocable',
+  scopeVote: 'only this vote',
+  scopeFunds: "can't move funds",
+  scopeRevocable: 'revocable',
 
   chainTitle: 'Live authority chain',
   scopeChip: '4 caveats',
@@ -180,9 +180,9 @@ const zh: Dict = {
   governor: 'Governor 合约',
   proposalBody:
     '提案:将核心开发团队预算按每季度 12,000 USDC 续期,凭每月公开的里程碑报告、经 2/3 多签放款,并对未用资金设追回条款。DAO 是否批准?',
-  scopeVote: '🔒 仅限这一票',
-  scopeFunds: '🚫 不能动用资金',
-  scopeRevocable: '↩︎ 可撤销',
+  scopeVote: '仅限这一票',
+  scopeFunds: '不能动用资金',
+  scopeRevocable: '可撤销',
 
   chainTitle: '实时授权链',
   scopeChip: '4 条 caveat',

@@ -21,9 +21,9 @@ import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useAccount, useWalletClient } from 'wagmi';
 import { deriveSmartAccount, signGrant, type SmartAccount } from '../lib/wallet';
 import { motion, useReducedMotion } from 'motion/react';
-import { Coins, Gauge, Lock, Network, Scissors, ShieldCheck, Sparkles, Ticket } from 'lucide-react';
-import { Panel } from '../components/ui/Panel';
-import { StatusDot } from '../components/ui/Badge';
+import { Award, Ban, Coins, FileText, Gauge, KeyRound, Lock, Network, Scissors, ShieldCheck, Sparkles, Ticket, Undo2, Wallet } from 'lucide-react';
+import { Panel, PanelHeader } from '../components/ui/Panel';
+import { Badge, StatusDot, TrackTag } from '../components/ui/Badge';
 import { Stat } from '../components/ui/Stat';
 
 const ORDER = ['granted', 'redelegated', 'analyzing', 'decided', 'voting', 'voted'];
@@ -287,43 +287,61 @@ export default function Home() {
         })}
       </section>
 
-      {/* connect — RainbowKit owns wallet selection (EIP-6963) + chain switching */}
-      <div className={`card connect-bar ${isConnected ? 'live' : ''} row spread`}>
-        <div className="connect-identity">
-          <div className="label">{t.walletLabel}</div>
-          {userSA ? (
-            <>
-              <div className="row gap-sm mt-sm sa-headline">
-                <span className="mono sa-address">{userSA.address}</span>
-                <span className="pill brand">{t.saHeadline}</span>
-                <Jazzicon diameter={20} seed={jsNumberForAddress(userSA.address)} />
-              </div>
-              <div className="row gap-sm mt-sm">
-                <span className="label">{formatMessage(t.eoaSubline, { address: address ?? t.notConnected })}</span>
-                <span className="pill">{t.eoaPill}</span>
-              </div>
-              <div className="label mt-sm">{t.sigCaption}</div>
-            </>
-          ) : (
-            <div className="mono">{address ?? t.notConnected}</div>
-          )}
+      {/* connect + Smart Account identity — Track: MetaMask Smart Accounts */}
+      <Panel tone={userSA ? 'brand' : 'default'} glow={!!userSA} pad="lg" className="mb-3.5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <TrackTag tone="brand" icon={Award}>Smart Accounts · ERC-4337</TrackTag>
+          <ConnectButton showBalance={false} accountStatus="address" chainStatus="icon" />
         </div>
-        <ConnectButton showBalance={false} accountStatus="address" chainStatus="icon" />
-      </div>
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-mute">
+          <Wallet className="size-3.5" /> {t.walletLabel}
+        </div>
+        {userSA ? (
+          <div className="mt-3 space-y-3">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Jazzicon diameter={24} seed={jsNumberForAddress(userSA.address)} />
+              <span className="break-all font-mono text-[15px] font-medium text-ink">{userSA.address}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="brand">{t.saHeadline}</Badge>
+              <Badge tone="neutral">{t.eoaPill}</Badge>
+              <span className="font-mono text-xs text-ink-mute">{formatMessage(t.eoaSubline, { address: address ?? t.notConnected })}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-ink-mute">
+              <KeyRound className="size-3" /> {t.sigCaption}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 font-mono text-sm text-ink-soft">{address ?? t.notConnected}</div>
+        )}
+      </Panel>
 
       {/* proposal */}
-      <div className="card">
-        <div className="row spread">
-          <div className="card-title">{t.proposalTitle} {cfg && <span className="mono label">#{shortHex(cfg.proposalId, 5)}</span>}</div>
-          {cfg && <a className="mono" href={`${BASESCAN}/address/${cfg.governor}`} target="_blank" rel="noreferrer">{t.governor} {shortHex(cfg.governor, 4)} ↗</a>}
+      <Panel pad="lg" className="mb-3.5">
+        <PanelHeader
+          icon={FileText}
+          title={t.proposalTitle}
+          right={
+            cfg ? (
+              <a
+                className="font-mono text-xs text-info hover:underline"
+                href={`${BASESCAN}/address/${cfg.governor}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t.governor} {shortHex(cfg.governor, 4)} ↗
+              </a>
+            ) : undefined
+          }
+        />
+        {cfg && <div className="-mt-2 mb-3 font-mono text-xs text-ink-mute">#{shortHex(cfg.proposalId, 5)}</div>}
+        <p className="text-[14px] leading-relaxed text-ink-soft">{t.proposalBody}</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Badge tone="brand"><Lock className="size-3" /> {t.scopeVote}</Badge>
+          <Badge tone="brand"><Ban className="size-3" /> {t.scopeFunds}</Badge>
+          <Badge tone="brand"><Undo2 className="size-3" /> {t.scopeRevocable}</Badge>
         </div>
-        <p className="mt-sm mb-0">{t.proposalBody}</p>
-        <div className="row gap-sm mt-md">
-          <span className="pill brand">{t.scopeVote}</span>
-          <span className="pill brand">{t.scopeFunds}</span>
-          <span className="pill brand">{t.scopeRevocable}</span>
-        </div>
-      </div>
+      </Panel>
 
       {rootDel && cfg && userSA && (
         <>
