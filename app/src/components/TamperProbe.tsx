@@ -13,13 +13,11 @@ import { Ban, CheckCircle2, Radar } from 'lucide-react';
 import { RPC_URL } from '../lib/config';
 import { cn } from '../lib/cn';
 import { formatMessage, getDict, resolveLang } from '../lib/i18n';
-import type { SmartAccount } from '../lib/wallet';
 import { Panel, PanelHeader } from './ui/Panel';
 import { Badge } from './ui/Badge';
 
 interface TamperProbeProps {
   rootDel: Delegation;
-  userSA: SmartAccount;
   governor: Address;
   proposalId: bigint;
   chainId: number;
@@ -66,7 +64,7 @@ const rowBorder = (s: ProbeStatus): string =>
  * DelegationManager: the honest proposalId passes, a tampered proposalId=999
  * reverts at AllowedCalldataEnforcer. Proves the scope is enforced on-chain.
  */
-export function TamperProbe({ rootDel, userSA, governor, proposalId, chainId }: TamperProbeProps) {
+export function TamperProbe({ rootDel, governor, proposalId, chainId }: TamperProbeProps) {
   const t = currentDict();
   const [honest, setHonest] = useState<ProbeStatus>('idle');
   const [tampered, setTampered] = useState<ProbeStatus>('idle');
@@ -90,9 +88,12 @@ export function TamperProbe({ rootDel, userSA, governor, proposalId, chainId }: 
       const client = createPublicClient({ chain: baseSepolia, transport: http(RPC_URL) });
       const redeemClient = client as unknown as Parameters<typeof canRedeem>[0];
       const manager = delegationManagerAddress(chainId);
+      // Redeem [rootDel] AS its delegate (the orchestrator) — the honest call only passes when
+      // simulated from the authorized redeemer; the tampered proposalId then reverts at the caveat.
+      const redeemer = rootDel.delegate;
       const [honestCanRedeem, tamperedCanRedeem] = await Promise.all([
-        withTimeout(canRedeem(redeemClient, manager, honestCalldata, userSA.address), 2500),
-        withTimeout(canRedeem(redeemClient, manager, tamperedCalldata, userSA.address), 2500),
+        withTimeout(canRedeem(redeemClient, manager, honestCalldata, redeemer), 2500),
+        withTimeout(canRedeem(redeemClient, manager, tamperedCalldata, redeemer), 2500),
       ]);
       setHonest(honestCanRedeem ? 'pass' : 'revert');
       setTampered(tamperedCanRedeem ? 'pass' : 'revert');

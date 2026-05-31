@@ -56,6 +56,7 @@ export default function Home() {
   const [runId, setRunId] = useState<string | null>(null);
   const [run, setRun] = useState<RunStatus | null>(null);
   const [rootDel, setRootDel] = useState<Delegation | null>(null);
+  const [grantedProposalId, setGrantedProposalId] = useState<bigint | null>(null);
   const [busy, setBusy] = useState(false);
   const [recalling, setRecalling] = useState(false);
   const [recallTx, setRecallTx] = useState<string | null>(null);
@@ -161,6 +162,7 @@ export default function Home() {
         proposalText: activeProposal.body.en,
       });
       setRootDel(grant.rootDelegation);
+      setGrantedProposalId(activeProposal.id);
       const { runId: id } = await postGrant(grant);
       setRun(null);
       setRunId(id);
@@ -354,9 +356,8 @@ export default function Home() {
           <PermissionInspector rootDel={rootDel} chainId={CHAIN_ID} />
           <TamperProbe
             rootDel={rootDel}
-            userSA={userSA}
-            governor={cfg.governor}
-            proposalId={BigInt(cfg.proposalId)}
+            governor={VOTE_BOARD_ADDRESS}
+            proposalId={grantedProposalId ?? activeProposal.id}
             chainId={CHAIN_ID}
           />
         </>
