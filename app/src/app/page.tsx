@@ -59,6 +59,8 @@ export default function Home() {
   const [grantedProposalId, setGrantedProposalId] = useState<bigint | null>(null);
   const [grantRunId, setGrantRunId] = useState<string | null>(null);
   const [votesUsed, setVotesUsed] = useState(0);
+  const [maxVotes, setMaxVotes] = useState(10);
+  const [ttlDays, setTtlDays] = useState(30);
   const [busy, setBusy] = useState(false);
   const [recalling, setRecalling] = useState(false);
   const [recallTx, setRecallTx] = useState<string | null>(null);
@@ -162,6 +164,8 @@ export default function Home() {
         proposalId: activeProposal.id.toString(),
         orchestratorSA: cfg.orchestratorSA,
         proposalText: activeProposal.body.en,
+        maxVotes,
+        ttlDays,
       });
       setRootDel(grant.rootDelegation);
       setGrantedProposalId(activeProposal.id);
@@ -225,7 +229,7 @@ export default function Home() {
     icon: React.ComponentType<{ className?: string }>;
   }[] = [
     { label: t.authority, value: <NumberTicker value={authorityPct} suffix="%" />, tone: killed ? 'ink' : 'brand', icon: Gauge },
-    { label: t.kpi.caveats, value: '10', unit: 'votes', tone: 'ink', icon: Vote },
+    { label: t.kpi.caveats, value: String(maxVotes), unit: 'votes', tone: 'ink', icon: Vote },
     { label: t.kpi.fee, value: '0.01', unit: 'USDC', tone: 'eth', icon: Coins },
     { label: t.kpi.networks, value: '2', unit: 'chains', tone: 'ink', icon: Network },
   ];
@@ -461,12 +465,23 @@ export default function Home() {
 
       {/* actions */}
       <Panel pad="md" className="mb-3.5">
+        {!grantRunId && !killed && (
+          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-hairline pb-3 text-[13px] text-ink-soft">
+            <span className="text-ink-mute">{t.grantScopeLabel}</span>
+            <label className="inline-flex items-center gap-1.5">
+              <NumberField value={maxVotes} min={1} max={100} onChange={setMaxVotes} /> {t.grantVotesUnit}
+            </label>
+            <label className="inline-flex items-center gap-1.5">
+              <NumberField value={ttlDays} min={1} max={365} onChange={setTtlDays} /> {t.grantDaysUnit}
+            </label>
+          </div>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="text-[13px] text-ink-soft">
             {killed
               ? t.actionDeadHint
               : grantRunId
-                ? formatMessage(t.standingHint, { used: String(votesUsed), max: '10' })
+                ? formatMessage(t.standingHint, { used: String(votesUsed), max: String(maxVotes) })
                 : t.actionLiveHint}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -617,6 +632,29 @@ function ChainNode({
         </a>
       )}
     </div>
+  );
+}
+
+function NumberField({
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <input
+      type="number"
+      min={min}
+      max={max}
+      value={value}
+      onChange={(e) => onChange(Math.max(min, Math.min(max, Math.floor(Number(e.target.value) || min))))}
+      className="w-16 rounded-lg border border-hairline bg-surface-2 px-2 py-1 text-center font-mono text-sm text-ink outline-none transition-colors focus:border-brand"
+    />
   );
 }
 

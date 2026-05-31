@@ -110,6 +110,9 @@ const en = {
   severing: 'Severing…',
   grant: 'Grant standing vote authority',
   voteActive: 'Let the agent vote this proposal',
+  grantScopeLabel: 'Standing scope:',
+  grantVotesUnit: 'votes',
+  grantDaysUnit: 'days',
   signing: 'Signing…',
 
   underHood: 'Under the hood · run',
@@ -273,6 +276,9 @@ const zh: Dict = {
   severing: '斩断中…',
   grant: '授予常驻投票权',
   voteActive: '让 AI 投这个提案',
+  grantScopeLabel: '常驻授权:',
+  grantVotesUnit: '票',
+  grantDaysUnit: '天',
   signing: '签名中…',
 
   underHood: '底层细节 · 运行',
