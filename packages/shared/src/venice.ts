@@ -94,6 +94,8 @@ export interface AnalysisResult {
   model: string;
   tee: TeeProof;
   usage?: unknown;
+  /** the model's reasoning_content (capped), surfaced for the UI's TEE reasoning stream. */
+  reasoning?: string;
 }
 
 async function veniceFetch(cfg: VeniceConfig, path: string, init?: RequestInit): Promise<Response> {
@@ -156,6 +158,7 @@ export function toVeniceTrace(result: AnalysisResult, attestation?: TeeAttestati
     support: result.decision.support,
     decision: result.decision.decision,
     rationale: result.decision.rationale,
+    reasoning: result.reasoning,
     attestation: {
       verified: result.tee.verified || (attestation?.verified ?? false),
       nonce: attestation?.nonce,
@@ -195,5 +198,6 @@ export async function analyzeProposal(cfg: VeniceConfig, proposalText: string): 
   };
   const message = json.choices?.[0]?.message;
   const content = message?.content || message?.reasoning_content || '';
-  return { decision: parseDecision(content), model, tee, usage: json.usage };
+  const reasoning = (message?.reasoning_content ?? '').trim().slice(0, 360) || undefined;
+  return { decision: parseDecision(content), model, tee, usage: json.usage, reasoning };
 }

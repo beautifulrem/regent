@@ -493,6 +493,47 @@ button.big {
   animation: scan 1.2s ease-in-out infinite;
 }
 
+/* Venice TEE reasoning console — replays the model's private reasoning, then crystallizes the verdict */
+.tee-console {
+  border: 1px solid rgba(110, 168, 254, 0.3);
+  border-radius: var(--radius-md);
+  background: rgba(110, 168, 254, 0.06);
+  padding: 12px 14px;
+}
+.tee-console-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tee-console-head .tee-lock { color: var(--color-state-info); }
+.tee-console-head .tee-model { margin-left: auto; }
+.tee-console-body {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--color-state-info);
+  min-height: 38px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.tee-caret {
+  display: inline-block;
+  width: 7px;
+  height: 13px;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--color-state-info);
+  animation: teeBlink 0.9s steps(1) infinite;
+}
+@keyframes teeBlink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+.tee-json {
+  display: block;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-card-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-top: 4px;
+  word-break: break-all;
+}
+
 /* energy beams drawn between the nodes (SVG overlay) */
 .beam-svg {
   position: absolute;
@@ -730,6 +771,7 @@ button.big {
   .cnode.working { animation: none; }
   .cnode.working .avatar { transform: none; }
   .tee .sweep { animation: none; }
+  .tee-caret { animation: none; opacity: 0; }
   .chain.killed, .chain.killed .cnode { animation: none; }
   .step.current .dot { animation: none; }
   .tamper-row.pass, .tamper-row.revert { animation: none; }

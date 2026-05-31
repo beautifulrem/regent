@@ -7,6 +7,7 @@ import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
 import { PermissionInspector } from '../components/PermissionInspector';
 import { TamperProbe } from '../components/TamperProbe';
+import { TeeReasoningStream } from '../components/TeeReasoningStream';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { BASESCAN, CHAIN_ID, shortHex } from '../lib/config';
 import { grantDisabled } from '../lib/flow';
@@ -276,14 +277,7 @@ export default function Home() {
         )}
 
         {/* live result */}
-        {venice && !killed && (
-          <div className="decision mt-lg row gap-sm">
-            <span className="label">{t.aiDecided}</span>
-            <span className={`pill ${decisionClass(venice.decision)}`}>{venice.decision}</span>
-            {venice.attestation.verified && <span className="pill green">{t.teeVerified}</span>}
-            <span className="rationale" style={{ flexBasis: '100%' }}>“{venice.rationale}”</span>
-          </div>
-        )}
+        {venice && !killed && <TeeReasoningStream venice={venice} t={t} />}
         {run?.vote && !killed && (
           <div className="vote-proof mt-md">
             <div className="vote-burst">

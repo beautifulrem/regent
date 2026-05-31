@@ -102,6 +102,8 @@ export const VeniceTraceSchema = z
     support: SupportSchema,
     decision: DecisionSchema,
     rationale: z.string(),
+    /** the model's private reasoning (capped) for the UI's TEE reasoning stream; absent for non-reasoning models. */
+    reasoning: z.string().optional(),
     attestation: z.object({ verified: z.boolean(), nonce: z.string().optional() }),
     signature: z.object({ recovered: z.boolean(), signingAddress: AddressSchema.optional() }),
   })
