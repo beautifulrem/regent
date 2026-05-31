@@ -18,7 +18,7 @@ import { TeeReasoningStream } from '../components/TeeReasoningStream';
 import { BASESCAN, CHAIN_ID, shortHex } from '../lib/config';
 import { grantDisabled } from '../lib/flow';
 import { formatMessage, getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
-import { getConfig, getRun, postGrant, provision, type DemoConfig } from '../lib/orchestrator';
+import { getConfig, getRun, postGrant, provision, voteAgain, type DemoConfig } from '../lib/orchestrator';
 import { recall } from '../lib/recall';
 import { fireSever } from '../lib/sever';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -26,7 +26,7 @@ import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
 import { useAccount, useWalletClient } from 'wagmi';
 import { deriveSmartAccount, signGrant, type SmartAccount } from '../lib/wallet';
 import { motion, useReducedMotion } from 'motion/react';
-import { Activity, AlertTriangle, Award, Bot, CheckCircle2, Coins, Gauge, GitBranch, KeyRound, Lock, Network, ScanSearch, Scissors, ShieldCheck, Sparkles, Ticket, User, Wallet, Workflow } from 'lucide-react';
+import { Activity, AlertTriangle, Award, Bot, CheckCircle2, Coins, Gauge, GitBranch, KeyRound, Lock, Network, ScanSearch, Scissors, ShieldCheck, Sparkles, Ticket, User, Vote, Wallet, Workflow } from 'lucide-react';
 import { Panel, PanelHeader } from '../components/ui/Panel';
 import { Badge, StatusDot, TrackTag } from '../components/ui/Badge';
 import { Stat } from '../components/ui/Stat';
@@ -57,6 +57,8 @@ export default function Home() {
   const [run, setRun] = useState<RunStatus | null>(null);
   const [rootDel, setRootDel] = useState<Delegation | null>(null);
   const [grantedProposalId, setGrantedProposalId] = useState<bigint | null>(null);
+  const [grantRunId, setGrantRunId] = useState<string | null>(null);
+  const [votesUsed, setVotesUsed] = useState(0);
   const [busy, setBusy] = useState(false);
   const [recalling, setRecalling] = useState(false);
   const [recallTx, setRecallTx] = useState<string | null>(null);
@@ -166,6 +168,26 @@ export default function Home() {
       const { runId: id } = await postGrant(grant);
       setRun(null);
       setRunId(id);
+      setGrantRunId(id);
+      setVotesUsed(1);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Standing authority in action: vote on the CURRENT proposal reusing the existing grant — NO new
+  // signature. Succeeds while the grant is live; reverts on-chain once revoked / exhausted / expired.
+  async function onVoteActive() {
+    if (!grantRunId || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { runId: id } = await voteAgain(grantRunId, activeProposal.id.toString(), activeProposal.body.en);
+      setRun(null);
+      setRunId(id);
+      setVotesUsed((v) => v + 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -230,6 +252,7 @@ export default function Home() {
     },
   ];
   const terminal = ['voted', 'failed', 'revoked'].includes(s ?? '');
+  const running = !!run && !terminal;
   const currentIdx = run && !terminal ? steps.findIndex((st) => !st.done) : -1;
   const statusKey = killed ? 'revoked' : run?.status ?? '';
 
@@ -437,17 +460,43 @@ export default function Home() {
       </Panel>
 
       {/* actions */}
-      <Panel pad="md" className="mb-3.5 flex flex-wrap items-center justify-between gap-3">
-        <div className="text-[13px] text-ink-soft">{killed ? t.actionDeadHint : t.actionLiveHint}</div>
-        {run && run.status === 'voted' && !killed ? (
-          <button className="danger big inline-flex items-center gap-2" onClick={onRecall} disabled={recalling || !rootDel || !userSA} title={t.recallTitle}>
-            <Scissors className="size-4" /> {recalling ? t.severing : t.recall}
-          </button>
-        ) : (
-          <button className="big" onClick={onGrant} disabled={grantDisabled({ busy, hasConfig: !!cfg, connected: isConnected && !!userSA, status: s, killed })}>
-            {busy ? t.signing : t.grant}
-          </button>
-        )}
+      <Panel pad="md" className="mb-3.5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-[13px] text-ink-soft">
+            {killed
+              ? t.actionDeadHint
+              : grantRunId
+                ? formatMessage(t.standingHint, { used: String(votesUsed), max: '10' })
+                : t.actionLiveHint}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {!grantRunId ? (
+              <button
+                className="big"
+                onClick={onGrant}
+                disabled={grantDisabled({ busy, hasConfig: !!cfg, connected: isConnected && !!userSA, status: s, killed })}
+              >
+                {busy ? t.signing : t.grant}
+              </button>
+            ) : (
+              <>
+                <button className="inline-flex items-center gap-2" onClick={onVoteActive} disabled={busy || running}>
+                  <Vote className="size-4" /> {busy ? t.signing : t.voteActive}
+                </button>
+                {!killed && (
+                  <button
+                    className="danger inline-flex items-center gap-2"
+                    onClick={onRecall}
+                    disabled={recalling || running || !rootDel || !userSA}
+                    title={t.recallTitle}
+                  >
+                    <Scissors className="size-4" /> {recalling ? t.severing : t.recall}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </Panel>
 
       {error && (
