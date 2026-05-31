@@ -5,6 +5,7 @@ import type { Delegation, RunStatus } from '@mandate/shared';
 import { AnimatedBeam } from '../components/AnimatedBeam';
 import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
+import { OneShotFinale } from '../components/OneShotFinale';
 import { PermissionInspector } from '../components/PermissionInspector';
 import { ScopeChip } from '../components/ScopeChip';
 import { TamperProbe } from '../components/TamperProbe';
@@ -339,6 +340,8 @@ export default function Home() {
           {run.error && <div className="err mt-md">⚠ {run.error.code}: {run.error.message}</div>}
         </div>
       )}
+
+      <OneShotFinale t={t} />
 
       <p className="label mt-lg">
         {t.footer.a}<span className="mono">pnpm --filter @mandate/orchestrator serve</span>{t.footer.b}<span className="mono">pnpm proposal --reseed</span>{t.footer.c}
