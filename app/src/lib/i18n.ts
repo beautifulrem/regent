@@ -113,6 +113,8 @@ const en = {
   grantScopeLabel: 'Standing scope:',
   grantVotesUnit: 'votes',
   grantDaysUnit: 'days',
+  revokedRejected: 'Revoke worked — the agent tried to vote again, but the redemption was rejected on-chain. That is the kill-switch.',
+  voteRejected: 'Vote rejected on-chain (revoked)',
   signing: 'Signing…',
 
   underHood: 'Under the hood · run',
@@ -279,6 +281,8 @@ const zh: Dict = {
   grantScopeLabel: '常驻授权:',
   grantVotesUnit: '票',
   grantDaysUnit: '天',
+  revokedRejected: '撤销生效 —— AI 想再投,但兑现被链上拒绝了。这正是斩断授权的意义。',
+  voteRejected: '投票被链上拒绝(已撤销)',
   signing: '签名中…',
 
   underHood: '底层细节 · 运行',

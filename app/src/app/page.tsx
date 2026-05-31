@@ -249,7 +249,7 @@ export default function Home() {
       ) : null,
     },
     {
-      done: reached(s, 'voted'), fail: s === 'failed', label: t.steps[3],
+      done: reached(s, 'voted'), fail: s === 'failed', label: killed && s === 'failed' ? t.voteRejected : t.steps[3],
       node: run?.vote ? (
         <a className="mt-2 inline-block font-mono text-[13px] text-info hover:underline" href={`${BASESCAN}/tx/${run.vote.txHash}`} target="_blank" rel="noreferrer">{t.castVoteTx} {shortHex(run.vote.txHash, 5)} ↗</a>
       ) : null,
@@ -551,11 +551,16 @@ export default function Home() {
               <span className="font-mono text-xs text-ink-soft">{run.delegations.redelegationHash ? shortHex(run.delegations.redelegationHash, 6) : '—'}</span>
             </div>
           </div>
-          {run.error && (
-            <div className="mt-3 flex items-center gap-2 text-[13px] text-bad">
-              <AlertTriangle className="size-4 shrink-0" /> {run.error.code}: {run.error.message}
-            </div>
-          )}
+          {run.error &&
+            (killed ? (
+              <div className="mt-3 flex items-center gap-2 rounded-xl border border-ok/25 bg-ok/8 px-3 py-2 text-[13px] text-ink-soft">
+                <ShieldCheck className="size-4 shrink-0 text-ok" /> {t.revokedRejected}
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center gap-2 text-[13px] text-bad">
+                <AlertTriangle className="size-4 shrink-0" /> {run.error.message.split('\n')[0]}
+              </div>
+            ))}
         </Panel>
       )}
 
