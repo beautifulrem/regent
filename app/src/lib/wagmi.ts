@@ -1,5 +1,6 @@
 'use client';
 
+import './serverLocalStorage';
 import { connectorsForWallets } from '@rainbow-me/rainbowkit';
 import { injectedWallet, metaMaskWallet } from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http } from 'wagmi';

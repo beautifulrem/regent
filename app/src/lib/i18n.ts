@@ -26,6 +26,27 @@ const en = {
   notConnected: 'not connected',
   smartAccount: 'MetaMask smart account',
   connect: 'Connect MetaMask',
+  saHeadline: 'MetaMask Smart Account (ERC-4337 · Hybrid)',
+  eoaSubline: 'signer EOA · {address}',
+  eoaPill: 'EOA',
+  sigCaption: 'signs via userSA.signDelegation (EIP-712)',
+
+  permissionInspectorTitle: 'What you actually signed (decoded from the delegation bytes)',
+  permissionInspectorProvenance: 'signature {signature} · hash {hash}',
+  permissionInspectorPosted: 'this exact object was POSTed to /grant',
+  tamperProbeButton: 'Run on-chain check',
+  tamperProbeChecking: 'Checking…',
+  tamperProbeTimeout:
+    'cached fallback: live RPC timed out; the signed scope still shows tampered proposalId is blocked by AllowedCalldataEnforcer.',
+  tamperProbeHonest: 'honest calldata',
+  tamperProbeTampered: 'tampered proposalId=999',
+  tamperProbeIdle: 'not checked',
+  tamperProbePass: '✓ would pass',
+  tamperProbeRevert: '✗ reverts · {enforcer}',
+  tamperProbeFallback: 'cached fallback',
+  executedBanner: 'Executed AS your Smart Account {address} — DelegationManager.redeemDelegations(leaf→root)',
+  executedSubtext: 'on-chain voter == your smart account, not the analyst EOA',
+  viewTx: 'view tx',
 
   proposalTitle: 'The proposal being voted on',
   governor: 'Governor',
@@ -53,6 +74,7 @@ const en = {
   actionLiveHint: 'Sign once. The agents do the rest. Revoke whenever you want.',
   actionDeadHint: 'This grant is dead. Re-connect or reload to start over.',
   recall: '✂️ Recall — kill the chain',
+  recallTitle: 'DelegationManager.disableDelegation · selector 0x49934047',
   severing: 'Severing…',
   grant: 'Grant one-vote authority',
   signing: 'Signing…',
@@ -107,6 +129,27 @@ const zh: Dict = {
   notConnected: '未连接',
   smartAccount: 'MetaMask 智能账户',
   connect: '连接 MetaMask',
+  saHeadline: 'MetaMask 智能账户 (ERC-4337 · Hybrid)',
+  eoaSubline: '签名 EOA · {address}',
+  eoaPill: 'EOA',
+  sigCaption: '通过 userSA.signDelegation 签名 (EIP-712)',
+
+  permissionInspectorTitle: '你实际签署的内容(从 delegation 字节解码)',
+  permissionInspectorProvenance: '签名 {signature} · 哈希 {hash}',
+  permissionInspectorPosted: '这个确切对象已 POST 到 /grant',
+  tamperProbeButton: '运行链上检查',
+  tamperProbeChecking: '检查中…',
+  tamperProbeTimeout:
+    '缓存回退:实时 RPC 超时;已签名范围仍显示篡改 proposalId 会被 AllowedCalldataEnforcer 阻止。',
+  tamperProbeHonest: '真实 calldata',
+  tamperProbeTampered: '篡改 proposalId=999',
+  tamperProbeIdle: '未检查',
+  tamperProbePass: '✓ 会通过',
+  tamperProbeRevert: '✗ 回滚 · {enforcer}',
+  tamperProbeFallback: '缓存回退',
+  executedBanner: '以你的智能账户 {address} 执行 — DelegationManager.redeemDelegations(leaf→root)',
+  executedSubtext: '链上 voter == 你的智能账户,不是分析员 EOA',
+  viewTx: '查看交易',
 
   proposalTitle: '正在投票的提案',
   governor: 'Governor 合约',
@@ -134,6 +177,7 @@ const zh: Dict = {
   actionLiveHint: '只签一次,余下交给代理。你随时可以撤销。',
   actionDeadHint: '该授权已失效。重新连接或刷新页面可重新开始。',
   recall: '✂️ 撤销 —— 斩断授权链',
+  recallTitle: 'DelegationManager.disableDelegation · selector 0x49934047',
   severing: '斩断中…',
   grant: '授予一次投票权',
   signing: '签名中…',
@@ -172,6 +216,13 @@ const DICTS: Record<Lang, Dict> = { en, zh };
 
 export function getDict(lang: Lang): Dict {
   return DICTS[lang];
+}
+
+export function formatMessage(template: string, values: Record<string, string>): string {
+  return Object.entries(values).reduce(
+    (message, [key, value]) => message.replaceAll(`{${key}}`, value),
+    template,
+  );
 }
 
 export function resolveLang(input?: string | null): Lang {

@@ -5,10 +5,12 @@ import type { Delegation, RunStatus } from '@mandate/shared';
 import { AnimatedBeam } from '../components/AnimatedBeam';
 import { LangToggle } from '../components/LangToggle';
 import { NumberTicker } from '../components/NumberTicker';
+import { PermissionInspector } from '../components/PermissionInspector';
+import { TamperProbe } from '../components/TamperProbe';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { BASESCAN, shortHex } from '../lib/config';
+import { BASESCAN, CHAIN_ID, shortHex } from '../lib/config';
 import { grantDisabled } from '../lib/flow';
-import { getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
+import { formatMessage, getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
 import { getConfig, getRun, postGrant, type DemoConfig } from '../lib/orchestrator';
 import { recall } from '../lib/recall';
 import { fireSever } from '../lib/sever';
@@ -204,15 +206,23 @@ export default function Home() {
 
       {/* connect — RainbowKit owns wallet selection (EIP-6963) + chain switching */}
       <div className={`card connect-bar ${isConnected ? 'live' : ''} row spread`}>
-        <div>
+        <div className="connect-identity">
           <div className="label">{t.walletLabel}</div>
-          <div className="mono">{address ?? t.notConnected}</div>
-          {userSA && (
-            <div className="label mt-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              {t.smartAccount}&nbsp;
-              <Jazzicon diameter={16} seed={jsNumberForAddress(userSA.address)} />
-              <span className="mono">{shortHex(userSA.address, 6)}</span>
-            </div>
+          {userSA ? (
+            <>
+              <div className="row gap-sm mt-sm sa-headline">
+                <span className="mono sa-address">{userSA.address}</span>
+                <span className="pill brand">{t.saHeadline}</span>
+                <Jazzicon diameter={20} seed={jsNumberForAddress(userSA.address)} />
+              </div>
+              <div className="row gap-sm mt-sm">
+                <span className="label">{formatMessage(t.eoaSubline, { address: address ?? t.notConnected })}</span>
+                <span className="pill">{t.eoaPill}</span>
+              </div>
+              <div className="label mt-sm">{t.sigCaption}</div>
+            </>
+          ) : (
+            <div className="mono">{address ?? t.notConnected}</div>
           )}
         </div>
         <ConnectButton showBalance={false} accountStatus="address" chainStatus="icon" />
@@ -231,6 +241,19 @@ export default function Home() {
           <span className="pill brand">{t.scopeRevocable}</span>
         </div>
       </div>
+
+      {rootDel && cfg && userSA && (
+        <>
+          <PermissionInspector rootDel={rootDel} chainId={CHAIN_ID} />
+          <TamperProbe
+            rootDel={rootDel}
+            userSA={userSA}
+            governor={cfg.governor}
+            proposalId={BigInt(cfg.proposalId)}
+            chainId={CHAIN_ID}
+          />
+        </>
+      )}
 
       {/* the animated authority chain — centerpiece */}
       <div className="card">
@@ -262,10 +285,21 @@ export default function Home() {
           </div>
         )}
         {run?.vote && !killed && (
-          <div className="vote-burst mt-md">
-            <span className="check">✓</span>
-            <span>{t.voteCast}</span>
-            <a className="mono" href={`${BASESCAN}/tx/${run.vote.txHash}`} target="_blank" rel="noreferrer">{shortHex(run.vote.txHash, 5)} ↗</a>
+          <div className="vote-proof mt-md">
+            <div className="vote-burst">
+              <span className="check">✓</span>
+              <span>{t.voteCast}</span>
+              <a className="mono" href={`${BASESCAN}/tx/${run.vote.txHash}`} target="_blank" rel="noreferrer">{shortHex(run.vote.txHash, 5)} ↗</a>
+            </div>
+            {userSA && (
+              <div className="executed-banner mt-sm">
+                <div className="row gap-sm">
+                  <span>{formatMessage(t.executedBanner, { address: shortHex(userSA.address, 6) })}</span>
+                  <a className="mono" href={`${BASESCAN}/tx/${run.vote.txHash}`} target="_blank" rel="noreferrer">{t.viewTx} ↗</a>
+                </div>
+                <div className="label mt-sm">{t.executedSubtext}</div>
+              </div>
+            )}
           </div>
         )}
         {killed && (
@@ -280,7 +314,7 @@ export default function Home() {
       <div className="card row spread">
         <div className="label">{killed ? t.actionDeadHint : t.actionLiveHint}</div>
         {run && run.status === 'voted' && !killed ? (
-          <button className="danger big" onClick={onRecall} disabled={recalling || !rootDel || !userSA}>{recalling ? t.severing : t.recall}</button>
+          <button className="danger big" onClick={onRecall} disabled={recalling || !rootDel || !userSA} title={t.recallTitle}>{recalling ? t.severing : t.recall}</button>
         ) : (
           <button className="big" onClick={onGrant} disabled={grantDisabled({ busy, hasConfig: !!cfg, connected: isConnected && !!userSA, status: s, killed })}>{busy ? t.signing : t.grant}</button>
         )}
