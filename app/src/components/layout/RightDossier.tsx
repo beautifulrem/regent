@@ -28,7 +28,7 @@ export function RightDossier({ vm }: { vm: MissionVM }) {
   const showTally = !!vm.cfg;
 
   return (
-    <div className="pointer-events-auto absolute right-5 top-[132px] z-[3] hidden max-h-[calc(100dvh-208px)] w-[340px] flex-col gap-6 overflow-y-auto pl-1 pb-4 hud-scroll lg:flex">
+    <div className="pointer-events-auto absolute right-5 top-[132px] z-[3] hidden max-h-[calc(100dvh-208px)] w-[340px] flex-col gap-6 overflow-y-auto overflow-x-hidden pl-1 pb-4 hud-scroll lg:flex">
       <AnimatePresence initial={false}>
         {showTee && (
           <Reveal key="tee">

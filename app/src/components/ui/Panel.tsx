@@ -58,8 +58,8 @@ export function PanelHeader({
   right?: ReactNode;
 }) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-3">
-      <div className="flex items-center gap-3">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+      <div className="flex min-w-0 items-center gap-3">
         {Icon && (
           <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-hairline bg-surface-2 text-brand">
             <Icon className="size-[18px]" strokeWidth={1.75} />
@@ -73,7 +73,7 @@ export function PanelHeader({
         </div>
       </div>
       {(track || right) && (
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {track}
           {right}
         </div>
