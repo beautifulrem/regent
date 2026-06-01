@@ -22,7 +22,7 @@ export function LeftRail({ vm }: { vm: MissionVM }) {
   const showScope = !!vm.rootDel && !!vm.cfg && !!vm.userSA && !vm.killed && vm.grantedProposalId != null;
 
   return (
-    <div className="hud-scroll flex h-full flex-col gap-6 overflow-y-auto overflow-x-hidden p-4 pt-5">
+    <div className="hud-scroll flex h-full flex-col gap-6 overflow-y-auto overflow-x-hidden p-4 pt-14">
       {!showIdentity && !showScope ? (
         <div className="flex flex-col gap-3">
           <p className="font-display text-[15px] font-semibold leading-snug text-ink/90">

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type RefObject } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle, type ImperativePanelHandle } from 'react-resizable-panels';
+import { useEffect, useState, type RefObject } from 'react';
 import type { Address } from 'viem';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { ShieldCheck } from 'lucide-react';
@@ -16,12 +15,9 @@ import { ProposalDock } from './proposal/ProposalDock';
 import { ActionBar } from './panels/ActionBar';
 import { ErrorToast } from './panels/ErrorToast';
 import { type VoteRecord } from './panels/VoteLog';
-import { LeftRail } from './layout/LeftRail';
-import { RightDossier } from './layout/RightDossier';
 import { TrackRail } from './layout/TrackRail';
-import { SplitterGrip } from './layout/SplitterHandle';
-
-const HANDLE_CLASS = 'group relative w-2 shrink-0 cursor-col-resize outline-none';
+import { LeftSidebar } from './layout/LeftSidebar';
+import { RightSidebar } from './layout/RightSidebar';
 
 /**
  * The view-model the orchestrator (page.tsx) hands to the single-screen cockpit. It carries the
@@ -84,34 +80,23 @@ export interface MissionVM {
 }
 
 /**
- * The cockpit: a persistent TopBar over a 3-pane resizable splitter — a collapsible grant-side
- * sidebar, the living React Flow permission graph in the center (with the proposal / actions /
- * track HUD floating over it), and a collapsible execution-side sidebar. Drag the splitters to
- * resize; collapse both and the graph goes full-bleed immersive. The graph re-fits on every
- * layout change so the chain always stays framed in the center pane.
+ * The cockpit: a persistent TopBar over a 3-pane layout — a collapsible grant-side sidebar, the
+ * living React Flow permission graph in the center (with the proposal / actions / track HUD floating
+ * over it), and a collapsible execution-side sidebar whose dossier is organized into tabs. Each
+ * sidebar animates (Gemini-style) between a full panel and a narrow icon rail; collapse both and the
+ * graph goes full-bleed immersive. The graph re-fits via its ResizeObserver as the sidebars animate.
  */
 export function MissionControl({ vm }: { vm: MissionVM }) {
-  const leftRef = useRef<ImperativePanelHandle>(null);
-  const rightRef = useRef<ImperativePanelHandle>(null);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
-  const [fitTick, setFitTick] = useState(0);
 
-  // Phones / tablets: start with the sidebars collapsed so the graph isn't crushed (the user can
-  // still drag them open). Desktops keep the saved / default layout.
+  // Phones / tablets: start collapsed so the graph isn't crushed (the user can open the sidebars).
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      leftRef.current?.collapse();
-      rightRef.current?.collapse();
+      setLeftCollapsed(true);
+      setRightCollapsed(true);
     }
   }, []);
-
-  const toggle = (ref: RefObject<ImperativePanelHandle | null>) => {
-    const p = ref.current;
-    if (!p) return;
-    if (p.isCollapsed()) p.expand();
-    else p.collapse();
-  };
 
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden">
@@ -132,32 +117,14 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
         </div>
       </header>
 
-      <PanelGroup direction="horizontal" className="min-h-0 flex-1" onLayout={() => setFitTick((t) => t + 1)}>
-        {/* grant-side sidebar — Smart Account · Permission X-Ray · Tamper Probe (collapsible) */}
-        <Panel
-          ref={leftRef}
-          collapsible
-          collapsedSize={0}
-          minSize={14}
-          maxSize={32}
-          defaultSize={20}
-          onCollapse={() => setLeftCollapsed(true)}
-          onExpand={() => setLeftCollapsed(false)}
-          className="relative"
-        >
-          <LeftRail vm={vm} />
-        </Panel>
-
-        <PanelResizeHandle className={HANDLE_CLASS}>
-          <SplitterGrip side="left" collapsed={leftCollapsed} onToggle={() => toggle(leftRef)} />
-        </PanelResizeHandle>
+      <div className="flex min-h-0 flex-1">
+        <LeftSidebar vm={vm} collapsed={leftCollapsed} onToggle={() => setLeftCollapsed((c) => !c)} />
 
         {/* center — the living permission graph + the proposal / actions / track HUD over it */}
-        <Panel minSize={34} className="relative overflow-hidden">
+        <div className="relative min-w-0 flex-1 overflow-hidden">
           <div ref={vm.graphStageRef} className="absolute inset-0">
-            <GraphStage vm={vm} fitTick={fitTick} />
+            <GraphStage vm={vm} />
           </div>
-
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-base/85 to-transparent" aria-hidden />
           <ProposalDock
             proposal={vm.activeProposal}
@@ -171,27 +138,10 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
           <ActionBar vm={vm} />
           <TrackRail vm={vm} />
           <ErrorToast error={vm.error} />
-        </Panel>
+        </div>
 
-        <PanelResizeHandle className={HANDLE_CLASS}>
-          <SplitterGrip side="right" collapsed={rightCollapsed} onToggle={() => toggle(rightRef)} />
-        </PanelResizeHandle>
-
-        {/* execution-side sidebar — TEE · vote result · proof · tally · x402 · 1Shot (collapsible) */}
-        <Panel
-          ref={rightRef}
-          collapsible
-          collapsedSize={0}
-          minSize={18}
-          maxSize={44}
-          defaultSize={26}
-          onCollapse={() => setRightCollapsed(true)}
-          onExpand={() => setRightCollapsed(false)}
-          className="relative"
-        >
-          <RightDossier vm={vm} />
-        </Panel>
-      </PanelGroup>
+        <RightSidebar vm={vm} collapsed={rightCollapsed} onToggle={() => setRightCollapsed((c) => !c)} />
+      </div>
     </div>
   );
 }

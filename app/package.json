@@ -24,7 +24,6 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-jazzicon": "^1.0.4",
-    "react-resizable-panels": "^2.1.9",
     "tailwind-merge": "^3.6.0",
     "viem": "^2.51.3",
     "wagmi": "^2.19.5"
