@@ -45,8 +45,7 @@
   --animate-float: floaty 6s ease-in-out infinite;
 }
 
-/* Legacy CSS-var palette still referenced by the bespoke SVG layers
-   (AnimatedBeam, ScopeChip), the page background and focus rings. */
+/* Legacy CSS-var palette still referenced by the page background and focus rings. */
 :root {
   --color-brand-primary: #f6851b;
   --color-brand-accent: #e2761b;
@@ -210,108 +209,10 @@ input:focus-visible {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
 }
-@keyframes shake {
-  10%, 90% { transform: translateX(-1px); }
-  20%, 80% { transform: translateX(2px); }
-  30%, 50%, 70% { transform: translateX(-4px); }
-  40%, 60% { transform: translateX(4px); }
-}
-@keyframes pop {
-  0% { transform: scale(0.4); opacity: 0; }
-  70% { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
-}
-@keyframes beamFlow {
-  to { stroke-dashoffset: -22; }
-}
-
-/* ---------- authority-chain layout (the bespoke node graph) ---------- */
-.chain {
-  display: flex;
-  align-items: stretch;
-  gap: 56px;
-  position: relative;
-  padding-top: 30px; /* band above the nodes for the floating scope token */
-}
-.chain.killed {
-  animation: shake 0.5s;
-}
-@media (max-width: 560px) {
-  .chain { gap: 28px; }
-}
-
-/* energy beams drawn between the nodes (SVG overlay) */
-.beam-svg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: visible;
-}
-.beam-base {
-  fill: none;
-  stroke: var(--color-border);
-  stroke-width: 2;
-  stroke-linecap: round;
-  transition: stroke 0.3s;
-}
-.beam-base.killed {
-  stroke: var(--color-state-danger);
-  stroke-dasharray: 5 7;
-  opacity: 0.7;
-}
-.beam-pulse {
-  fill: none;
-  stroke-width: 2.75;
-  stroke-linecap: round;
-  stroke-dasharray: 9 13;
-  animation: beamFlow 0.55s linear infinite;
-}
-.beam-cut {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  display: inline-flex;
-  animation: pop 0.4s both;
-  pointer-events: none;
-}
-
-/* A2A attenuation token — floats in the band ABOVE whichever node holds the permission.
-   Anchor does horizontal centring (static translateX) + position (motion left/top); the inner
-   pill does the scale (motion) — split across two elements so neither transform clobbers the other. */
-.scope-chip-anchor {
-  position: absolute;
-  transform: translateX(-50%);
-  z-index: 3;
-  pointer-events: none;
-}
-.scope-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  border-radius: var(--radius-pill);
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-  color: #1a0f02;
-  background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-accent));
-  box-shadow: 0 4px 14px -4px var(--color-brand-glow);
-}
-
-/* monospace addresses/hashes inside the bespoke SVG chip */
-.mono {
-  font-family: var(--font-mono), ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-/* respect reduced-motion: keep state legible, drop the looping/oscillating motion */
+/* respect reduced-motion: keep the ambient drift still */
 @media (prefers-reduced-motion: reduce) {
   .aurora::before,
   .aurora-orb { animation: none; }
-  .beam-pulse { animation: none; opacity: 0.9; }
-  .chain.killed { animation: none; }
 }
 
 /* ===================================================================

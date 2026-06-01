@@ -24,7 +24,7 @@ export function LeftRail({ vm }: { vm: MissionVM }) {
   if (!showIdentity && !showScope) return null;
 
   return (
-    <div className="pointer-events-auto absolute left-5 top-[132px] z-[3] flex max-h-[calc(100dvh-208px)] w-[320px] flex-col gap-6 overflow-y-auto pr-1 pb-4 hud-scroll">
+    <div className="pointer-events-auto absolute left-5 top-[132px] z-[3] hidden max-h-[calc(100dvh-208px)] w-[320px] flex-col gap-6 overflow-y-auto pr-1 pb-4 hud-scroll lg:flex">
       <AnimatePresence initial={false}>
         {showIdentity && (
           <Reveal key="sa">

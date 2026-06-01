@@ -37,7 +37,7 @@ export function TrackRail({ vm }: { vm: MissionVM }) {
   return (
     <>
       {open !== null && <div className="fixed inset-0 z-[3]" aria-hidden onClick={() => setOpen(null)} />}
-      <div className="absolute inset-x-0 bottom-4 z-[4] flex items-end justify-center gap-2">
+      <div className="absolute inset-x-0 bottom-4 z-[4] flex flex-wrap items-end justify-center gap-2 px-2">
         {TRACK_DEFS.map((def, idx) => {
           const state = def.state(snap);
           const item = t.scorecard.items[def.itemIndex];
