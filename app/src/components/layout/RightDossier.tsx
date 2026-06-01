@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Cpu } from 'lucide-react';
+import { Globe, Lock } from 'lucide-react';
 import { TeeReasoningStream } from '../TeeReasoningStream';
 import { VoteTally } from '../VoteTally';
 import { X402TollGate } from '../X402TollGate';
@@ -32,14 +32,18 @@ export function RightDossier({ vm }: { vm: MissionVM }) {
       <AnimatePresence initial={false}>
         {showTee && (
           <Reveal key="tee">
-            <div className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-info/80">
-              <Cpu className="size-3" /> {t.teeConsoleTitle}
+            <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-info/80">
+              <Lock className="size-3" /> {t.split.private}
+              <span className="text-info/45">· {t.teeConsoleTitle}</span>
             </div>
             <TeeReasoningStream venice={vm.venice!} t={t} />
           </Reveal>
         )}
         {showResult && (
           <Reveal key="result">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-ok/80">
+              <Globe className="size-3" /> {t.split.public}
+            </div>
             <VoteResultBanner run={vm.run} killed={vm.killed} recallTx={vm.recallTx} userSAAddress={vm.userSA?.address} t={t} />
           </Reveal>
         )}
