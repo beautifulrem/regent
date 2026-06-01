@@ -18,3 +18,23 @@ export interface GrantGateState {
 export function grantDisabled({ busy, hasConfig, connected, status, killed }: GrantGateState): boolean {
   return busy || !hasConfig || !connected || (!!status && status !== 'failed') || killed;
 }
+
+export interface VoteActiveGateState {
+  hasGrant: boolean;
+  busy: boolean;
+  running: boolean;
+  killed: boolean;
+}
+
+/**
+ * Whether the "let the agent vote this proposal" action is disabled. It needs an existing
+ * standing grant and nothing in flight — BUT it stays ENABLED once the chain is killed, so the
+ * judge can fire one more vote and watch the redemption get rejected on-chain (the kill-switch
+ * proof). A killed chain therefore overrides the in-flight lock.
+ */
+export function voteActiveDisabled({ hasGrant, busy, running, killed }: VoteActiveGateState): boolean {
+  if (!hasGrant) return true;
+  if (busy) return true;
+  if (killed) return false;
+  return running;
+}

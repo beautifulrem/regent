@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { grantDisabled } from './flow';
+import { grantDisabled, voteActiveDisabled } from './flow';
 
 const base = { busy: false, hasConfig: true, connected: true, status: undefined as string | undefined, killed: false };
 
@@ -27,5 +27,31 @@ describe('grantDisabled', () => {
 
   it('stays disabled after the chain is killed', () => {
     expect(grantDisabled({ ...base, killed: true })).toBe(true);
+  });
+});
+
+describe('voteActiveDisabled', () => {
+  const base = { hasGrant: true, busy: false, running: false, killed: false };
+
+  it('is disabled until a standing grant exists', () => {
+    expect(voteActiveDisabled({ ...base, hasGrant: false })).toBe(true);
+  });
+
+  it('is enabled with a live grant and nothing in flight', () => {
+    expect(voteActiveDisabled(base)).toBe(false);
+  });
+
+  it('is disabled while a vote is being posted', () => {
+    expect(voteActiveDisabled({ ...base, busy: true })).toBe(true);
+  });
+
+  it('is disabled while a run is mid-flight (no double-fire)', () => {
+    expect(voteActiveDisabled({ ...base, running: true })).toBe(true);
+  });
+
+  it('STAYS enabled after the chain is killed — the judge fires one more vote to watch it revert on-chain', () => {
+    expect(voteActiveDisabled({ ...base, killed: true })).toBe(false);
+    // killed overrides everything: even a lingering run does not lock the kill-switch proof
+    expect(voteActiveDisabled({ ...base, killed: true, running: true })).toBe(false);
   });
 });

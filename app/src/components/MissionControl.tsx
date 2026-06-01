@@ -13,6 +13,7 @@ import { LangToggle } from './LangToggle';
 import { StatusDot } from './ui/Badge';
 import { GraphStage } from './graph/GraphStage';
 import { ProposalDock } from './proposal/ProposalDock';
+import { ActionBar } from './panels/ActionBar';
 
 /**
  * The view-model the orchestrator (page.tsx) hands to the single-screen cockpit. It carries the
@@ -120,13 +121,8 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
       {/* soft bottom scrim */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-base/90 to-transparent" aria-hidden />
 
-      {/* Action zone — frameless bottom-center controls (MC-S5) */}
-      <div className="absolute inset-x-0 bottom-14 z-[3] flex flex-col items-center gap-1.5 text-center">
-        <div className="text-[13px] text-ink-soft/80">
-          {vm.run ? `run ${vm.statusKey}` : vm.isConnected ? 'ready to grant' : 'connect to begin'}
-        </div>
-        <div className="text-[12px] text-ink-mute/70">action controls · grant / vote / recall (MC-S5)</div>
-      </div>
+      {/* Action zone — frameless bottom-center controls */}
+      <ActionBar vm={vm} />
 
       {/* Track rail — frameless glowing chips, the always-visible judges' checklist (MC-S8) */}
       <div className="absolute inset-x-0 bottom-4 z-[3] flex items-center justify-center gap-2.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-mute/70">
