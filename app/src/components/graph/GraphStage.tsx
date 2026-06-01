@@ -71,10 +71,17 @@ function GraphCanvas({ vm }: { vm: MissionVM }) {
     [vm.s, vm.killed, vm.youAddr, vm.orchAddr, vm.analystAddr, vm.isConnected, vm.activeProposal.seed, vm.venice, vm.run?.vote, copy],
   );
 
-  // keep the whole chain framed (locked viewport, auto-fit)
+  // Keep the chain framed. The graph CANVAS is inset to the clear zone between the HUD rails (see
+  // MissionControl), so a small uniform pad is all that's needed; re-fit on resize so the locked
+  // viewport always frames the whole chain.
   useEffect(() => {
-    const id = setTimeout(() => fitView({ padding: 0.22, duration: 350, maxZoom: 1.1 }), 60);
-    return () => clearTimeout(id);
+    const fit = () => fitView({ padding: 0.14, duration: 350, maxZoom: 1.15 });
+    const id = setTimeout(fit, 60);
+    if (typeof window !== 'undefined') window.addEventListener('resize', fit);
+    return () => {
+      clearTimeout(id);
+      if (typeof window !== 'undefined') window.removeEventListener('resize', fit);
+    };
   }, [fitView, graph.nodes.length]);
 
   return (
@@ -84,7 +91,7 @@ function GraphCanvas({ vm }: { vm: MissionVM }) {
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       fitView
-      fitViewOptions={{ padding: 0.22, maxZoom: 1.1 }}
+      fitViewOptions={{ padding: 0.14, maxZoom: 1.15 }}
       proOptions={{ hideAttribution: true }}
       nodesDraggable={false}
       nodesConnectable={false}

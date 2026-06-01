@@ -82,8 +82,9 @@ export interface MissionVM {
 export function MissionControl({ vm }: { vm: MissionVM }) {
   return (
     <div className="relative h-dvh w-full overflow-hidden">
-      {/* full-bleed living graph (React Flow) — the immersive centerpiece */}
-      <div ref={vm.graphStageRef} className="absolute inset-0">
+      {/* living graph (React Flow) — the immersive centerpiece. Full-bleed below lg; on lg+ the
+          canvas insets to the clear zone between the side rails so nodes never sit under a rail. */}
+      <div ref={vm.graphStageRef} className="absolute inset-0 lg:left-[336px] lg:right-[356px]">
         <GraphStage vm={vm} />
       </div>
 
