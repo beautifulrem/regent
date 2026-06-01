@@ -14,11 +14,13 @@ export function MandateSentence({
   boundMode,
   maxVotes,
   ttlDays,
+  presetLabel,
   t,
 }: {
   boundMode: BoundMode;
   maxVotes: number;
   ttlDays: number;
+  presetLabel?: string;
   t: Dict;
 }) {
   const sentence = formatMessage(t.grantSentence[boundMode], { votes: String(maxVotes), days: String(ttlDays) });
@@ -41,6 +43,7 @@ export function MandateSentence({
             · {c}
           </span>
         ))}
+        {presetLabel && <span className="text-info/90">· {t.presets.actingAs} {presetLabel}</span>}
       </div>
     </div>
   );

@@ -64,6 +64,8 @@ export interface MissionVM {
   setTtlDays: (n: number) => void;
   boundMode: 'votes' | 'days' | 'both';
   setBoundMode: (m: 'votes' | 'days' | 'both') => void;
+  presetKey: string | null;
+  applyPreset: (key: string) => void;
   // status flags
   busy: boolean;
   recalling: boolean;

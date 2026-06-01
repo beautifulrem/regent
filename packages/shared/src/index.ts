@@ -43,6 +43,7 @@ export {
   resolveModel,
   resolveTeeModel,
   toVeniceTrace,
+  withVotingPolicy,
 } from './venice.js';
 export type {
   CapabilitiesResult,

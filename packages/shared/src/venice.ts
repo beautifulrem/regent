@@ -201,3 +201,20 @@ export async function analyzeProposal(cfg: VeniceConfig, proposalText: string): 
   const reasoning = (message?.reasoning_content ?? '').trim().slice(0, 360) || undefined;
   return { decision: parseDecision(content), model, tee, usage: json.usage, reasoning };
 }
+
+/**
+ * Append an owner voting-mandate (policy) to the proposal text the TEE analyst evaluates, clearly
+ * labelled as OWNER CONTEXT. The model still decides For/Against/Abstain on the proposal's merits —
+ * the policy is a preference it weighs, not a hardcoded vote. No-op when no policy is given, so the
+ * default flow (and the FAUCET harness, which sends none) is unchanged.
+ */
+export function withVotingPolicy(proposalText: string, policy?: string): string {
+  const p = policy?.trim();
+  if (!p) return proposalText;
+  return (
+    `${proposalText}\n\n---\n` +
+    `The proposal owner granted you a STANDING vote with this voting mandate:\n"${p}"\n` +
+    `Weigh the proposal on its own merits and honour this mandate where it applies. ` +
+    `You still decide For / Against / Abstain yourself.`
+  );
+}

@@ -119,6 +119,7 @@ const en = {
   boundModeDays: 'Time',
   boundModeBoth: 'Both',
   mandateStats: { votes: 'Vote budget', validity: 'Valid for', authority: 'Authority' },
+  presets: { label: 'Voting mandate', treasury: 'Treasury guard', risk: 'Protocol risk', cautious: 'Abstain on doubt', actingAs: 'acting as' },
   grantSentence: {
     both: 'An AI may vote any proposal on this DAO for {days} days, up to {votes} votes — and never touch your funds.',
     votes: 'An AI may vote any proposal on this DAO, up to {votes} votes — and never touch your funds.',
@@ -299,6 +300,7 @@ const zh: Dict = {
   boundModeDays: '天数',
   boundModeBoth: '两者',
   mandateStats: { votes: '投票额度', validity: '有效期', authority: '权限' },
+  presets: { label: '投票立场', treasury: '国库卫士', risk: '协议风险', cautious: '存疑弃权', actingAs: '立场' },
   grantSentence: {
     both: 'AI 可替你投这个 DAO 的任意提案,{days} 天内、至多 {votes} 票,且永不动用你的资金。',
     votes: 'AI 可替你投这个 DAO 的任意提案,至多 {votes} 票,且永不动用你的资金。',

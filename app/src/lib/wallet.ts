@@ -11,7 +11,7 @@ import {
   Implementation,
   toMetaMaskSmartAccount,
 } from '@metamask/smart-accounts-kit';
-import { buildStandingVoteDelegation, type Delegation } from '@mandate/shared';
+import { buildStandingVoteDelegation, withVotingPolicy, type Delegation } from '@mandate/shared';
 import { CHAIN_ID, DEMO_PROPOSAL, RPC_URL } from './config';
 
 export type SmartAccount = Awaited<ReturnType<typeof toMetaMaskSmartAccount>>;
@@ -44,6 +44,8 @@ export interface GrantTarget {
   /** Standing-grant guardrails — user-configurable; omit one to bound only by the other. Baked on-chain. */
   maxVotes?: number;
   ttlDays?: number;
+  /** Optional owner voting policy (from a preset) — joins the proposal text the TEE analyst weighs. */
+  policy?: string;
 }
 
 /**
@@ -69,7 +71,7 @@ export async function signGrant(userSA: SmartAccount, target: GrantTarget) {
     chainId: CHAIN_ID,
     governor: target.governor,
     proposalId: target.proposalId,
-    proposalText: target.proposalText ?? DEMO_PROPOSAL,
+    proposalText: withVotingPolicy(target.proposalText ?? DEMO_PROPOSAL, target.policy),
     rootDelegation,
   };
 }

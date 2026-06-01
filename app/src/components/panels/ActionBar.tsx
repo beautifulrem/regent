@@ -4,6 +4,7 @@ import type { ComponentType } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Minus, Plus, Scissors, Vote, Zap } from 'lucide-react';
 import { grantDisabled, voteActiveDisabled } from '../../lib/flow';
+import { VOTE_PRESETS } from '../../lib/presets';
 import { type Dict } from '../../lib/i18n';
 import { cn } from '../../lib/cn';
 import { MandateStats } from './MandateStats';
@@ -57,9 +58,37 @@ export function ActionBar({ vm }: { vm: MissionVM }) {
       <AnimatePresence mode="wait" initial={false}>
         {!granted ? (
           <motion.div key="config" {...enter} transition={{ duration: 0.3, ease: EASE }} className="flex flex-col items-center gap-3">
-            {/* the mandate you're about to sign, in plain English (lead-in) */}
             {vm.isConnected && (
-              <MandateSentence boundMode={vm.boundMode} maxVotes={vm.maxVotes} ttlDays={vm.ttlDays} t={t} />
+              <>
+                {/* voting-mandate presets — one click hires a kind of voter (sets bounds + policy) */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-mute/60">{t.presets.label}</span>
+                  {VOTE_PRESETS.map((p) => (
+                    <button
+                      key={p.key}
+                      onClick={() => vm.applyPreset(p.key)}
+                      aria-pressed={vm.presetKey === p.key}
+                      className={cn(
+                        'rounded-chip! border! bg-none! px-2.5! py-1! text-[10.5px]! font-bold! shadow-none! transition-colors duration-200',
+                        vm.presetKey === p.key
+                          ? 'border-info/50! bg-info/15! text-info!'
+                          : 'border-transparent! bg-transparent! text-ink-mute! hover:text-ink!',
+                      )}
+                    >
+                      {t.presets[p.key]}
+                    </button>
+                  ))}
+                </div>
+
+                {/* the mandate you're about to sign, in plain English (lead-in) */}
+                <MandateSentence
+                  boundMode={vm.boundMode}
+                  maxVotes={vm.maxVotes}
+                  ttlDays={vm.ttlDays}
+                  presetLabel={vm.presetKey ? t.presets[vm.presetKey as 'treasury' | 'risk' | 'cautious'] : undefined}
+                  t={t}
+                />
+              </>
             )}
 
             {/* bound-mode segmented toggle */}

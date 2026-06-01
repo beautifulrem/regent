@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { Delegation, RunStatus } from '@mandate/shared';
-import { PROPOSALS, VOTE_BOARD_ADDRESS, isVoteBoardLive } from '@mandate/shared';
+import { PROPOSALS, VOTE_BOARD_ADDRESS, isVoteBoardLive, withVotingPolicy } from '@mandate/shared';
+import { presetFor } from '../lib/presets';
 import { getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
 import { getConfig, getRun, postGrant, provision, voteAgain, type DemoConfig } from '../lib/orchestrator';
 import { recall } from '../lib/recall';
@@ -32,6 +33,8 @@ export default function Home() {
   const [votesUsed, setVotesUsed] = useState(0);
   const [grantedAt, setGrantedAt] = useState<number | null>(null);
   const [voteLog, setVoteLog] = useState<VoteRecord[]>([]);
+  const [policy, setPolicy] = useState<string | undefined>(undefined);
+  const [presetKey, setPresetKey] = useState<string | null>(null);
   const [maxVotes, setMaxVotes] = useState(10);
   const [ttlDays, setTtlDays] = useState(30);
   const [boundMode, setBoundMode] = useState<'votes' | 'days' | 'both'>('both');
@@ -140,6 +143,23 @@ export default function Home() {
     return () => clearInterval(id);
   }, [rotationPaused, activeIdx]);
 
+  // Voting-mandate presets: one click sets bounds + an owner policy (passed to the TEE analyst as
+  // decision context). Clicking the active preset clears it (back to "decide on merits").
+  function applyPreset(key: string) {
+    if (key === presetKey) {
+      setPresetKey(null);
+      setPolicy(undefined);
+      return;
+    }
+    const p = presetFor(key);
+    if (!p) return;
+    setPresetKey(key);
+    setPolicy(p.policy);
+    setBoundMode('both');
+    setMaxVotes(p.maxVotes);
+    setTtlDays(p.ttlDays);
+  }
+
   async function onGrant() {
     if (!cfg || !userSA || !address) return;
     setBusy(true);
@@ -159,6 +179,7 @@ export default function Home() {
         proposalText: activeProposal.body.en,
         maxVotes: boundMode === 'days' ? undefined : maxVotes,
         ttlDays: boundMode === 'votes' ? undefined : ttlDays,
+        policy,
       });
       setRootDel(grant.rootDelegation);
       setGrantedProposalId(activeProposal.id);
@@ -182,7 +203,7 @@ export default function Home() {
     setBusy(true);
     setError(null);
     try {
-      const { runId: id } = await voteAgain(grantRunId, activeProposal.id.toString(), activeProposal.body.en);
+      const { runId: id } = await voteAgain(grantRunId, activeProposal.id.toString(), withVotingPolicy(activeProposal.body.en, policy));
       setRun(null);
       setRunId(id);
       setVotesUsed((v) => v + 1);
@@ -246,6 +267,8 @@ export default function Home() {
     setTtlDays,
     boundMode,
     setBoundMode,
+    presetKey,
+    applyPreset,
     busy,
     recalling,
     recallTx,
