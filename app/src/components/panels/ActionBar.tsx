@@ -7,6 +7,7 @@ import { grantDisabled, voteActiveDisabled } from '../../lib/flow';
 import { type Dict } from '../../lib/i18n';
 import { cn } from '../../lib/cn';
 import { MandateStats } from './MandateStats';
+import { MandateSentence } from './MandateSentence';
 import type { MissionVM } from '../MissionControl';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -56,6 +57,11 @@ export function ActionBar({ vm }: { vm: MissionVM }) {
       <AnimatePresence mode="wait" initial={false}>
         {!granted ? (
           <motion.div key="config" {...enter} transition={{ duration: 0.3, ease: EASE }} className="flex flex-col items-center gap-3">
+            {/* the mandate you're about to sign, in plain English (lead-in) */}
+            {vm.isConnected && (
+              <MandateSentence boundMode={vm.boundMode} maxVotes={vm.maxVotes} ttlDays={vm.ttlDays} t={t} />
+            )}
+
             {/* bound-mode segmented toggle */}
             <div className="flex items-center gap-1.5">
               {MODES.map((m) => (
@@ -105,9 +111,7 @@ export function ActionBar({ vm }: { vm: MissionVM }) {
               {vm.busy ? t.signing : t.grant}
             </button>
 
-            {vm.isConnected ? (
-              <p className="max-w-[460px] text-center text-[12px] leading-relaxed text-ink-mute/85">{t.actionLiveHint}</p>
-            ) : (
+            {!vm.isConnected && (
               <div className="max-w-[480px] text-center">
                 <p className="font-display text-[15px] font-semibold leading-snug text-ink/90">
                   {t.heroLine1} {t.heroLine2}
