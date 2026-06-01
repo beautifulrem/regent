@@ -12,6 +12,7 @@ import { cn } from '../lib/cn';
 import { LangToggle } from './LangToggle';
 import { StatusDot } from './ui/Badge';
 import { GraphStage } from './graph/GraphStage';
+import { ProposalDock } from './proposal/ProposalDock';
 
 /**
  * The view-model the orchestrator (page.tsx) hands to the single-screen cockpit. It carries the
@@ -102,15 +103,15 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
         </div>
       </header>
 
-      {/* Proposal — frameless top-center strip (the subject the graph operates on) */}
-      <div className="absolute left-1/2 top-[68px] z-[3] max-w-[640px] -translate-x-1/2 px-4 text-center">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-brand/80">
-          {vm.activeIdx + 1}/{vm.proposalCount} · #{vm.activeProposal.id.toString().slice(-6)}
-        </div>
-        <div className="font-display text-xl font-semibold leading-tight text-ink [text-shadow:0_2px_18px_rgba(0,0,0,0.7)]">
-          {vm.activeProposal.title[vm.lang]}
-        </div>
-      </div>
+      {/* Proposal — frameless top-center HUD (the subject the graph operates on) */}
+      <ProposalDock
+        proposal={vm.activeProposal}
+        activeIdx={vm.activeIdx}
+        count={vm.proposalCount}
+        onSelect={vm.setActiveIdx}
+        lang={vm.lang}
+        t={vm.t}
+      />
 
       {/* contextual HUD — frameless floating zones (filled in MC-S6/S7) */}
       <HudZone className="left-6 top-36 w-[300px]" label="grant side · MC-S6" hint="SmartAccount · X-Ray · Tamper" />
