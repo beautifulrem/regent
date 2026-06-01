@@ -10,6 +10,7 @@ import { fireSever } from '../lib/sever';
 import { useAccount, useWalletClient } from 'wagmi';
 import { deriveSmartAccount, signGrant, type SmartAccount } from '../lib/wallet';
 import { MissionControl, type MissionVM } from '../components/MissionControl';
+import { type VoteRecord } from '../components/panels/VoteLog';
 
 /**
  * Thin orchestrator: owns ALL run-flow state, effects, and actions, builds the view-model, and
@@ -30,6 +31,7 @@ export default function Home() {
   const [grantRunId, setGrantRunId] = useState<string | null>(null);
   const [votesUsed, setVotesUsed] = useState(0);
   const [grantedAt, setGrantedAt] = useState<number | null>(null);
+  const [voteLog, setVoteLog] = useState<VoteRecord[]>([]);
   const [maxVotes, setMaxVotes] = useState(10);
   const [ttlDays, setTtlDays] = useState(30);
   const [boundMode, setBoundMode] = useState<'votes' | 'days' | 'both'>('both');
@@ -92,6 +94,24 @@ export default function Home() {
       try {
         const r = await getRun(runId);
         setRun(r);
+        if (r.status === 'voted' && r.vote) {
+          const txHash = r.vote.txHash;
+          setVoteLog((log) =>
+            log.some((e) => e.runId === r.runId)
+              ? log
+              : [
+                  {
+                    runId: r.runId,
+                    proposalId: r.proposalId,
+                    decision: r.venice?.decision,
+                    rationale: r.venice?.rationale,
+                    txHash,
+                    attested: !!r.venice?.attestation.verified,
+                  },
+                  ...log,
+                ],
+          );
+        }
         if (['voted', 'failed', 'revoked'].includes(r.status) && timer.current) {
           clearInterval(timer.current);
           timer.current = null;
@@ -125,6 +145,7 @@ export default function Home() {
     setBusy(true);
     setError(null);
     setRecallTx(null);
+    setVoteLog([]);
     try {
       if (!isVoteBoardLive(VOTE_BOARD_ADDRESS)) {
         throw new Error('VoteBoard not deployed yet — run script/DeployVoteBoard.s.sol, then set VOTE_BOARD_ADDRESS.');
@@ -210,6 +231,7 @@ export default function Home() {
     grantRunId,
     votesUsed,
     grantedAt,
+    voteLog,
     youAddr: run?.delegations.participants?.user ?? userSA?.address,
     orchAddr: run?.delegations.participants?.orchestrator ?? cfg?.orchestratorSA,
     analystAddr: run?.delegations.participants?.analyst ?? cfg?.analyst,

@@ -9,6 +9,7 @@ import { X402TollGate } from '../X402TollGate';
 import { OneShotFinale } from '../OneShotFinale';
 import { VoteResultBanner } from '../panels/VoteResultBanner';
 import { ProofTimeline } from '../panels/ProofTimeline';
+import { VoteLog } from '../panels/VoteLog';
 import type { MissionVM } from '../MissionControl';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
@@ -45,6 +46,11 @@ export function RightDossier({ vm }: { vm: MissionVM }) {
         {showProof && (
           <Reveal key="proof">
             <ProofTimeline run={vm.run!} killed={vm.killed} t={t} />
+          </Reveal>
+        )}
+        {vm.voteLog.length > 0 && (
+          <Reveal key="votelog">
+            <VoteLog records={vm.voteLog} lang={vm.lang} t={t} />
           </Reveal>
         )}
         {showTally && (

@@ -14,6 +14,7 @@ import { GraphStage } from './graph/GraphStage';
 import { ProposalDock } from './proposal/ProposalDock';
 import { ActionBar } from './panels/ActionBar';
 import { ErrorToast } from './panels/ErrorToast';
+import { type VoteRecord } from './panels/VoteLog';
 import { LeftRail } from './layout/LeftRail';
 import { RightDossier } from './layout/RightDossier';
 import { TrackRail } from './layout/TrackRail';
@@ -47,6 +48,7 @@ export interface MissionVM {
   grantRunId: string | null;
   votesUsed: number;
   grantedAt: number | null;
+  voteLog: VoteRecord[];
   youAddr?: string;
   orchAddr?: string;
   analystAddr?: string;
