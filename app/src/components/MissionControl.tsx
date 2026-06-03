@@ -8,6 +8,7 @@ import type { DemoConfig } from '../lib/orchestrator';
 import type { SmartAccount } from '../lib/wallet';
 import type { Dict, Lang } from '../lib/i18n';
 import { reached } from '../lib/runState';
+import { decisionToSupport, useLiveTally, withOptimisticVote } from '../lib/useLiveTally';
 import { ErrorToast } from './panels/ErrorToast';
 import { type VoteRecord } from './panels/VoteLog';
 import { NetworkField } from './mission/NetworkField';
@@ -111,12 +112,17 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
   const anchorTop = RAIL_TOP + (idx < 0 ? 0 : idx) * RAIL_STEP;
   const activeItem = rail.find((r) => r.key === panel);
 
-  const seed = vm.activeProposal.seed;
-  const pips = {
-    for_: seed.filter((x) => x === 1).length,
-    against: seed.filter((x) => x === 0).length,
-    abstain: seed.filter((x) => x === 2).length,
-  };
+  // Live on-chain tally for the active proposal (HUD bar + counts, the VoteBoard node pips, and the
+  // tally popover all read this one source). Once the agent casts AS the user's smart account, the
+  // vote shows here as a real 6th voter; until the next poll catches up, fold it in optimistically.
+  const youVotedHere = !!vm.run?.vote && vm.run?.proposalId === vm.activeProposal.id.toString();
+  const { tally, voters, live } = withOptimisticVote(
+    useLiveTally(vm.activeProposal.id, vm.activeProposal.seed),
+    vm.userSA?.address,
+    decisionToSupport(vm.venice?.decision),
+    youVotedHere,
+  );
+  const pips = { for_: tally.for_, against: tally.against, abstain: tally.abstain };
 
   const toggle = (key: PanelKey) => setPanel((c) => (c === key ? null : key));
 
@@ -131,6 +137,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
       <main className="mc-center hud-scroll">
         <ProposalHUD
           proposal={vm.activeProposal}
+          tally={tally}
           activeIdx={vm.activeIdx}
           count={vm.proposalCount}
           onSelect={vm.setActiveIdx}
@@ -159,7 +166,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
       </main>
 
       <Popover side="right" open={!!panel} anchorTop={anchorTop} title={panel ? t.panels[panel] : ''} icon={activeItem?.icon} onClose={() => setPanel(null)}>
-        {panel && <PopoverBody panel={panel} vm={vm} />}
+        {panel && <PopoverBody panel={panel} vm={vm} tally={tally} voters={voters} live={live} />}
       </Popover>
 
       <ErrorToast error={vm.error} />

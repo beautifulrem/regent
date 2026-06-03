@@ -1,22 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { createPublicClient, http, type Address } from 'viem';
-import { baseSepolia } from 'viem/chains';
+import type { Address } from 'viem';
 import { Users, Vote } from 'lucide-react';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
-import {
-  DEMO_PERSONAS,
-  VOTE_BOARD_ABI,
-  VOTE_BOARD_ADDRESS,
-  decodeBallot,
-  isVoteBoardLive,
-  personaFor,
-} from '@mandate/shared';
-import { BASESCAN, RPC_URL, shortHex } from '../lib/config';
+import { VOTE_BOARD_ADDRESS, personaFor } from '@mandate/shared';
+import { BASESCAN, shortHex } from '../lib/config';
 import { cn } from '../lib/cn';
-import { tallyBreakdown, tallyFromSeed, type TallyBreakdown } from '../lib/voteboard-view';
+import type { TallyBreakdown } from '../lib/voteboard-view';
+import type { VoterRow } from '../lib/useLiveTally';
 import { NumberTicker } from './NumberTicker';
 import { Panel, PanelHeader } from './ui/Panel';
 import { Badge, TrackTag } from './ui/Badge';
@@ -24,95 +16,27 @@ import type { Dict } from '../lib/i18n';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-type Choice = 0 | 1 | 2 | null;
-interface VoterRow {
-  address: string;
-  support: Choice;
-}
-
-const personaIndex = (addr: string) =>
-  DEMO_PERSONAS.findIndex((p) => p.address.toLowerCase() === addr.toLowerCase());
-
-const seedVoters = (seed: readonly number[]): VoterRow[] =>
-  DEMO_PERSONAS.map((p, i) => ({ address: p.address, support: (seed[i] ?? null) as Choice }));
-
 /**
- * Live For/Against/Abstain tally + voter list for the ACTIVE proposal. Reads that proposal's
- * on-chain tally every 3s; until live (or between rotations) it shows the proposal's seeded
- * distribution, so each rotating proposal visibly carries a different DAO vote.
+ * Live For/Against/Abstain tally + voter list for the ACTIVE proposal. Presentational: the
+ * tally/voters come from `useLiveTally` (lifted to the cockpit so the HUD, the graph node and this
+ * popover share one source), so a vote cast AS the user's smart account shows here as a real voter.
  */
 export function VoteTally({
-  proposalId,
-  seed,
+  tally,
+  voters,
+  live,
   you,
   t,
   bare = false,
 }: {
-  proposalId: bigint;
-  seed: readonly number[];
+  tally: TallyBreakdown;
+  voters: VoterRow[];
+  live: boolean;
   you?: Address;
   t: Dict;
   bare?: boolean;
 }) {
   const reduce = useReducedMotion();
-  const live = isVoteBoardLive(VOTE_BOARD_ADDRESS);
-  const [tally, setTally] = useState<TallyBreakdown>(() => tallyFromSeed(seed));
-  const [voters, setVoters] = useState<VoterRow[]>(() => seedVoters(seed));
-
-  // Snap to the new proposal's seeded fallback the instant the active proposal changes.
-  useEffect(() => {
-    setTally(tallyFromSeed(seed));
-    setVoters(seedVoters(seed));
-  }, [proposalId, seed]);
-
-  useEffect(() => {
-    if (!live) return;
-    const client = createPublicClient({ chain: baseSepolia, transport: http(RPC_URL) });
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const [against, forV, abstain] = (await client.readContract({
-          address: VOTE_BOARD_ADDRESS,
-          abi: VOTE_BOARD_ABI,
-          functionName: 'getTally',
-          args: [proposalId],
-        })) as [bigint, bigint, bigint];
-        const addrs = (await client.readContract({
-          address: VOTE_BOARD_ADDRESS,
-          abi: VOTE_BOARD_ABI,
-          functionName: 'getVoters',
-          args: [proposalId],
-        })) as readonly Address[];
-        // Personas reuse this proposal's seeded support; only an unknown voter (a judge) needs a read.
-        const rows: VoterRow[] = [];
-        for (const a of addrs) {
-          const idx = personaIndex(a);
-          if (idx >= 0) {
-            rows.push({ address: a, support: (seed[idx] ?? null) as Choice });
-          } else {
-            const s = (await client.readContract({
-              address: VOTE_BOARD_ADDRESS,
-              abi: VOTE_BOARD_ABI,
-              functionName: 'getVote',
-              args: [proposalId, a],
-            })) as number;
-            rows.push({ address: a, support: decodeBallot(s) as Choice });
-          }
-        }
-        if (cancelled) return;
-        setTally(tallyBreakdown(Number(against), Number(forV), Number(abstain)));
-        setVoters(rows);
-      } catch (e) {
-        if (typeof console !== 'undefined') console.warn('[VoteTally] poll failed', e);
-      }
-    };
-    void poll();
-    const id = setInterval(poll, 3000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [live, proposalId, seed]);
 
   return (
     <Panel pad="lg" bare={bare} className={bare ? '' : 'mb-3.5'}>

@@ -2,15 +2,17 @@
 
 import type { DaoProposal } from '@mandate/shared';
 import type { Dict, Lang } from '../../lib/i18n';
+import type { TallyBreakdown } from '../../lib/voteboard-view';
 import { StatusDot } from '../ui/Badge';
 
 /**
  * Top-center proposal HUD — the live status line (voting now · n/total · #id), the proposal title +
- * body, a segmented For/Against/Abstain micro-tally from the proposal's seeded distribution, and the
- * progress dots that rotate / select proposals.
+ * body, a segmented For/Against/Abstain micro-tally (from the live on-chain tally, so the user's own
+ * cast vote shows up here), and the progress dots that rotate / select proposals.
  */
 export function ProposalHUD({
   proposal,
+  tally,
   activeIdx,
   count,
   onSelect,
@@ -18,19 +20,16 @@ export function ProposalHUD({
   t,
 }: {
   proposal: DaoProposal;
+  tally: TallyBreakdown;
   activeIdx: number;
   count: number;
   onSelect: (i: number) => void;
   lang: Lang;
   t: Dict;
 }) {
-  const counts = proposal.seed.reduce<Record<number, number>>((a, s) => {
-    a[s] = (a[s] ?? 0) + 1;
-    return a;
-  }, {});
-  const forV = counts[1] ?? 0;
-  const against = counts[0] ?? 0;
-  const abstain = counts[2] ?? 0;
+  const forV = tally.for_;
+  const against = tally.against;
+  const abstain = tally.abstain;
 
   return (
     <div className="flex w-full max-w-[760px] flex-col items-center">

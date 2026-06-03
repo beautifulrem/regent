@@ -4,6 +4,8 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { VOTE_BOARD_ADDRESS } from '@mandate/shared';
 import { Award, Globe, Lock, Wallet } from 'lucide-react';
 import { CHAIN_ID } from '../../lib/config';
+import type { TallyBreakdown } from '../../lib/voteboard-view';
+import type { VoterRow } from '../../lib/useLiveTally';
 import { VoteTally } from '../VoteTally';
 import { X402TollGate } from '../X402TollGate';
 import { OneShotFinale } from '../OneShotFinale';
@@ -19,14 +21,24 @@ import type { MissionVM } from '../MissionControl';
 import type { PanelKey } from './IconRail';
 
 /** Routes a rail key to its popover body, reusing the app's real (live) modules. */
-export function PopoverBody({ panel, vm }: { panel: PanelKey; vm: MissionVM }) {
+export function PopoverBody({
+  panel,
+  vm,
+  tally,
+  voters,
+  live,
+}: {
+  panel: PanelKey;
+  vm: MissionVM;
+  tally: TallyBreakdown;
+  voters: VoterRow[];
+  live: boolean;
+}) {
   switch (panel) {
     case 'wallet':
       return <WalletBody vm={vm} />;
     case 'tally':
-      return vm.cfg ? (
-        <VoteTally proposalId={vm.activeProposal.id} seed={vm.activeProposal.seed} you={vm.userSA?.address} t={vm.t} bare />
-      ) : null;
+      return <VoteTally tally={tally} voters={voters} live={live} you={vm.userSA?.address} t={vm.t} bare />;
     case 'x402':
       return vm.cfg ? <X402TollGate cfg={vm.cfg} t={vm.t} bare /> : null;
     case 'oneshot':
