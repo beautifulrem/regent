@@ -95,16 +95,15 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
           {vm.isConnected && (
             <div className="flex flex-wrap items-center justify-center gap-1.5">
               <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-mute/60">{t.presets.label}</span>
+              <StanceChip label={t.presets.default} desc={t.presetDesc.default} active={!vm.presetKey} onClick={() => vm.applyPreset('default')} />
               {VOTE_PRESETS.map((p) => (
-                <button
+                <StanceChip
                   key={p.key}
-                  type="button"
-                  className={`mc-preset${vm.presetKey === p.key ? ' on' : ''}`}
-                  aria-pressed={vm.presetKey === p.key}
+                  label={t.presets[p.key]}
+                  desc={t.presetDesc[p.key]}
+                  active={vm.presetKey === p.key}
                   onClick={() => vm.applyPreset(p.key)}
-                >
-                  {t.presets[p.key]}
-                </button>
+                />
               ))}
             </div>
           )}
@@ -211,5 +210,19 @@ function StepBtn({
     <button type="button" className="mc-step" onClick={onClick} disabled={disabled} aria-label={label}>
       <Icon className="size-4" strokeWidth={2.5} />
     </button>
+  );
+}
+
+/** A voting-stance chip with a content-sized bubble (on hover/focus) explaining what it does. */
+function StanceChip({ label, desc, active, onClick }: { label: string; desc: string; active: boolean; onClick: () => void }) {
+  return (
+    <span className="mc-stance">
+      <button type="button" className={`mc-preset${active ? ' on' : ''}`} aria-pressed={active} onClick={onClick}>
+        {label}
+      </button>
+      <span role="tooltip" className="mc-stance-tip">
+        {desc}
+      </span>
+    </span>
   );
 }

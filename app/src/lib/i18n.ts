@@ -127,7 +127,14 @@ const en = {
   boundModeDays: 'Time',
   boundModeBoth: 'Both',
   mandateStats: { votes: 'Vote budget', validity: 'Valid for', authority: 'Authority' },
-  presets: { label: 'Voting mandate', treasury: 'Treasury guard', risk: 'Protocol risk', cautious: 'Abstain on doubt', actingAs: 'acting as' },
+  presets: { label: 'Voting stance', default: 'Default', fiscal: 'Fiscal', growth: 'Growth', security: 'Security', participation: 'Access', actingAs: 'acting as' },
+  presetDesc: {
+    default: 'No leaning — the agent decides each proposal purely on its own merits.',
+    fiscal: 'Fiscally strict: rewards milestones, clawbacks and lean budgets; wary of large, open-ended or unaudited spends.',
+    growth: 'Pro-ecosystem: backs accountable grants, incentives and liquidity that grow usage and participation.',
+    security: 'Safety-first: prioritizes audits and conservative parameters; resists changes that add systemic or contract risk.',
+    participation: 'Openness-first: favours lower barriers and broader voter access, with accountability kept intact.',
+  },
   grantSentence: {
     both: 'An AI may vote any proposal on this DAO for {days} days, up to {votes} votes — and never touch your funds.',
     votes: 'An AI may vote any proposal on this DAO, up to {votes} votes — and never touch your funds.',
@@ -335,7 +342,14 @@ const zh: Dict = {
   boundModeDays: '天数',
   boundModeBoth: '两者',
   mandateStats: { votes: '投票额度', validity: '有效期', authority: '权限' },
-  presets: { label: '投票立场', treasury: '国库卫士', risk: '协议风险', cautious: '存疑弃权', actingAs: '立场' },
+  presets: { label: '投票立场', default: '默认', fiscal: '财政', growth: '增长', security: '安全', participation: '参与', actingAs: '立场' },
+  presetDesc: {
+    default: '不预设倾向 —— AI 仅按提案本身的事实与权衡来投。',
+    fiscal: '财政从严:看重里程碑、追回与精简预算;对大额、开口或未审计的支出保持警惕。',
+    growth: '倾向发展:支持有问责的资助、激励与流动性,以扩大使用与参与。',
+    security: '安全优先:看重审计与稳健参数;抵制增加系统性或合约风险的改动。',
+    participation: '开放优先:支持降低门槛、扩大投票参与,同时保持问责。',
+  },
   grantSentence: {
     both: 'AI 可替你投这个 DAO 的任意提案,{days} 天内、至多 {votes} 票,且永不动用你的资金。',
     votes: 'AI 可替你投这个 DAO 的任意提案,至多 {votes} 票,且永不动用你的资金。',

@@ -335,6 +335,26 @@ html, body { height: 100%; overflow: hidden; }
 .mc-preset:hover { filter: none; background: transparent; color: var(--color-ink); }
 .mc-preset.on { border-color: rgba(110, 168, 254, 0.5); background: rgba(110, 168, 254, 0.15); color: var(--color-info); }
 
+/* stance chip + its hover/focus bubble — content-sized, floats above the chip with a small tail */
+.mc-stance { position: relative; display: inline-flex; }
+.mc-stance-tip {
+  position: absolute; bottom: calc(100% + 9px); left: 50%; z-index: 40;
+  width: max-content; max-width: 240px; padding: 9px 12px; border-radius: 12px; text-align: left;
+  font-size: 12px; line-height: 1.5; color: var(--color-ink-soft); white-space: normal; pointer-events: none;
+  background: rgba(12, 15, 22, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-hairline); box-shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.85);
+  opacity: 0; visibility: hidden; transform: translateX(-50%) translateY(4px);
+  transition: opacity 0.15s var(--ease-fluid), transform 0.15s var(--ease-fluid);
+}
+.mc-stance:hover .mc-stance-tip,
+.mc-stance:focus-within .mc-stance-tip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+.mc-stance-tip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; width: 10px; height: 10px;
+  background: rgba(12, 15, 22, 0.92); border-right: 1px solid var(--color-hairline); border-bottom: 1px solid var(--color-hairline);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+@media (prefers-reduced-motion: reduce) { .mc-stance-tip { transition: none; } }
+
 /* track chips */
 .mc-tracks { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
 .mc-chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--color-hairline);

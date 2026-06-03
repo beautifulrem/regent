@@ -146,7 +146,9 @@ export default function Home() {
   // Voting-mandate presets: one click sets bounds + an owner policy (passed to the TEE analyst as
   // decision context). Clicking the active preset clears it (back to "decide on merits").
   function applyPreset(key: string) {
-    if (key === presetKey) {
+    // 'default' is the no-policy baseline (decide on merits); selecting it (or re-clicking the
+    // active stance) clears any owner mandate.
+    if (key === 'default' || key === presetKey) {
       setPresetKey(null);
       setPolicy(undefined);
       return;
