@@ -389,28 +389,28 @@ html, body { height: 100%; overflow: hidden; }
 .mc-x { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; padding: 0; background: transparent; color: var(--color-ink-mute); border: 1px solid var(--color-hairline); box-shadow: none; flex-shrink: 0; cursor: pointer; }
 .mc-x:hover { color: var(--color-ink); filter: none; border-color: var(--color-line); background: transparent; }
 
-/* secondary action buttons inside a popover (x402 trace · 1Shot replay · tamper check) render as
-   calm, fully-rounded ghost buttons — never the bright solid-orange CTA block, and warm to brand
-   only on hover. The primary .mc-btn (e.g. the wallet Connect) is excluded and keeps its tint. */
+/* secondary action buttons inside a popover (x402 trace · 1Shot replay · tamper check): a calm
+   tinted-orange, fully-rounded button — orange enough to read as the action, never the bright solid
+   CTA block. The primary .mc-btn (e.g. the wallet Connect) is excluded and keeps its own tint. */
 .mc-pop-body button:not(.mc-btn) {
-  background: transparent;
-  color: var(--color-ink-soft);
-  border: 1px solid var(--color-hairline);
+  background: rgba(246, 133, 27, 0.1);
+  color: var(--color-brand);
+  border: 1px solid rgba(246, 133, 27, 0.4);
   border-radius: var(--radius-chip);
   box-shadow: none;
   font-weight: 600;
-  padding: 9px 16px;
+  padding: 9px 18px;
   transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.08s;
 }
 .mc-pop-body button:not(.mc-btn):hover:not(:disabled) {
-  color: var(--color-brand);
-  border-color: rgba(246, 133, 27, 0.45);
-  background: rgba(246, 133, 27, 0.08);
+  background: rgba(246, 133, 27, 0.18);
+  border-color: rgba(246, 133, 27, 0.65);
+  color: var(--color-brand-soft);
   filter: none;
   box-shadow: none;
 }
 .mc-pop-body button:not(.mc-btn):active:not(:disabled) { transform: translateY(1px); }
-.mc-pop-body button:not(.mc-btn):disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.mc-pop-body button:not(.mc-btn):disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 
 /* ---- the authority chain graph (4 nodes, flowing beams, scissors-cut) ---- */
 .chain { position: relative; display: flex; align-items: stretch; gap: 24px; padding-top: 16px; }

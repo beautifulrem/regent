@@ -48,9 +48,9 @@ export function OneShotFinale({ t, bare = false }: { t: Dict; bare?: boolean }) 
 
   if (phase === 'idle') {
     return (
-      <Panel tone="eth" pad="lg" bare={bare} className={`${bare ? '' : 'mb-3.5 '}flex flex-wrap items-center justify-between gap-3`}>
-        <div className="flex items-center gap-2 text-[13px] text-ink-soft">
-          <Radio className="size-4 text-[#8aa0f0]" /> {t.oneShotCtaHint}
+      <Panel tone="eth" pad="lg" bare={bare} className={`${bare ? '' : 'mb-3.5 '}flex flex-col items-center gap-3 text-center`}>
+        <div className="flex items-center justify-center gap-2 text-[13px] text-ink-soft">
+          <Radio className="size-4 shrink-0 text-[#8aa0f0]" /> {t.oneShotCtaHint}
         </div>
         <button onClick={run} className="inline-flex items-center gap-2">
           <Play className="size-4" /> {t.oneShotCtaBtn}

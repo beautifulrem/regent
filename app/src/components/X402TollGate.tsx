@@ -129,7 +129,7 @@ export function X402TollGate({ cfg, t, bare = false }: { cfg: DemoConfig; t: Dic
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
         <button onClick={trace} disabled={tracing} className="inline-flex items-center gap-2">
           <Wallet className="size-4" /> {tracing ? t.x402.tracing : t.x402.trace}
         </button>

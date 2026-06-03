@@ -140,9 +140,11 @@ export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = fal
         </div>
       </div>
       {timedOut && <div className="mt-3 text-[12px] text-warn">{t.tamperProbeTimeout}</div>}
-      <button className="mt-4" onClick={runProbe} disabled={checking}>
-        {checking ? t.tamperProbeChecking : t.tamperProbeButton}
-      </button>
+      <div className="mt-4 flex justify-center">
+        <button onClick={runProbe} disabled={checking}>
+          {checking ? t.tamperProbeChecking : t.tamperProbeButton}
+        </button>
+      </div>
     </Panel>
   );
 }
