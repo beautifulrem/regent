@@ -89,6 +89,7 @@ const en = {
 
   chainTitle: 'Live authority chain',
   scopeChip: '4 caveats',
+  scopeChipOrigin: 'full grant',
   scopeChipAttenuated: 'attenuated',
   nodes: {
     you: { who: 'You', role: 'grant the permission' },
@@ -305,6 +306,7 @@ const zh: Dict = {
 
   chainTitle: '实时授权链',
   scopeChip: '4 条 caveat',
+  scopeChipOrigin: '完整授权',
   scopeChipAttenuated: '已收窄',
   nodes: {
     you: { who: '你', role: '授予权限' },

@@ -241,7 +241,6 @@ function ScopeChip({
   pos,
   attenuated,
   label,
-  attLabel,
 }: {
   container: DivRef;
   youRef: DivRef;
@@ -250,7 +249,6 @@ function ScopeChip({
   pos: 'you' | 'orch' | 'analyst';
   attenuated: boolean;
   label: string;
-  attLabel: string;
 }) {
   const [xs, setXs] = useState<{ you: number; orch: number; analyst: number } | null>(null);
   useEffect(() => {
@@ -295,7 +293,7 @@ function ScopeChip({
           transition: 'transform .5s var(--ease-fluid)',
         }}
       >
-        <Lock size={12} /> {attenuated ? attLabel : label}
+        <Lock size={12} /> {label}
       </span>
     </div>
   );
@@ -357,6 +355,9 @@ export function AuthorityChain({
   // with the light, instead of teleporting to the analyst the moment the first beam fires.
   const chipPos: 'you' | 'orch' | 'analyst' = beamLive('analyzing') ? 'analyst' : beamLive('redelegated') ? 'orch' : 'you';
   const chipAttenuated = beamLive('analyzing');
+  // Held by You it's the full grant; the orchestrator's root delegation reads as its caveats; once
+  // attenuated it's the narrowed scope.
+  const chipLabel = chipPos === 'analyst' ? t.scopeChipAttenuated : chipPos === 'orch' ? t.scopeChip : t.scopeChipOrigin;
 
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1080 }}>
@@ -381,7 +382,7 @@ export function AuthorityChain({
       <Beam container={containerRef} from={analystRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone="ok" />
 
       {live && !killed && !cutting && (
-        <ScopeChip container={containerRef} youRef={youRef} orchRef={orchRef} analystRef={analystRef} pos={chipPos} attenuated={chipAttenuated} label={t.scopeChip} attLabel={t.scopeChipAttenuated} />
+        <ScopeChip container={containerRef} youRef={youRef} orchRef={orchRef} analystRef={analystRef} pos={chipPos} attenuated={chipAttenuated} label={chipLabel} />
       )}
     </div>
   );
