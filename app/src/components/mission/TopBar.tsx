@@ -56,7 +56,7 @@ export function TopBar({ lang, toggleLang, t }: { lang: Lang; toggleLang: () => 
               <button
                 type="button"
                 onClick={openAccountModal}
-                className="inline-flex items-center gap-2 rounded-chip border border-hairline bg-surface/60 px-3 py-1.5 font-mono text-xs font-semibold text-ink-soft shadow-none backdrop-blur transition-colors hover:border-brand/40 hover:text-ink"
+                className="inline-flex items-center gap-2 rounded-chip border border-hairline bg-none bg-surface/60 px-3 py-1.5 font-mono text-xs font-semibold text-ink-soft shadow-none backdrop-blur transition-colors hover:border-brand/40 hover:text-ink"
               >
                 <Jazzicon diameter={16} seed={jsNumberForAddress(account.address)} />
                 {account.displayName}

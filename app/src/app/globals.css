@@ -110,39 +110,44 @@ input:focus-visible {
   border-radius: var(--radius-md);
 }
 
-/* ---------- buttons (zero-specificity base via :where so utility re-skins win) ---------- */
-:where(button) {
-  background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-accent));
-  color: #1a0f02;
-  border: 0;
-  border-radius: var(--radius-pill);
-  padding: 12px 22px;
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-  transition: filter 0.14s, transform 0.08s, opacity 0.14s, box-shadow 0.14s;
-  box-shadow: 0 6px 20px -8px var(--color-brand-glow);
-}
-:where(button:hover:not(:disabled)) {
-  filter: brightness(1.08);
-  box-shadow: 0 10px 28px -8px var(--color-brand-glow);
-}
-:where(button:active:not(:disabled)) {
-  transform: translateY(1px);
-}
-:where(button:disabled) {
-  opacity: 0.4;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-:where(button.danger) {
-  background: linear-gradient(135deg, #f87171, #dc4d4d);
-  color: #1a0606;
-  box-shadow: 0 6px 20px -8px rgba(248, 113, 113, 0.4);
-}
-:where(button.big) {
-  padding: 14px 28px;
-  font-size: 16px;
+/* ---------- buttons (base orange CTA) ----------
+   In @layer base so Tailwind utilities (later `utilities` layer) AND the unlayered .mc-*
+   component classes both re-skin it without !important — ghost/subtle buttons just set
+   `bg-*` / their own background and win. Plain <button>s (reused popover actions) keep this. */
+@layer base {
+  :where(button) {
+    background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-accent));
+    color: #1a0f02;
+    border: 0;
+    border-radius: var(--radius-pill);
+    padding: 12px 22px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: filter 0.14s, transform 0.08s, opacity 0.14s, box-shadow 0.14s;
+    box-shadow: 0 6px 20px -8px var(--color-brand-glow);
+  }
+  :where(button:hover:not(:disabled)) {
+    filter: brightness(1.08);
+    box-shadow: 0 10px 28px -8px var(--color-brand-glow);
+  }
+  :where(button:active:not(:disabled)) {
+    transform: translateY(1px);
+  }
+  :where(button:disabled) {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  :where(button.danger) {
+    background: linear-gradient(135deg, #f87171, #dc4d4d);
+    color: #1a0606;
+    box-shadow: 0 6px 20px -8px rgba(248, 113, 113, 0.4);
+  }
+  :where(button.big) {
+    padding: 14px 28px;
+    font-size: 16px;
+  }
 }
 
 /* ===================================================================
