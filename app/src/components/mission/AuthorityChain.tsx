@@ -235,29 +235,33 @@ function Beam({
 
 function ScopeChip({
   container,
+  youRef,
   orchRef,
   analystRef,
-  redelegated,
+  pos,
+  attenuated,
   label,
   attLabel,
 }: {
   container: DivRef;
+  youRef: DivRef;
   orchRef: DivRef;
   analystRef: DivRef;
-  redelegated: boolean;
+  pos: 'you' | 'orch' | 'analyst';
+  attenuated: boolean;
   label: string;
   attLabel: string;
 }) {
-  const [xs, setXs] = useState<{ orch: number; analyst: number } | null>(null);
+  const [xs, setXs] = useState<{ you: number; orch: number; analyst: number } | null>(null);
   useEffect(() => {
     const compute = () => {
-      if (!container.current || !orchRef.current || !analystRef.current) return;
+      if (!container.current || !youRef.current || !orchRef.current || !analystRef.current) return;
       const cr = container.current.getBoundingClientRect();
       const cx = (n: HTMLDivElement) => {
         const r = n.getBoundingClientRect();
         return r.left - cr.left + r.width / 2;
       };
-      setXs({ orch: cx(orchRef.current), analyst: cx(analystRef.current) });
+      setXs({ you: cx(youRef.current), orch: cx(orchRef.current), analyst: cx(analystRef.current) });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -267,11 +271,13 @@ function ScopeChip({
       ro.disconnect();
       window.removeEventListener('resize', compute);
     };
-  }, [container, orchRef, analystRef]);
+  }, [container, youRef, orchRef, analystRef]);
   if (!xs) return null;
-  const x = redelegated ? xs.analyst : xs.orch;
+  // Rides with the light packet — You → Orchestrator → Analyst, one beam per stage. The `left`
+  // transition matches the packet's 0.85s travel so the token and the light move as one.
+  const x = xs[pos];
   return (
-    <div style={{ position: 'absolute', left: x, top: -14, transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none', transition: 'left .5s var(--ease-fluid)' }}>
+    <div style={{ position: 'absolute', left: x, top: -14, transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none', transition: 'left .85s var(--ease-fluid)' }}>
       <span
         style={{
           display: 'inline-flex',
@@ -285,11 +291,11 @@ function ScopeChip({
           color: '#1a0f02',
           background: 'linear-gradient(135deg, var(--color-brand), var(--color-brand-deep))',
           boxShadow: '0 4px 14px -4px var(--color-brand-glow)',
-          transform: redelegated ? 'scale(.92)' : 'scale(1)',
+          transform: attenuated ? 'scale(.92)' : 'scale(1)',
           transition: 'transform .5s var(--ease-fluid)',
         }}
       >
-        <Lock size={12} /> {redelegated ? attLabel : label}
+        <Lock size={12} /> {attenuated ? attLabel : label}
       </span>
     </div>
   );
@@ -346,6 +352,11 @@ export function AuthorityChain({
   const orchWorking = nodeLit('redelegated') && !beamLive('analyzing'); // lit, holding the scope
   const analystWorking = nodeLit('analyzing') && shownIdx < idxOf('decided'); // lit, deciding
   const analystTee = analystWorking; // "thinking…" pill while deciding
+  // The scope token rides with the packets: held by You, → Orchestrator on the You→Orch beam, then →
+  // Analyst on the Orch→Analyst beam (attenuated). Same thresholds as the beams ⇒ moves in lockstep
+  // with the light, instead of teleporting to the analyst the moment the first beam fires.
+  const chipPos: 'you' | 'orch' | 'analyst' = beamLive('analyzing') ? 'analyst' : beamLive('redelegated') ? 'orch' : 'you';
+  const chipAttenuated = beamLive('analyzing');
 
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1080 }}>
@@ -370,7 +381,7 @@ export function AuthorityChain({
       <Beam container={containerRef} from={analystRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone="ok" />
 
       {live && !killed && !cutting && (
-        <ScopeChip container={containerRef} orchRef={orchRef} analystRef={analystRef} redelegated={beamLive('redelegated')} label={t.scopeChip} attLabel={t.scopeChipAttenuated} />
+        <ScopeChip container={containerRef} youRef={youRef} orchRef={orchRef} analystRef={analystRef} pos={chipPos} attenuated={chipAttenuated} label={t.scopeChip} attLabel={t.scopeChipAttenuated} />
       )}
     </div>
   );
