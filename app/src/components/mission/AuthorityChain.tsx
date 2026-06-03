@@ -375,7 +375,7 @@ export function AuthorityChain({
         thinking={t.thinking}
         killed={killed}
       />
-      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active board pips={pips} />
+      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board pips={pips} />
 
       <Beam container={containerRef} from={youRef} to={orchRef} live={beamLive('redelegated')} killed={killed} cutting={cutting} root />
       <Beam container={containerRef} from={orchRef} to={analystRef} live={beamLive('analyzing')} killed={killed} cutting={cutting} />
