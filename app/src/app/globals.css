@@ -221,65 +221,12 @@ input:focus-visible {
   .aurora-orb { animation: none; }
 }
 
-/* ===================================================================
-   React Flow → our dark, FRAMELESS canvas (MC-S1). globals.css is imported
-   AFTER @xyflow/react/dist/style.css, so these (unlayered) win over RF's
-   defaults — the canvas is transparent (aurora shows through) and the
-   default node box is stripped so our beacon nodes float frameless.
-   =================================================================== */
-.react-flow {
-  background: transparent;
-  --xy-background-pattern-color: color-mix(in oklab, var(--color-brand) 30%, transparent);
-  --xy-edge-stroke: var(--color-line);
-}
-.react-flow__renderer,
-.react-flow__pane { background: transparent; }
-.react-flow__node {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
-  width: auto;
-  color: inherit;
-  font-size: inherit;
-  cursor: default;
-}
-.react-flow__node:focus,
-.react-flow__node:focus-visible { outline: none; box-shadow: none; }
-.react-flow__handle {
-  opacity: 0;
-  width: 1px;
-  height: 1px;
-  min-width: 1px;
-  min-height: 1px;
-  border: 0;
-  background: transparent;
-  pointer-events: none;
-}
-.react-flow__attribution { display: none; }
-
-/* frameless HUD scrollbar — thin, brand-muted, transparent track (the rails over the graph) */
+/* frameless HUD scrollbar — thin, brand-muted, transparent track (over the canvas) */
 .hud-scroll { scrollbar-width: thin; scrollbar-color: var(--color-line) transparent; }
 .hud-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
 .hud-scroll::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
 .hud-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-ink-mute); }
 .hud-scroll::-webkit-scrollbar-track { background: transparent; }
-
-/* graph animations (MC-S3) */
-@keyframes graphEdgeFlow { to { stroke-dashoffset: -22; } }
-.graph-edge-flow { stroke-dasharray: 9 13; animation: graphEdgeFlow 0.55s linear infinite; }
-@keyframes graphNodeShake {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-3px); }
-  40% { transform: translateX(3px); }
-  60% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
-}
-.graph-node-shake { animation: graphNodeShake 0.5s ease-in-out; }
-@media (prefers-reduced-motion: reduce) {
-  .graph-edge-flow, .graph-node-shake { animation: none; }
-}
 
 /* ====================================================================================
    IMMERSIVE "MISSION CONTROL" LAYOUT — full-viewport, centered around the authority

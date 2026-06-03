@@ -11,8 +11,8 @@ import { Badge } from '../ui/Badge';
 /**
  * Frameless identity HUD for the connected MetaMask Smart Account (the ERC-4337 root delegator).
  * No card — a Jazzicon + the real on-chain SA address (BaseScan link) + the 4337·Hybrid marker +
- * the signer EOA + how it signs. This is the "You" node's dossier; it blooms in the LeftRail the
- * moment a wallet connects, so judges SEE a real smart account before anything is granted.
+ * the signer EOA + how it signs. This is the "You" node's dossier; it opens in the Smart Account
+ * popover the moment a wallet connects, so judges SEE a real smart account before anything is granted.
  */
 export function SmartAccountCard({
   userSA,

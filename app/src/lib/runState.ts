@@ -1,5 +1,5 @@
-// Pure run-state helpers shared by the orchestrator page, the GraphStage mapper, and panels.
-// Lifted out of page.tsx so the graph model + region components can import them without a cycle.
+// Pure run-state helpers shared by the orchestrator page, the authority chain, and panels.
+// Lifted out of page.tsx so the mission components can import them without a cycle.
 
 /** The happy-path run order. `reached` also treats 'revoked' as past every step. */
 export const ORDER = ['granted', 'redelegated', 'analyzing', 'decided', 'voting', 'voted'] as const;
