@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { Bot, Boxes, ExternalLink, Lock, ScanSearch, Scissors, User, type LucideIcon } from 'lucide-react';
 import { BASESCAN, shortHex } from '../../lib/config';
+import { ORDER } from '../../lib/runState';
 import type { Dict } from '../../lib/i18n';
 
 type Pips = { for_: number; against: number; abstain: number };
@@ -328,30 +329,57 @@ export function AuthorityChain({
   const s = status;
   const live = !!s && !['', 'idle'].includes(s);
 
+  // How far the real run has progressed (treats 'revoked' as past every stage).
+  let targetIdx = -1;
+  for (let i = 0; i < ORDER.length; i++) if (reached(ORDER[i])) targetIdx = i;
+
+  // Reveal the chain left-to-right one stage at a time: ratchet a *displayed* index up toward the
+  // real one (never ahead). Polling can jump the run status several stages at once — without this
+  // the beams + scope token would light all at once instead of flowing in sequence.
+  const [shownIdx, setShownIdx] = useState(-1);
+  useEffect(() => {
+    if (killed) {
+      if (shownIdx !== targetIdx) setShownIdx(targetIdx);
+      return;
+    }
+    if (shownIdx === targetIdx) return;
+    if (shownIdx > targetIdx) {
+      setShownIdx(targetIdx); // a fresh run reset us behind — snap back, then re-reveal
+      return;
+    }
+    const id = setTimeout(() => setShownIdx((v) => v + 1), 700);
+    return () => clearTimeout(id);
+  }, [shownIdx, targetIdx, killed]);
+
+  const r = (target: string) => shownIdx >= (ORDER as readonly string[]).indexOf(target);
+  const orchWorking = shownIdx === 0; // granted shown, narrowing toward redelegation
+  const analystWorking = shownIdx === 1 || shownIdx === 2; // received the scope → deciding
+  const analystTee = shownIdx === 2; // reasoning in the enclave
+
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1080 }}>
       <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} active={connected} killed={killed} />
-      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} active={reached('redelegated')} working={s === 'granted'} killed={killed} />
+      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} active={r('redelegated')} working={orchWorking} killed={killed} />
       <ChainNode
         nodeRef={analystRef}
         icon={ScanSearch}
         who={t.nodes.analyst.who}
         role={t.nodes.analyst.role}
         addr={parties.analyst}
-        active={reached('analyzing')}
-        working={s === 'redelegated' || s === 'analyzing'}
-        tee={s === 'analyzing'}
+        active={r('analyzing')}
+        working={analystWorking}
+        tee={analystTee}
         thinking={t.thinking}
         killed={killed}
       />
       <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active board pips={pips} />
 
-      <Beam container={containerRef} from={youRef} to={orchRef} live={reached('redelegated')} killed={killed} cutting={cutting} root />
-      <Beam container={containerRef} from={orchRef} to={analystRef} live={reached('analyzing')} killed={killed} cutting={cutting} />
-      <Beam container={containerRef} from={analystRef} to={boardRef} live={reached('voted')} killed={killed} cutting={cutting} tone="ok" />
+      <Beam container={containerRef} from={youRef} to={orchRef} live={r('redelegated')} killed={killed} cutting={cutting} root />
+      <Beam container={containerRef} from={orchRef} to={analystRef} live={r('analyzing')} killed={killed} cutting={cutting} />
+      <Beam container={containerRef} from={analystRef} to={boardRef} live={r('voted')} killed={killed} cutting={cutting} tone="ok" />
 
       {live && !killed && !cutting && (
-        <ScopeChip container={containerRef} orchRef={orchRef} analystRef={analystRef} redelegated={reached('redelegated')} label={t.scopeChip} attLabel={t.scopeChipAttenuated} />
+        <ScopeChip container={containerRef} orchRef={orchRef} analystRef={analystRef} redelegated={r('redelegated')} label={t.scopeChip} attLabel={t.scopeChipAttenuated} />
       )}
     </div>
   );
