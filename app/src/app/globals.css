@@ -363,8 +363,7 @@ html, body { height: 100%; overflow: hidden; }
 
 /* ---- Venice-TEE console: "sealed enclave" hacker terminal (Matrix-flavoured) ----
    Layering: console bg → .tee-rain (code rain, z0) → .tee-crt / .tee-sweep (z1) → content (z2). */
-.tee-console { animation: teeRise 0.44s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.tee-rain { position: absolute; inset: 0; display: block; width: 100%; height: 100%; z-index: 0; opacity: 0.16; pointer-events: none; }
+.tee-console { animation: teeRise 0.62s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .tee-crt { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.22; mix-blend-mode: soft-light;
   background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 5px); }
 .tee-sweep { position: absolute; left: 0; right: 0; top: 0; height: 20px; z-index: 1; pointer-events: none; filter: blur(1px); mix-blend-mode: screen;
@@ -376,10 +375,28 @@ html, body { height: 100%; overflow: hidden; }
 .tee-cursor { display: inline-block; width: 7px; height: 1em; margin-left: 2px; transform: translateY(2px); border-radius: 1px;
   background: var(--color-cyan); box-shadow: 0 0 10px rgba(56, 224, 255, 0.4); animation: teeBlink 0.98s steps(1, end) infinite; }
 
+/* "terminal boot open": unfold from a thin slit + scale overshoot + a bright cyan border-glow
+   flash that settles to a calm info-blue edge — a clearly visible reveal for the sealed enclave. */
 @keyframes teeRise {
-  0% { opacity: 0; transform: translateY(12px) scale(0.985); filter: blur(5px); }
-  55% { opacity: 1; filter: blur(0); }
-  100% { opacity: 1; transform: none; filter: blur(0); }
+  0% {
+    opacity: 0; transform: translateY(8px) scale(0.92); filter: blur(4px);
+    clip-path: inset(46% 0 46% 0 round 14px);
+    box-shadow: 0 0 0 1px rgba(56, 224, 255, 0), 0 0 0 -10px rgba(56, 224, 255, 0);
+  }
+  42% {
+    opacity: 1; transform: translateY(0) scale(1.015); filter: blur(0);
+    clip-path: inset(0 0 0 0 round 14px);
+    box-shadow: 0 0 0 1px rgba(56, 224, 255, 0.65), 0 0 44px -4px rgba(56, 224, 255, 0.55);
+  }
+  66% {
+    transform: scale(0.995);
+    box-shadow: 0 0 0 1px rgba(56, 224, 255, 0.38), 0 0 28px -8px rgba(56, 224, 255, 0.3);
+  }
+  100% {
+    opacity: 1; transform: none; filter: blur(0);
+    clip-path: inset(0 0 0 0 round 14px);
+    box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.18), 0 20px 50px -28px rgba(0, 0, 0, 0.8);
+  }
 }
 @keyframes teeSweep {
   0% { opacity: 0; transform: translateY(-20px); }
@@ -404,7 +421,6 @@ html, body { height: 100%; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .tee-console, .tee-boot, .tee-verdict, .tee-verdict-badge, .tee-cursor { animation: none; }
   .tee-sweep { display: none; }
-  .tee-rain { opacity: 0.07; }
 }
 
 /* track chips */

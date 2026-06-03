@@ -5,7 +5,6 @@ import { BadgeCheck, FileSignature, Lock, Sparkles } from 'lucide-react';
 import { shortHex } from '../../lib/config';
 import type { Dict } from '../../lib/i18n';
 import { Badge } from '../ui/Badge';
-import { MatrixRain } from './MatrixRain';
 import { decisionColor, TeeCursor, useTeeStream } from './teeStream';
 
 /**
@@ -38,8 +37,10 @@ export function TeeConsole({
   const tone = decisionColor(venice?.decision);
 
   return (
-    <div className="tee-console relative w-full max-w-[620px] shrink-0 overflow-hidden rounded-[14px] border border-info/25 bg-[#070b14]/85 backdrop-blur">
-      <MatrixRain className="tee-rain" />
+    <div
+      className="tee-console relative w-full max-w-[620px] shrink-0 overflow-hidden rounded-[14px] border border-info/25 bg-[#070b14]/85 backdrop-blur"
+      style={{ boxShadow: '0 0 0 1px rgba(110,168,254,0.18), 0 20px 50px -28px rgba(0,0,0,0.8)' }}
+    >
       <span className="tee-sweep" aria-hidden />
       <span className="tee-crt" aria-hidden />
 
