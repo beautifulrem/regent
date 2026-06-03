@@ -430,8 +430,13 @@ html, body { height: 100%; overflow: hidden; }
 .mc-tracks { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
 .mc-chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--color-hairline);
   background: rgba(20, 25, 37, 0.5); padding: 6px 14px; font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
-  color: var(--color-ink-mute); }
-.mc-chip.met { color: var(--color-ok); border-color: rgba(74, 222, 128, 0.3); }
+  color: var(--color-ink-mute); transition: color .35s var(--ease-fluid), border-color .35s var(--ease-fluid); }
+/* each track chip pops + glows green the moment it lights — they cascade 4337 → 7710 → A2A → TEE */
+.mc-chip.met { color: var(--color-ok); border-color: rgba(74, 222, 128, 0.3); animation: chipLight 0.55s var(--ease-snappy) both; }
+@keyframes chipLight {
+  0%   { transform: scale(0.82); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  45%  { transform: scale(1.13); box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.16), 0 0 20px rgba(74, 222, 128, 0.55); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); } }
 
 /* capability dock — x402 + 1Shot surfaced as native high-value cards */
 .mc-dock { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
@@ -563,6 +568,7 @@ html, body { height: 100%; overflow: hidden; }
   .mc-thinking { animation: none; }
   .mc-pop.right, .mc-pop.left { animation: none; }
   .mc-phase.current .pd { animation: none; }
+  .mc-chip.met { animation: none; }
 }
 
 @media (max-width: 720px) {

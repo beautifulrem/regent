@@ -104,7 +104,6 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
   const { t } = vm;
 
   const runActive = !!vm.venice || !!vm.run;
-  const granted = !!vm.grantRunId;
 
   const rail: RailItem[] = [
     { key: 'wallet', icon: Wallet, title: t.panels.wallet },
@@ -175,7 +174,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
 
         <ScopeBlock vm={vm} />
 
-        <CapabilityDock t={t} onOpen={setPanel} granted={granted} />
+        <CapabilityDock t={t} onOpen={setPanel} connected={vm.isConnected} revealIdx={revealIdx} />
       </main>
 
       <Popover side="right" open={!!panel} anchorTop={anchorTop} title={panel ? t.panels[panel] : ''} icon={activeItem?.icon} onClose={() => setPanel(null)}>
