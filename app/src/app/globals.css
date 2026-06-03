@@ -361,6 +361,52 @@ html, body { height: 100%; overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) { .mc-stance-tip { transition: none; } }
 
+/* ---- Venice-TEE console: "sealed enclave" hacker terminal (Matrix-flavoured) ----
+   Layering: console bg → .tee-rain (code rain, z0) → .tee-crt / .tee-sweep (z1) → content (z2). */
+.tee-console { animation: teeRise 0.44s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.tee-rain { position: absolute; inset: 0; display: block; width: 100%; height: 100%; z-index: 0; opacity: 0.16; pointer-events: none; }
+.tee-crt { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.22; mix-blend-mode: soft-light;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 5px); }
+.tee-sweep { position: absolute; left: 0; right: 0; top: 0; height: 20px; z-index: 1; pointer-events: none; filter: blur(1px); mix-blend-mode: screen;
+  background: linear-gradient(180deg, transparent, rgba(56, 224, 255, 0.22) 46%, rgba(246, 133, 27, 0.1) 54%, transparent);
+  animation: teeSweep 0.85s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both; }
+.tee-boot { animation: teeDecrypt 0.5s 0.14s var(--ease-fluid) both; }
+.tee-verdict { animation: teeDecrypt 0.34s var(--ease-fluid) both; }
+.tee-verdict-badge { animation: teeGlitch 0.34s steps(1, end) both; }
+.tee-cursor { display: inline-block; width: 7px; height: 1em; margin-left: 2px; transform: translateY(2px); border-radius: 1px;
+  background: var(--color-cyan); box-shadow: 0 0 10px rgba(56, 224, 255, 0.4); animation: teeBlink 0.98s steps(1, end) infinite; }
+
+@keyframes teeRise {
+  0% { opacity: 0; transform: translateY(12px) scale(0.985); filter: blur(5px); }
+  55% { opacity: 1; filter: blur(0); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes teeSweep {
+  0% { opacity: 0; transform: translateY(-20px); }
+  12% { opacity: 0.45; }
+  72% { opacity: 0.28; }
+  100% { opacity: 0; transform: translateY(360px); }
+}
+@keyframes teeDecrypt {
+  0% { opacity: 0; transform: translateY(5px); filter: blur(3px); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+@keyframes teeGlitch {
+  0% { opacity: 0; clip-path: inset(0 0 0 0); text-shadow: none; transform: translateY(3px); }
+  20% { opacity: 1; clip-path: inset(16% 0 56% 0); text-shadow: 1px 0 var(--color-cyan), -1px 0 var(--color-brand); transform: none; }
+  40% { clip-path: inset(60% 0 12% 0); text-shadow: -1px 0 var(--color-cyan), 1px 0 var(--color-info); }
+  60% { clip-path: inset(32% 0 38% 0); text-shadow: 1px 0 rgba(246, 133, 27, 0.7), -1px 0 rgba(56, 224, 255, 0.7); }
+  80% { clip-path: inset(0 0 0 0); text-shadow: 0 0 12px rgba(56, 224, 255, 0.3); }
+  100% { opacity: 1; clip-path: inset(0 0 0 0); text-shadow: none; }
+}
+@keyframes teeBlink { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tee-console, .tee-boot, .tee-verdict, .tee-verdict-badge, .tee-cursor { animation: none; }
+  .tee-sweep { display: none; }
+  .tee-rain { opacity: 0.07; }
+}
+
 /* track chips */
 .mc-tracks { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
 .mc-chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; border: 1px solid var(--color-hairline);

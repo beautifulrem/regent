@@ -9,7 +9,6 @@ import type { VoterRow } from '../../lib/useLiveTally';
 import { VoteTally } from '../VoteTally';
 import { X402TollGate } from '../X402TollGate';
 import { OneShotFinale } from '../OneShotFinale';
-import { TeeReasoningStream } from '../TeeReasoningStream';
 import { PermissionInspector } from '../PermissionInspector';
 import { TamperProbe } from '../TamperProbe';
 import { SmartAccountCard } from '../panels/SmartAccountCard';
@@ -17,6 +16,7 @@ import { ProofTimeline } from '../panels/ProofTimeline';
 import { VoteLog } from '../panels/VoteLog';
 import { VoteResultBanner } from '../panels/VoteResultBanner';
 import { TrackTag } from '../ui/Badge';
+import { TeeConsole } from './TeeConsole';
 import type { MissionVM } from '../MissionControl';
 import type { PanelKey } from './IconRail';
 
@@ -103,7 +103,7 @@ function RunBody({ vm }: { vm: MissionVM }) {
           <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-info/80">
             <Lock className="size-3" /> {t.split.private}
           </div>
-          <TeeReasoningStream venice={vm.venice} t={t} />
+          <TeeConsole venice={vm.venice} status={vm.s} killed={vm.killed} t={t} />
         </div>
       )}
       {(vm.run?.vote || vm.killed) && (
