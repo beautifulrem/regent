@@ -14,6 +14,9 @@ type DivRef = RefObject<HTMLDivElement | null>;
 // even when the real run is faster. The ratchet never runs ahead of the real status, so the analyst
 // step still waits out the genuine Venice decision time.
 const STAGE_MS = 1500;
+// Packet-travel time: a node turns ON this long after its incoming beam goes live, so the light
+// visibly crosses the wire first and *then* the Orchestrator / Analyst lights up. Matches beamTravel.
+const PACKET_MS = 850;
 
 interface ChainNodeProps {
   nodeRef: DivRef;
@@ -358,22 +361,41 @@ export function AuthorityChain({
     return () => clearTimeout(id);
   }, [shownIdx, targetIdx, killed]);
 
-  const r = (target: string) => shownIdx >= (ORDER as readonly string[]).indexOf(target);
-  const orchWorking = shownIdx === 0; // granted shown, narrowing toward redelegation
-  const analystWorking = shownIdx === 1 || shownIdx === 2; // received the scope → deciding
-  const analystTee = shownIdx === 2; // reasoning in the enclave
+  // A second, lagging index: a node only lights AFTER its incoming packet has travelled to it, so
+  // the light flows across the wire first, then the Orchestrator / Analyst turns on (PACKET_MS behind).
+  const [litIdx, setLitIdx] = useState(-1);
+  useEffect(() => {
+    if (killed) {
+      if (litIdx !== targetIdx) setLitIdx(targetIdx);
+      return;
+    }
+    if (litIdx === shownIdx) return;
+    if (litIdx > shownIdx) {
+      setLitIdx(shownIdx);
+      return;
+    }
+    const id = setTimeout(() => setLitIdx((v) => v + 1), PACKET_MS);
+    return () => clearTimeout(id);
+  }, [litIdx, shownIdx, killed]);
+
+  const idxOf = (target: string) => (ORDER as readonly string[]).indexOf(target);
+  const beamLive = (target: string) => shownIdx >= idxOf(target); // packet travels the wire
+  const nodeLit = (target: string) => litIdx >= idxOf(target); //    node turns on once it arrives
+  const orchWorking = nodeLit('redelegated') && !beamLive('analyzing'); // lit, holding the scope
+  const analystWorking = nodeLit('analyzing') && shownIdx < idxOf('decided'); // lit, deciding
+  const analystTee = analystWorking; // "thinking…" pill while deciding
 
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1080 }}>
       <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} active={connected} killed={killed} />
-      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} active={r('redelegated')} working={orchWorking} killed={killed} />
+      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} active={nodeLit('redelegated')} working={orchWorking} killed={killed} />
       <ChainNode
         nodeRef={analystRef}
         icon={ScanSearch}
         who={t.nodes.analyst.who}
         role={t.nodes.analyst.role}
         addr={parties.analyst}
-        active={r('analyzing')}
+        active={nodeLit('analyzing')}
         working={analystWorking}
         tee={analystTee}
         thinking={t.thinking}
@@ -381,12 +403,12 @@ export function AuthorityChain({
       />
       <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active board pips={pips} />
 
-      <Beam container={containerRef} from={youRef} to={orchRef} live={r('redelegated')} killed={killed} cutting={cutting} root />
-      <Beam container={containerRef} from={orchRef} to={analystRef} live={r('analyzing')} killed={killed} cutting={cutting} />
-      <Beam container={containerRef} from={analystRef} to={boardRef} live={r('voted')} killed={killed} cutting={cutting} tone="ok" />
+      <Beam container={containerRef} from={youRef} to={orchRef} live={beamLive('redelegated')} killed={killed} cutting={cutting} root />
+      <Beam container={containerRef} from={orchRef} to={analystRef} live={beamLive('analyzing')} killed={killed} cutting={cutting} />
+      <Beam container={containerRef} from={analystRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone="ok" />
 
       {live && !killed && !cutting && (
-        <ScopeChip container={containerRef} orchRef={orchRef} analystRef={analystRef} redelegated={r('redelegated')} label={t.scopeChip} attLabel={t.scopeChipAttenuated} />
+        <ScopeChip container={containerRef} orchRef={orchRef} analystRef={analystRef} redelegated={beamLive('redelegated')} label={t.scopeChip} attLabel={t.scopeChipAttenuated} />
       )}
     </div>
   );
