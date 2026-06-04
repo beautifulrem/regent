@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Scale, Scissors, ShieldCheck, TrendingUp, User, Users, type LucideIcon } from 'lucide-react';
+import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Receipt, Scale, Scissors, ShieldCheck, TrendingUp, User, Users, type LucideIcon } from 'lucide-react';
 import { LENSES, type Decision, type LensKey, type LensVerdict } from '@mandate/shared';
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
@@ -27,13 +27,16 @@ const LENS_ICON: Record<LensKey, LucideIcon> = {
 // circle's halo (rgba so inline styles can alpha them); beamDeep→beamLight is the beam gradient and
 // `packet` the travelling light. For=ok(green) · Against=bad(red) · Abstain=warn(amber) · brand=orange
 // (the spine / our cast landed) · info=cold blue (a lens still thinking).
-type ToneKey = 'brand' | 'info' | 'ok' | 'bad' | 'warn';
+type ToneKey = 'brand' | 'info' | 'ok' | 'bad' | 'warn' | 'pay';
 const TONES: Record<ToneKey, { accent: string; ring: string; bg: string; glow: string; beamDeep: string; beamLight: string; packet: string }> = {
   brand: { accent: 'var(--color-brand)', ring: 'rgba(246,133,27,.5)', bg: 'rgba(246,133,27,.15)', glow: 'rgba(246,133,27,.06)', beamDeep: 'var(--color-brand-deep)', beamLight: '#ffc879', packet: 'var(--color-brand-soft)' },
   info: { accent: 'var(--color-info)', ring: 'rgba(110,168,254,.5)', bg: 'rgba(110,168,254,.13)', glow: 'rgba(110,168,254,.07)', beamDeep: '#3b6fd0', beamLight: '#8fb6ef', packet: '#8fb6ef' },
   ok: { accent: 'var(--color-ok)', ring: 'rgba(74,222,128,.55)', bg: 'rgba(74,222,128,.12)', glow: 'rgba(74,222,128,.06)', beamDeep: '#2f9e5a', beamLight: '#6ee79a', packet: '#6ee79a' },
   bad: { accent: 'var(--color-bad)', ring: 'rgba(248,113,113,.55)', bg: 'rgba(248,113,113,.12)', glow: 'rgba(248,113,113,.06)', beamDeep: '#a23b3b', beamLight: '#f87171', packet: '#f87171' },
   warn: { accent: 'var(--color-warn)', ring: 'rgba(251,191,36,.55)', bg: 'rgba(251,191,36,.13)', glow: 'rgba(251,191,36,.07)', beamDeep: '#a87514', beamLight: '#fbbf24', packet: '#fbbf24' },
+  // gold — the x402 mUSDC payment sub-flow (budget chip / coin packet / receipt tick); distinct from
+  // the orange voting spine so "money" reads as its own thing.
+  pay: { accent: '#f5b942', ring: 'rgba(245,185,66,.5)', bg: 'rgba(245,185,66,.13)', glow: 'rgba(245,185,66,.18)', beamDeep: '#a8791f', beamLight: '#ffd470', packet: '#ffd470' },
 };
 
 /** A vote decision → its tone key (For=green, Against=red, Abstain=amber); anything else → brand. */
@@ -340,6 +343,188 @@ function ScopeChip({
   );
 }
 
+/** A small gold mUSDC budget chip floating above "You" — the AI's x402 spend allowance for this
+ *  mandate, with a live used/cap counter (driven by votesUsed). Reuses ScopeChip's float technique.
+ *  Stacks ABOVE the scope chip (-52 vs -30) so the two never overlap at rest. */
+function BudgetChip({
+  container,
+  youRef,
+  spent,
+  cap,
+  killed,
+  label,
+}: {
+  container: DivRef;
+  youRef: DivRef;
+  spent: number;
+  cap: number;
+  killed: boolean;
+  label: string;
+}) {
+  const [p, setP] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const compute = () => {
+      if (!container.current || !youRef.current) return;
+      const cr = container.current.getBoundingClientRect();
+      const r = youRef.current.getBoundingClientRect();
+      setP({ x: r.left - cr.left + r.width / 2, y: r.top - cr.top - 52 });
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (container.current) ro.observe(container.current);
+    window.addEventListener('resize', compute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', compute);
+    };
+  }, [container, youRef]);
+  if (!p) return null;
+  const T = TONES.pay;
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: p.x,
+        top: p.y,
+        transform: 'translateX(-50%)',
+        zIndex: 3,
+        pointerEvents: 'none',
+        opacity: killed ? 0.4 : 1,
+        filter: killed ? 'grayscale(1)' : 'none',
+        transition: 'opacity .3s, filter .3s',
+      }}
+    >
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '3px 9px',
+          borderRadius: 999,
+          fontSize: 11,
+          fontWeight: 700,
+          whiteSpace: 'nowrap',
+          color: '#1a0f02',
+          background: `linear-gradient(135deg, ${T.beamLight}, ${T.beamDeep})`,
+          boxShadow: `0 4px 14px -4px ${T.glow}`,
+        }}
+      >
+        <Coins size={12} /> {label} {spent}/{cap}
+      </span>
+    </div>
+  );
+}
+
+/** A single gold coin that pulses from You toward the data-feed seller (the Arbiter node carries the
+ *  analyst address) the moment the AI fetches context ('analyzing'). Renders ONLY the travelling
+ *  packet (reusing the .beam-packet keyframe — single-shot, hidden under prefers-reduced-motion); no
+ *  persistent line, so it adds no clutter to the spine. */
+function CoinPacket({
+  container,
+  from,
+  to,
+  live,
+  killed,
+}: {
+  container: DivRef;
+  from: DivRef;
+  to: DivRef;
+  live: boolean;
+  killed: boolean;
+}) {
+  const [seg, setSeg] = useState<{ x: number; y: number; dx: number; dy: number } | null>(null);
+  useEffect(() => {
+    const compute = () => {
+      if (!from.current || !to.current || !container.current) return;
+      const cr = container.current.getBoundingClientRect();
+      const a = from.current.getBoundingClientRect();
+      const b = to.current.getBoundingClientRect();
+      const rad = (r: DOMRect) => (r.width >= 56 ? 30 : 19);
+      const aC = { x: a.left - cr.left + a.width / 2, y: a.top - cr.top + rad(a) };
+      const bC = { x: b.left - cr.left + b.width / 2, y: b.top - cr.top + rad(b) };
+      const dx = bC.x - aC.x;
+      const dy = bC.y - aC.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const start = { x: aC.x + (dx / len) * (rad(a) + 4), y: aC.y + (dy / len) * (rad(a) + 4) };
+      const end = { x: bC.x - (dx / len) * (rad(b) + 4), y: bC.y - (dy / len) * (rad(b) + 4) };
+      setSeg({ x: start.x, y: start.y, dx: end.x - start.x, dy: end.y - start.y });
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (container.current) ro.observe(container.current);
+    window.addEventListener('resize', compute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', compute);
+    };
+  }, [container, from, to, live]);
+  if (!seg || !live || killed) return null;
+  return (
+    <span
+      className="beam-packet"
+      style={
+        {
+          left: seg.x,
+          top: seg.y,
+          color: TONES.pay.packet,
+          '--dx': `${seg.dx}px`,
+          '--dy': `${seg.dy}px`,
+        } as CSSProperties
+      }
+    />
+  );
+}
+
+/** A small gold receipt tick pinned to the seller (Arbiter) node once a real toll has settled for the
+ *  shown proposal — links to the on-chain settlement tx. The main graph's "payment happened" proof. */
+function ReceiptTick({ container, nodeRef, txHash }: { container: DivRef; nodeRef: DivRef; txHash?: string }) {
+  const [p, setP] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const compute = () => {
+      if (!container.current || !nodeRef.current) return;
+      const cr = container.current.getBoundingClientRect();
+      const r = nodeRef.current.getBoundingClientRect();
+      setP({ x: r.left - cr.left + r.width / 2 + 24, y: r.top - cr.top + 8 });
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (container.current) ro.observe(container.current);
+    window.addEventListener('resize', compute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', compute);
+    };
+  }, [container, nodeRef]);
+  if (!p) return null;
+  const T = TONES.pay;
+  const tick = (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        padding: '2px 5px',
+        borderRadius: 999,
+        color: '#1a0f02',
+        background: `linear-gradient(135deg, ${T.beamLight}, ${T.beamDeep})`,
+        boxShadow: `0 3px 10px -3px ${T.glow}`,
+      }}
+    >
+      <Receipt size={11} strokeWidth={2.25} />
+    </span>
+  );
+  return (
+    <div style={{ position: 'absolute', left: p.x, top: p.y, transform: 'translate(-50%,-50%)', zIndex: 4, pointerEvents: txHash ? 'auto' : 'none' }}>
+      {txHash ? (
+        <a href={`${BASESCAN}/tx/${txHash}`} target="_blank" rel="noreferrer" title="x402 toll settled ↗">
+          {tick}
+        </a>
+      ) : (
+        tick
+      )}
+    </div>
+  );
+}
+
 export interface ChainParties {
   you?: string;
   orch?: string;
@@ -366,6 +551,10 @@ export function AuthorityChain({
   lenses,
   synthDecision,
   votedHere,
+  paymentCap,
+  paymentSpent,
+  tollSettled,
+  tollTxHash,
 }: {
   t: Dict;
   parties: ChainParties;
@@ -379,6 +568,14 @@ export function AuthorityChain({
   synthDecision?: string;
   /** true when OUR vote has landed on the currently-shown proposal — flips the VoteBoard to orange. */
   votedHere?: boolean;
+  /** the AI's cumulative x402 budget in queries (= mUSDC); 0/undefined hides the budget chip. */
+  paymentCap?: number;
+  /** how many of that budget have been spent (= votesUsed). */
+  paymentSpent?: number;
+  /** a real toll settled for the shown proposal — lights the receipt tick at the seller node. */
+  tollSettled?: boolean;
+  /** the settlement tx for the tick's link. */
+  tollTxHash?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const youRef = useRef<HTMLDivElement>(null);
@@ -501,6 +698,14 @@ export function AuthorityChain({
           icon={scope.icon}
         />
       )}
+
+      {/* x402 sub-flow welded onto the spine: budget chip above You, a coin pulsing You->seller while
+          the AI fetches context, and a receipt tick at the seller once the toll settles on-chain. */}
+      {connected && !!paymentCap && (
+        <BudgetChip container={containerRef} youRef={youRef} spent={paymentSpent ?? 0} cap={paymentCap} killed={killed} label={t.x402.buyerYou} />
+      )}
+      <CoinPacket container={containerRef} from={youRef} to={synthRef} live={beamLive('analyzing')} killed={killed} />
+      {tollSettled && !killed && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={tollTxHash} />}
     </div>
   );
 }

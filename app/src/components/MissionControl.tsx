@@ -9,6 +9,7 @@ import type { SmartAccount } from '../lib/wallet';
 import type { Dict, Lang } from '../lib/i18n';
 import { ORDER, reached } from '../lib/runState';
 import { useRatchet } from '../lib/useRatchet';
+import { DEFAULT_QUERY_BUDGET } from '../lib/x402-toll';
 import { decisionToSupport, useLiveTally, withOptimisticVote } from '../lib/useLiveTally';
 import { ErrorToast } from './panels/ErrorToast';
 import { type VoteRecord } from './panels/VoteLog';
@@ -171,6 +172,10 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
             lenses={vm.lenses}
             synthDecision={vm.venice?.decision}
             votedHere={youVotedHere}
+            paymentCap={vm.grantRunId ? (vm.boundMode === 'days' ? DEFAULT_QUERY_BUDGET : vm.maxVotes) : 0}
+            paymentSpent={vm.votesUsed}
+            tollSettled={!!vm.run?.toll && youVotedHere && !vm.killed}
+            tollTxHash={vm.run?.toll?.txHash}
           />
         </div>
 
