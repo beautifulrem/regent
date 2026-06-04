@@ -4,6 +4,7 @@ import {
   mapAttestation,
   parseDecision,
   resolveTeeModel,
+  stripReasoningMeta,
   toVeniceTrace,
   type AnalysisResult,
   type TeeAttestation,
@@ -118,5 +119,26 @@ describe('toVeniceTrace', () => {
 
   it('still validates without an attestation (header-only TEE proof)', () => {
     expect(() => VeniceTraceSchema.parse(toVeniceTrace(result))).not.toThrow();
+  });
+});
+
+describe('stripReasoningMeta', () => {
+  it('drops formatting self-talk but keeps the genuine deliberation', () => {
+    const leaked =
+      "We need to weigh verdicts. All four are 'For'. So final decision is For. " +
+      'Need to output one line minified JSON: {"decision":"For","rationale":"..."} with rationale ≤24 words, citing decisive lenses. ' +
+      'Should mention fiscal, growth, security, participation lenses. Must be ≤24 words.';
+    expect(stripReasoningMeta(leaked)).toBe("We need to weigh verdicts. All four are 'For'. So final decision is For.");
+  });
+
+  it('keeps genuine proposal reasoning untouched', () => {
+    const genuine =
+      'We need to evaluate the proposal: a 12,000 USDC quarterly budget with 2-of-3 multisig and clawback. ' +
+      'The mandate favours lean, milestone-gated spending; this aligns.';
+    expect(stripReasoningMeta(genuine)).toBe(genuine);
+  });
+
+  it('returns an empty string when every sentence is formatting meta', () => {
+    expect(stripReasoningMeta('Output one line of minified JSON. Must be ≤24 words.')).toBe('');
   });
 });

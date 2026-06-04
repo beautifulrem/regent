@@ -206,7 +206,9 @@ async function completeDecision(
   };
   const message = json.choices?.[0]?.message;
   const content = message?.content || message?.reasoning_content || '';
-  const reasoning = capExcerpt((message?.reasoning_content ?? '').trim(), 300) || undefined;
+  // Strip the model's formatting self-talk BEFORE capping, so the UI's reasoning stream shows genuine
+  // deliberation rather than "output one line minified JSON, ≤24 words…" (see stripReasoningMeta).
+  const reasoning = capExcerpt(stripReasoningMeta((message?.reasoning_content ?? '').trim()), 300) || undefined;
   return { decision: parseDecision(content), model: resolved, tee, usage: json.usage, reasoning };
 }
 
@@ -265,6 +267,24 @@ export function capExcerpt(s: string, max: number): string {
     if (space >= floor) end = space;
   }
   return cut.slice(0, end).trimEnd() + '…';
+}
+
+/**
+ * Pure: drop chain-of-thought sentences that merely restate the OUTPUT FORMAT — sentences mentioning
+ * JSON, word/char/token limits, "output one line", "cite the lenses", etc. Some TEE models (notably
+ * gpt-oss) narrate the task's formatting constraints in reasoning_content despite the system prompt
+ * forbidding it, which then leaks into the UI's TEE reasoning stream. This keeps only the genuine
+ * deliberation. Returns '' when every sentence was meta (callers fall back to a generic line).
+ */
+export function stripReasoningMeta(reasoning: string): string {
+  const META =
+    /\bjson\b|minif|one[\s-]?line|≤\s*\d|<=\s*\d|\b\d+\s*(?:words?|tokens?|chars?|characters?)\b|\boutput\b|\bformat(?:ting)?\b|\binstruction|\bshould\s+(?:mention|cite|include|output)|cit(?:e|ing)\b[^.。]*\blens|\brationale\b\s*(?:≤|<=|:)/i;
+  return reasoning
+    .split(/(?<=[.。!?…])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s && !META.test(s))
+    .join(' ')
+    .trim();
 }
 
 /**
