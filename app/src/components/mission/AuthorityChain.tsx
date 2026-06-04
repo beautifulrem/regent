@@ -422,9 +422,10 @@ export function AuthorityChain({
   const scope = SCOPE_STAGES[chipPos];
 
   // VoteBoard color = the live tally result (passing=green / failing=red), flipping to brand-orange once
-  // OUR vote has landed on the CURRENTLY-shown proposal (votedHere). The fan-in beams (lens→Arbiter) and
-  // the cast beam (Arbiter→board) carry the verdict color instead of the old fixed orange / green.
-  const boardTone: ToneKey = votedHere ? 'brand' : pips.for_ > pips.against ? 'ok' : 'bad';
+  // OUR vote has landed on the CURRENTLY-shown proposal (votedHere). Once the chain is SEVERED the orange
+  // "voted" state drops away — the board returns to the plain tally color. The fan-in beams (lens→Arbiter)
+  // and the cast beam (Arbiter→board) carry the verdict color instead of the old fixed orange / green.
+  const boardTone: ToneKey = !killed && votedHere ? 'brand' : pips.for_ > pips.against ? 'ok' : 'bad';
 
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center' }}>

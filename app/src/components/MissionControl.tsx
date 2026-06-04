@@ -178,7 +178,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
 
         <ScopeBlock vm={vm} />
 
-        <CapabilityDock t={t} onOpen={setPanel} connected={vm.isConnected} revealIdx={revealIdx} />
+        <CapabilityDock t={t} onOpen={setPanel} connected={vm.isConnected} revealIdx={revealIdx} killed={vm.killed} />
       </main>
 
       <Popover side="right" open={!!panel} anchorTop={anchorTop} title={panel ? t.panels[panel] : ''} icon={activeItem?.icon} onClose={() => setPanel(null)}>

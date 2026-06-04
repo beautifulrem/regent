@@ -239,7 +239,7 @@ export default function Home() {
   // Standing authority in action: vote on the CURRENT proposal reusing the existing grant — NO new
   // signature. Succeeds while the grant is live; reverts on-chain once revoked / exhausted / expired.
   async function onVoteActive() {
-    if (!grantRunId || busy) return;
+    if (!grantRunId || busy || recallTx) return; // chain severed → the mandate is dead, no more votes
     const mine = session.current;
     setBusy(true);
     setError(null);

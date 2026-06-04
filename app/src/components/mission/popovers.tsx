@@ -75,7 +75,7 @@ function WalletBody({ vm }: { vm: MissionVM }) {
         Smart Accounts · ERC-4337
       </TrackTag>
       <SmartAccountCard userSA={vm.userSA} eoaAddress={vm.address} t={t} />
-      {vm.rootDel && (
+      {vm.rootDel && !vm.killed && (
         <>
           <div className="border-t border-hairline" />
           <PermissionInspector rootDel={vm.rootDel} chainId={CHAIN_ID} bare />
@@ -85,6 +85,14 @@ function WalletBody({ vm }: { vm: MissionVM }) {
               <TamperProbe rootDel={vm.rootDel} governor={VOTE_BOARD_ADDRESS} proposalId={vm.grantedProposalId} chainId={CHAIN_ID} bare />
             </>
           )}
+        </>
+      )}
+      {vm.rootDel && vm.killed && (
+        <>
+          <div className="border-t border-hairline" />
+          <div className="rounded-lg border border-bad/30 bg-bad/[0.06] px-3 py-2.5 text-[12px] leading-relaxed text-bad">
+            {t.severedBold} {t.severedRest}
+          </div>
         </>
       )}
     </div>

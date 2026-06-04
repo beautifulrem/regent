@@ -9,15 +9,16 @@ import type { PanelKey } from './IconRail';
  * met-track micro badges (4337 · 7710 · A2A · TEE) below — the judge-readable "what this proves"
  * row. Clicking a card opens its popover.
  */
-export function CapabilityDock({ t, onOpen, connected, revealIdx }: { t: Dict; onOpen: (key: PanelKey) => void; connected: boolean; revealIdx: number }) {
+export function CapabilityDock({ t, onOpen, connected, revealIdx, killed }: { t: Dict; onOpen: (key: PanelKey) => void; connected: boolean; revealIdx: number; killed?: boolean }) {
   // Light up in sequence, in lockstep with the authority chain (revealIdx = the same staged index):
   // 4337 on connect, then 7710 (granted = stage 0) → A2A (redelegated = 1) → TEE (analyzing = 2). Each
   // chip pops + glows as it lights (see .mc-chip.met), so the proofs cascade instead of flipping at once.
+  // Once the chain is severed they all go dark — the mandate (and its proofs) is dead.
   const met = [
-    { label: '4337', on: connected },
-    { label: '7710', on: revealIdx >= 0 },
-    { label: 'A2A', on: revealIdx >= 1 },
-    { label: 'TEE', on: revealIdx >= 2 },
+    { label: '4337', on: connected && !killed },
+    { label: '7710', on: revealIdx >= 0 && !killed },
+    { label: 'A2A', on: revealIdx >= 1 && !killed },
+    { label: 'TEE', on: revealIdx >= 2 && !killed },
   ];
   return (
     <div className="flex flex-col items-center gap-3.5">

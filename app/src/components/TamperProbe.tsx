@@ -15,7 +15,7 @@ import { baseSepolia } from 'viem/chains';
 import { Ban, CheckCircle2, Radar } from 'lucide-react';
 import { RPC_URL } from '../lib/config';
 import { cn } from '../lib/cn';
-import { formatMessage, getDict, resolveLang } from '../lib/i18n';
+import { getDict, resolveLang } from '../lib/i18n';
 import { Panel, PanelHeader } from './ui/Panel';
 import { Badge } from './ui/Badge';
 
@@ -76,10 +76,13 @@ export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = fal
   const timedOut = honest === 'timeout' || tampered === 'timeout';
   const checking = honest === 'checking' || tampered === 'checking';
 
-  const resultLabel = (status: ProbeStatus) => {
+  const resultLabel = (status: ProbeStatus, kind: 'honest' | 'tampered') => {
     if (status === 'checking') return t.tamperProbeChecking;
     if (status === 'pass') return t.tamperProbePass;
-    if (status === 'revert') return formatMessage(t.tamperProbeRevert, { enforcer: 'AllowedMethodsEnforcer' });
+    // plain-language reason instead of the raw enforcer name: the tampered call is blocked because the
+    // scope only allows castVote (it can never move funds); the honest call only reverts when the mandate
+    // itself is no longer redeemable (revoked / expired / exhausted).
+    if (status === 'revert') return kind === 'tampered' ? t.tamperProbeRevertFunds : t.tamperProbeRevertDead;
     if (status === 'timeout') return t.tamperProbeFallback;
     return t.tamperProbeIdle;
   };
@@ -130,13 +133,13 @@ export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = fal
           <span className="flex items-center gap-2 text-[13px] text-ink-soft">
             <CheckCircle2 className="size-4 text-ok" /> {t.tamperProbeHonest}
           </span>
-          <Badge tone={badgeTone(honest)}>{resultLabel(honest)}</Badge>
+          <Badge tone={badgeTone(honest)}>{resultLabel(honest, 'honest')}</Badge>
         </div>
         <div className={cn('flex items-center justify-between gap-3 rounded-xl border bg-surface-2/60 px-3.5 py-3', rowBorder(tampered))}>
           <span className="flex items-center gap-2 text-[13px] text-ink-soft">
             <Ban className="size-4 text-bad" /> {t.tamperProbeTampered}
           </span>
-          <Badge tone={badgeTone(tampered)}>{resultLabel(tampered)}</Badge>
+          <Badge tone={badgeTone(tampered)}>{resultLabel(tampered, 'tampered')}</Badge>
         </div>
       </div>
       {timedOut && <div className="mt-3 text-[12px] text-warn">{t.tamperProbeTimeout}</div>}

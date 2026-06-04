@@ -49,9 +49,8 @@ describe('voteActiveDisabled', () => {
     expect(voteActiveDisabled({ ...base, running: true })).toBe(true);
   });
 
-  it('STAYS enabled after the chain is killed — the judge fires one more vote to watch it revert on-chain', () => {
-    expect(voteActiveDisabled({ ...base, killed: true })).toBe(false);
-    // killed overrides everything: even a lingering run does not lock the kill-switch proof
-    expect(voteActiveDisabled({ ...base, killed: true, running: true })).toBe(false);
+  it('is disabled once the chain is killed — the severed mandate is dead, no more votes', () => {
+    expect(voteActiveDisabled({ ...base, killed: true })).toBe(true);
+    expect(voteActiveDisabled({ ...base, killed: true, running: true })).toBe(true);
   });
 });

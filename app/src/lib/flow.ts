@@ -27,14 +27,14 @@ export interface VoteActiveGateState {
 }
 
 /**
- * Whether the "let the agent vote this proposal" action is disabled. It needs an existing
- * standing grant and nothing in flight — BUT it stays ENABLED once the chain is killed, so the
- * judge can fire one more vote and watch the redemption get rejected on-chain (the kill-switch
- * proof). A killed chain therefore overrides the in-flight lock.
+ * Whether the "let the agent vote this proposal" action is disabled. It needs an existing standing
+ * grant and nothing in flight, and it goes dead once the chain is SEVERED — the mandate is revoked,
+ * so the button must not be clickable (and must not bump the vote quota for a vote that would only
+ * revert on-chain). The kill is shown by the severed graph + the dead cockpit, not by firing again.
  */
 export function voteActiveDisabled({ hasGrant, busy, running, killed }: VoteActiveGateState): boolean {
   if (!hasGrant) return true;
   if (busy) return true;
-  if (killed) return false;
+  if (killed) return true;
   return running;
 }
