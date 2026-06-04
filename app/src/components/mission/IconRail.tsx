@@ -10,6 +10,8 @@ export interface RailItem {
   title: string;
   /** Small brand dot in the corner (e.g. a live run on the Run button). */
   dot?: boolean;
+  /** Inert + non-clickable (e.g. x402 before its first real per-vote settlement). */
+  disabled?: boolean;
 }
 
 /**
@@ -36,11 +38,12 @@ export function IconRail({
           <button
             key={it.key}
             type="button"
-            className={`mc-rail-btn${active === it.key ? ' active' : ''}`}
+            className={`mc-rail-btn${active === it.key ? ' active' : ''}${it.disabled ? ' disabled' : ''}`}
             title={it.title}
             aria-label={it.title}
             aria-pressed={active === it.key}
-            onClick={() => onSelect(it.key)}
+            aria-disabled={it.disabled}
+            onClick={() => !it.disabled && onSelect(it.key)}
           >
             <Icon className="size-[19px]" strokeWidth={1.9} />
             {it.dot && <span className="absolute right-1 top-1 size-1.5 rounded-full bg-brand" />}

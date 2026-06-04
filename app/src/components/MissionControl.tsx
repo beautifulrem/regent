@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type RefObject } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 import type { Address } from 'viem';
 import { Activity, Coins, Rocket, Vote, Wallet } from 'lucide-react';
 import { VOTE_BOARD_ADDRESS, type DaoProposal, type Delegation, type RunStatus } from '@mandate/shared';
@@ -106,14 +106,22 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
   const { t } = vm;
 
   const runActive = !!vm.venice || !!vm.run;
+  // x402 is bound to a REAL per-vote settlement: it only activates once a vote has settled a toll
+  // (which implies a standing grant + a completed on-chain vote). Until then it's inert + non-clickable.
+  const x402Enabled = !!vm.run?.toll && !vm.killed;
 
   const rail: RailItem[] = [
     { key: 'wallet', icon: Wallet, title: t.panels.wallet },
     { key: 'tally', icon: Vote, title: t.panels.tally },
-    { key: 'x402', icon: Coins, title: t.panels.x402 },
+    { key: 'x402', icon: Coins, title: t.panels.x402, disabled: !x402Enabled },
     { key: 'oneshot', icon: Rocket, title: t.panels.oneshot },
     { key: 'run', icon: Activity, title: t.panels.run, dot: runActive },
   ];
+
+  // close the x402 bubble if it loses eligibility while open (proposal switched away / chain severed)
+  useEffect(() => {
+    if (panel === 'x402' && !x402Enabled) setPanel(null);
+  }, [panel, x402Enabled]);
 
   const idx = panel ? rail.findIndex((r) => r.key === panel) : -1;
   const anchorTop = RAIL_TOP + (idx < 0 ? 0 : idx) * RAIL_STEP;
@@ -183,7 +191,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
 
         <ScopeBlock vm={vm} />
 
-        <CapabilityDock t={t} onOpen={setPanel} connected={vm.isConnected} revealIdx={revealIdx} killed={vm.killed} />
+        <CapabilityDock t={t} onOpen={setPanel} connected={vm.isConnected} revealIdx={revealIdx} killed={vm.killed} x402Enabled={x402Enabled} />
       </main>
 
       <Popover side="right" open={!!panel} anchorTop={anchorTop} title={panel ? t.panels[panel] : ''} icon={activeItem?.icon} onClose={() => setPanel(null)}>

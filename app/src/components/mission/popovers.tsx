@@ -49,7 +49,6 @@ export function PopoverBody({
           toll={vm.killed ? undefined : vm.run?.toll}
           queryCount={vm.votesUsed}
           cap={vm.grantRunId ? (vm.boundMode === 'days' ? DEFAULT_QUERY_BUDGET : vm.maxVotes) : undefined}
-          proposalId={vm.grantedProposalId ?? vm.activeProposal.id}
         />
       ) : null;
     case 'oneshot':

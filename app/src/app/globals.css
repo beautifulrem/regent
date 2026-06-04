@@ -273,6 +273,8 @@ html, body { height: 100%; overflow: hidden; }
 .mc-rail-btn:hover { color: var(--color-ink); border-color: var(--color-line); background: rgba(27, 34, 49, 0.7); filter: none; }
 .mc-rail-btn.active { color: var(--color-brand); border-color: rgba(246, 133, 27, 0.5); background: rgba(246, 133, 27, 0.12);
   box-shadow: 0 0 18px -8px var(--color-brand), inset 0 0 0 1px rgba(246, 133, 27, 0.2); }
+.mc-rail-btn.disabled { opacity: 0.4; cursor: not-allowed; }
+.mc-rail-btn.disabled:hover { color: var(--color-ink-mute); border-color: var(--color-hairline); background: rgba(20, 25, 37, 0.5); }
 
 /* centered focal column (the only scroller) */
 .mc-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
@@ -467,6 +469,11 @@ html, body { height: 100%; overflow: hidden; }
 .mc-cap.orange:hover { border-color: rgba(246, 133, 27, 0.6); box-shadow: 0 12px 30px -14px var(--color-brand-glow); }
 .mc-cap.cyan { border-color: rgba(56, 224, 255, 0.3); }
 .mc-cap.cyan:hover { border-color: rgba(56, 224, 255, 0.6); box-shadow: 0 12px 30px -14px rgba(56, 224, 255, 0.4); }
+/* x402 capability before its first real per-vote settlement: visible (so users see what's coming)
+   but clearly inert — no hover lift, not clickable. Neutral grey, NOT a broken/error look. */
+.mc-cap.inert { opacity: 0.5; filter: grayscale(0.25) brightness(0.9); cursor: not-allowed; border-color: var(--color-hairline) !important; }
+.mc-cap.inert:hover { transform: none; box-shadow: none; }
+.mc-cap.inert .mc-cap-ic { box-shadow: none; }
 .mc-cap-ic { width: 38px; height: 38px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; }
 .mc-cap.orange .mc-cap-ic { color: var(--color-brand); background: rgba(246, 133, 27, 0.12); box-shadow: 0 0 22px -8px var(--color-brand); }
 .mc-cap.cyan .mc-cap-ic { color: var(--color-cyan); background: rgba(56, 224, 255, 0.12); box-shadow: 0 0 22px -8px var(--color-cyan); }

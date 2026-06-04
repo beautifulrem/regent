@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { animate, useReducedMotion } from 'motion/react';
-import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Receipt, Scale, Scissors, ShieldCheck, TrendingUp, User, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Receipt, Scale, Scissors, ShieldCheck, Sparkles, TrendingUp, User, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { LENSES, type Decision, type LensKey, type LensVerdict } from '@mandate/shared';
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
@@ -424,11 +424,16 @@ function BudgetChip({
  *  length (CSS fixed-duration can't); the spin / wallet pulse / ring / data squares are CSS. */
 type PayPoint = { x: number; y: number };
 interface PayGeom {
-  pts: [PayPoint, PayPoint, PayPoint];
+  w: number;
+  h: number;
+  pts: [PayPoint, PayPoint, PayPoint]; // coin path you→orch→synth
   segLens: [number, number];
   total: number;
-  you: PayPoint;
-  synth: PayPoint;
+  you: PayPoint; // payer wallet (you edge)
+  synth: PayPoint; // payee wallet / coin landing (synth edge toward orch)
+  venice: PayPoint; // Venice AI satellite node center
+  venReqFrom: PayPoint; // synth edge toward Venice (data leaves the seller here)
+  venReqTo: PayPoint; // Venice edge toward synth (data arrives here)
 }
 
 /** Position along the You→Orchestrator→seller polyline at progress p∈[0,1]. */
@@ -467,7 +472,8 @@ function PaymentFlow({
   const synthWalletRef = useRef<HTMLSpanElement>(null);
   const curRef = useRef<PayPoint | null>(null);
   const [geom, setGeom] = useState<PayGeom | null>(null);
-  const [burst, setBurst] = useState(0); // bumps on each landing to (re)spawn the data-stream squares + ring
+  // transient seller↔Venice data exchange after the toll lands: req (终裁→Venice) → resp (Venice→终裁) → done
+  const [data, setData] = useState<'idle' | 'req' | 'resp' | 'done'>('idle');
 
   useEffect(() => {
     const compute = () => {
@@ -489,11 +495,27 @@ function PaymentFlow({
       const C = center(c);
       const youEdge = along(A, B, rad(a) + 6); // coin leaves the wallet just outside the You circle
       const synthEdge = along(C, B, rad(c) + 6); // and lands just outside the seller circle
+      // Venice AI satellite, upper-right of the Arbiter/seller (off the flex spine); the funded seller
+      // queries it. Data leaves/arrives at the trimmed edges so particles never fly into the circles.
+      const venice: PayPoint = { x: C.x + 58, y: C.y - 50 };
+      const venReqFrom = along(C, venice, rad(c) + 5);
+      const venReqTo = along(venice, C, 19);
       const segLens: [number, number] = [
         Math.hypot(B.x - youEdge.x, B.y - youEdge.y),
         Math.hypot(synthEdge.x - B.x, synthEdge.y - B.y),
       ];
-      setGeom({ pts: [youEdge, B, synthEdge], segLens, total: segLens[0] + segLens[1], you: youEdge, synth: synthEdge });
+      setGeom({
+        w: cr.width,
+        h: cr.height,
+        pts: [youEdge, B, synthEdge],
+        segLens,
+        total: segLens[0] + segLens[1],
+        you: youEdge,
+        synth: synthEdge,
+        venice,
+        venReqFrom,
+        venReqTo,
+      });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -535,7 +557,7 @@ function PaymentFlow({
           coin.style.opacity = '0';
           curRef.current = null;
           repulse(synthWalletRef);
-          setBurst((n) => n + 1); // fire the gold "clink" ring + the cyan data stream back to You
+          setData('req'); // coin deposited → the funded seller now queries Venice (req → resp → done)
         },
       });
       return () => controls.stop();
@@ -560,6 +582,22 @@ function PaymentFlow({
     curRef.current = null;
   }, [geom, active, settled, killed, reduce]);
 
+  // transient data exchange: req → resp → done (auto-clears; no infinite loop). reduced-motion jumps to done.
+  useEffect(() => {
+    if (data !== 'req' && data !== 'resp') return;
+    if (reduce) {
+      setData('done');
+      return;
+    }
+    const t = setTimeout(() => setData(data === 'req' ? 'resp' : 'done'), 820);
+    return () => clearTimeout(t);
+  }, [data, reduce]);
+
+  // reset when the toll is no longer current (proposal switched away, or chain severed)
+  useEffect(() => {
+    if (!settled || killed) setData('idle');
+  }, [settled, killed]);
+
   if (!geom) return null;
   const dim: CSSProperties | undefined = killed ? { opacity: 0.4, filter: 'grayscale(1)' } : undefined;
   return (
@@ -573,24 +611,34 @@ function PaymentFlow({
       <div ref={coinRef} className="pay-coin" style={{ opacity: 0, transform: `translate3d(${geom.you.x - 9}px, ${geom.you.y - 9}px, 0)` }}>
         <div className="pay-coin-face" />
       </div>
-      {burst > 0 && !killed && (
+      {settled && !killed && (
         <>
-          <span key={`ring-${burst}`} className="pay-ring" style={{ left: geom.synth.x, top: geom.synth.y }} />
-          {[0, 1, 2, 3, 4].map((i) => (
-            <span
-              key={`data-${burst}-${i}`}
-              className="data-packet"
-              style={
-                {
-                  left: geom.synth.x,
-                  top: geom.synth.y,
-                  '--dx': `${geom.you.x - geom.synth.x}px`,
-                  '--dy': `${geom.you.y - geom.synth.y}px`,
-                  animationDelay: `${i * 0.16}s`,
-                } as CSSProperties
-              }
-            />
-          ))}
+          {/* faint dashed channel between the seller and Venice */}
+          <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
+            <line x1={geom.venReqFrom.x} y1={geom.venReqFrom.y} x2={geom.venReqTo.x} y2={geom.venReqTo.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={0.4} />
+          </svg>
+          {/* Venice AI satellite — the platform the funded seller queries with the toll */}
+          <div style={{ position: 'absolute', left: geom.venice.x, top: geom.venice.y, transform: 'translate(-50%,-50%)', zIndex: 3, pointerEvents: 'none', textAlign: 'center', ...dim }}>
+            <span style={{ display: 'grid', placeItems: 'center', width: 30, height: 30, margin: '0 auto', borderRadius: 999, border: '1.5px solid var(--color-info)', background: 'rgba(20,25,37,.7)', color: 'var(--color-info)', boxShadow: '0 0 0 4px rgba(110,168,254,.10), 0 0 20px -7px var(--color-info)' }}>
+              <Sparkles size={15} />
+            </span>
+            <div style={{ marginTop: 3, fontFamily: 'var(--font-display)', fontSize: 9.5, fontWeight: 700, color: 'var(--color-info)', whiteSpace: 'nowrap' }}>Venice AI</div>
+          </div>
+          {/* gold "clink" ring the moment the coin is deposited */}
+          {data === 'req' && <span key="pay-ring" className="pay-ring" style={{ left: geom.synth.x, top: geom.synth.y }} />}
+          {/* transient AI-data exchange: request 终裁→Venice, then response Venice→终裁, then gone */}
+          {(data === 'req' || data === 'resp') &&
+            [0, 1, 2].map((i) => {
+              const from = data === 'req' ? geom.venReqFrom : geom.venReqTo;
+              const to = data === 'req' ? geom.venReqTo : geom.venReqFrom;
+              return (
+                <span
+                  key={`${data}-${i}`}
+                  className="data-packet"
+                  style={{ left: from.x, top: from.y, '--dx': `${to.x - from.x}px`, '--dy': `${to.y - from.y}px`, animationDelay: `${i * 0.13}s` } as CSSProperties}
+                />
+              );
+            })}
         </>
       )}
     </>
