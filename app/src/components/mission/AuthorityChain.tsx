@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { Bot, Boxes, Coins, ExternalLink, Lock, Scale, Scissors, ShieldCheck, TrendingUp, User, Users, type LucideIcon } from 'lucide-react';
+import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Scale, Scissors, ShieldCheck, TrendingUp, User, Users, type LucideIcon } from 'lucide-react';
 import { LENSES, type Decision, type LensKey, type LensVerdict } from '@mandate/shared';
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
@@ -288,30 +288,40 @@ function ScopeChip({
   youRef,
   orchRef,
   synthRef,
+  boardRef,
   pos,
   attenuated,
   label,
+  icon: Icon,
 }: {
   container: DivRef;
   youRef: DivRef;
   orchRef: DivRef;
   synthRef: DivRef;
-  pos: 'you' | 'orch' | 'synth';
+  boardRef: DivRef;
+  pos: 'you' | 'orch' | 'synth' | 'board';
   attenuated: boolean;
   label: string;
+  icon: LucideIcon;
 }) {
-  const [xs, setXs] = useState<{ you: number; orch: number; synth: number; topY: number } | null>(null);
+  const [xs, setXs] = useState<{ you: number; orch: number; synth: number; board: number; topY: number } | null>(null);
   useEffect(() => {
     const compute = () => {
-      if (!container.current || !youRef.current || !orchRef.current || !synthRef.current) return;
+      if (!container.current || !youRef.current || !orchRef.current || !synthRef.current || !boardRef.current) return;
       const cr = container.current.getBoundingClientRect();
       const cx = (n: HTMLDivElement) => {
         const r = n.getBoundingClientRect();
         return r.left - cr.left + r.width / 2;
       };
-      // float the token just above the You / Orch / Synth circle row (they share one vertical centre).
+      // float the token just above the You / Orch / Arbiter / Board circle row (they share one centre).
       const orchTop = orchRef.current.getBoundingClientRect().top - cr.top;
-      setXs({ you: cx(youRef.current), orch: cx(orchRef.current), synth: cx(synthRef.current), topY: orchTop - 30 });
+      setXs({
+        you: cx(youRef.current),
+        orch: cx(orchRef.current),
+        synth: cx(synthRef.current),
+        board: cx(boardRef.current),
+        topY: orchTop - 30,
+      });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -321,10 +331,11 @@ function ScopeChip({
       ro.disconnect();
       window.removeEventListener('resize', compute);
     };
-  }, [container, youRef, orchRef, synthRef]);
+  }, [container, youRef, orchRef, synthRef, boardRef]);
   if (!xs) return null;
-  // The scope token (the delegation) rides You → Orchestrator → Arbiter/终裁 (the cast point); the four
-  // lenses are decision agents, not delegation hops, so the token floats over them.
+  // The scope token (the delegation) rides You → Orchestrator → Arbiter (the cast point) → VoteBoard
+  // (the on-chain vote); the four lenses are decision agents, not delegation hops, so it floats over them.
+  // It glides between the circle x-positions (left transition) while its icon+label morph in (keyed).
   const x = xs[pos];
   return (
     <div style={{ position: 'absolute', left: x, top: xs.topY, transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none', transition: 'left .85s var(--ease-fluid)' }}>
@@ -332,7 +343,6 @@ function ScopeChip({
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 4,
           padding: '3px 9px',
           borderRadius: 999,
           fontSize: 11,
@@ -345,7 +355,9 @@ function ScopeChip({
           transition: 'transform .5s var(--ease-fluid)',
         }}
       >
-        <Lock size={12} /> {label}
+        <span key={pos} className="mc-scopechip-morph" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Icon size={12} /> {label}
+        </span>
       </span>
     </div>
   );
@@ -376,6 +388,7 @@ export function AuthorityChain({
   pips,
   lenses,
   synthDecision,
+  votedHere,
 }: {
   t: Dict;
   parties: ChainParties;
@@ -387,6 +400,8 @@ export function AuthorityChain({
   pips: Pips;
   lenses: LensVerdict[] | undefined;
   synthDecision?: string;
+  /** true when OUR vote has landed on the currently-shown proposal — flips the VoteBoard to orange. */
+  votedHere?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const youRef = useRef<HTMLDivElement>(null);
@@ -410,14 +425,27 @@ export function AuthorityChain({
   const synthWorking = nodeLit('decided') && shownIdx < idxOf('voting'); // lit, finalizing the vote
   const verdictFor = (key: LensKey) => lenses?.find((l) => l.lens === key);
 
-  // The scope token rides You → Orchestrator → Arbiter/终裁 (the per-proposal narrowed cast point).
-  const chipPos: 'you' | 'orch' | 'synth' = beamLive('decided') ? 'synth' : beamLive('redelegated') ? 'orch' : 'you';
-  const chipLabel = chipPos === 'synth' ? t.scopeChipAttenuated : chipPos === 'orch' ? t.scopeChip : t.scopeChipOrigin;
+  // The scope token rides You → Orchestrator → Arbiter (cast point) → VoteBoard, its icon + label
+  // morphing at each hop: full grant → narrowed → adjudicated → voted.
+  const chipPos: 'you' | 'orch' | 'synth' | 'board' = beamLive('voted')
+    ? 'board'
+    : beamLive('decided')
+      ? 'synth'
+      : beamLive('redelegated')
+        ? 'orch'
+        : 'you';
+  const SCOPE_STAGES: Record<typeof chipPos, { label: string; icon: LucideIcon }> = {
+    you: { label: t.scopeChipOrigin, icon: Lock },
+    orch: { label: t.scopeChip, icon: Filter },
+    synth: { label: t.scopeChipDecided, icon: Gavel },
+    board: { label: t.scopeChipVoted, icon: CheckCircle2 },
+  };
+  const scope = SCOPE_STAGES[chipPos];
 
-  // VoteBoard color = the live tally result (passing=green / failing=red), flipping to brand-orange the
-  // moment our vote lands. The fan-in beams (lens→Arbiter) and the cast beam (Arbiter→board) now carry
-  // the verdict color instead of the old fixed orange / green.
-  const boardTone: ToneKey = nodeLit('voted') ? 'brand' : pips.for_ > pips.against ? 'ok' : 'bad';
+  // VoteBoard color = the live tally result (passing=green / failing=red), flipping to brand-orange once
+  // OUR vote has landed on the CURRENTLY-shown proposal (votedHere). The fan-in beams (lens→Arbiter) and
+  // the cast beam (Arbiter→board) carry the verdict color instead of the old fixed orange / green.
+  const boardTone: ToneKey = votedHere ? 'brand' : pips.for_ > pips.against ? 'ok' : 'bad';
 
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center' }}>
@@ -483,7 +511,17 @@ export function AuthorityChain({
       <Beam container={containerRef} from={synthRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
 
       {live && !killed && !cutting && (
-        <ScopeChip container={containerRef} youRef={youRef} orchRef={orchRef} synthRef={synthRef} pos={chipPos} attenuated={chipPos === 'synth'} label={chipLabel} />
+        <ScopeChip
+          container={containerRef}
+          youRef={youRef}
+          orchRef={orchRef}
+          synthRef={synthRef}
+          boardRef={boardRef}
+          pos={chipPos}
+          attenuated={chipPos === 'synth' || chipPos === 'board'}
+          label={scope.label}
+          icon={scope.icon}
+        />
       )}
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { LENSES, type LensKey, type RunStatus } from '@mandate/shared';
-import { BadgeCheck, FileSignature, Lock, Sparkles, X } from 'lucide-react';
+import { BadgeCheck, Lock, Receipt, Sparkles, X } from 'lucide-react';
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
 import type { Dict } from '../../lib/i18n';
@@ -20,6 +20,7 @@ export function TeeConsole({
   status,
   stageIdx,
   lenses,
+  txHash,
   killed,
   t,
 }: {
@@ -27,6 +28,8 @@ export function TeeConsole({
   status?: string;
   stageIdx?: number; // when set (center console), gate on the chain's staged reveal, not raw status
   lenses?: RunStatus['lenses'];
+  /** the castVote tx hash (present once 'voted') — the real on-chain artifact the verdict row links to. */
+  txHash?: string;
   killed: boolean;
   t: Dict;
 }) {
@@ -197,16 +200,16 @@ export function TeeConsole({
                     </Badge>
                   </button>
                 )}
-                {venice.signature?.recovered && venice.signature.signingAddress && (
+                {txHash && (
                   <a
-                    href={`${BASESCAN}/address/${venice.signature.signingAddress}`}
+                    href={`${BASESCAN}/tx/${txHash}`}
                     target="_blank"
                     rel="noreferrer"
-                    title={venice.signature.signingAddress}
+                    title={`${t.castVoteTx} ${txHash}`}
                     className="no-underline hover:opacity-80"
                   >
                     <Badge tone="info">
-                      <FileSignature className="size-3" /> {shortHex(venice.signature.signingAddress, 4)}
+                      <Receipt className="size-3" /> {t.castVoteTx} {shortHex(txHash, 4)} ↗
                     </Badge>
                   </a>
                 )}
@@ -226,6 +229,9 @@ export function TeeConsole({
                   </div>
                   {venice.attestation.nonce && (
                     <div className="mt-1 font-mono text-ink-mute">nonce: {venice.attestation.nonce}</div>
+                  )}
+                  {venice.signature?.signingAddress && (
+                    <div className="mt-1 break-all font-mono text-ink-mute">signer: {venice.signature.signingAddress}</div>
                   )}
                 </div>
               )}

@@ -167,8 +167,12 @@ export default function Home() {
     if (recallTx) void fireSever(graphStageRef.current);
   }, [recallTx]);
 
-  // Rotate the active proposal so new ones "open"; pause while a grant/run is in flight.
-  const rotationPaused = busy || (run != null && !['voted', 'failed', 'revoked'].includes(run.status));
+  // Rotate the active proposal so new ones "open"; pause while a grant/run is in flight AND keep it
+  // pinned once a vote has landed (or the chain was revoked), so the HUD + VoteBoard stay on the exact
+  // proposal that was just voted — they no longer drift to another proposal under the orange "voted"
+  // board. Only a failed run re-opens rotation (so the judge can retry); the proposal chips still let
+  // the user move manually at any time.
+  const rotationPaused = busy || (run != null && run.status !== 'failed');
   useEffect(() => {
     if (rotationPaused) return;
     const id = setInterval(() => setActiveIdx((i) => (i + 1) % PROPOSALS.length), 24000);

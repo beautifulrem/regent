@@ -453,6 +453,10 @@ html, body { height: 100%; overflow: hidden; }
 .mc-verdict-pop { animation: verdictPop 0.42s var(--ease-snappy) both; text-shadow: 0 0 7px currentColor; }
 @keyframes verdictPop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
 
+/* the scope token's label+icon morph (soft fade/blur/rise) each time it advances You→Orch→Arbiter→Board */
+.mc-scopechip-morph { animation: chipMorph 0.45s var(--ease-fluid) both; }
+@keyframes chipMorph { 0% { opacity: 0; transform: translateY(3px) scale(0.92); filter: blur(2px); } 100% { opacity: 1; transform: none; filter: blur(0); } }
+
 /* capability dock — x402 + 1Shot surfaced as native high-value cards */
 .mc-dock { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
 .mc-cap { display: flex; align-items: center; gap: 11px; padding: 11px 16px; border-radius: 13px; cursor: pointer;
@@ -585,6 +589,7 @@ html, body { height: 100%; overflow: hidden; }
   .mc-phase.current .pd { animation: none; }
   .mc-chip.met { animation: none; }
   .mc-verdict-pop { animation: none; }
+  .mc-scopechip-morph { animation: none; }
   .tee-flash { animation: none; }
   .tee-lens { transition: none; }
 }

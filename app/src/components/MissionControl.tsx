@@ -170,10 +170,11 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
             pips={pips}
             lenses={vm.lenses}
             synthDecision={vm.venice?.decision}
+            votedHere={youVotedHere}
           />
         </div>
 
-        <TeeConsole venice={vm.venice} status={vm.s} stageIdx={revealIdx} lenses={vm.lenses} killed={vm.killed} t={t} />
+        <TeeConsole venice={vm.venice} status={vm.s} stageIdx={revealIdx} lenses={vm.lenses} txHash={vm.run?.vote?.txHash} killed={vm.killed} t={t} />
 
         <ScopeBlock vm={vm} />
 

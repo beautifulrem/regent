@@ -91,6 +91,8 @@ const en = {
   scopeChip: '4 caveats',
   scopeChipOrigin: 'full grant',
   scopeChipAttenuated: 'attenuated',
+  scopeChipDecided: 'adjudicated',
+  scopeChipVoted: 'voted',
   nodes: {
     you: { who: 'You', role: 'grant the permission' },
     orch: { who: 'Orchestrator', role: 'narrows the permission' },
@@ -313,6 +315,8 @@ const zh: Dict = {
   scopeChip: '4 条 caveat',
   scopeChipOrigin: '完整授权',
   scopeChipAttenuated: '已收窄',
+  scopeChipDecided: '已裁决',
+  scopeChipVoted: '已投票',
   nodes: {
     you: { who: '你', role: '授予权限' },
     orch: { who: '编排器', role: '收窄权限' },
