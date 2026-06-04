@@ -5,6 +5,7 @@
  * and the seller's balance grows by one toll per vote. The deployer (the VotesToken owner) mints the
  * buyer a small batch when it runs dry, so the rail is self-funding for the demo.
  */
+import { randomBytes } from 'node:crypto';
 import { createWalletClient, encodeFunctionData, erc20Abi, http, parseAbi, type Address, type Hex, type PublicClient } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
@@ -62,13 +63,13 @@ export async function settleToll(
 
   // 2) the buyer signs the SCOPED Erc20TransferAmount delegation (seller may pull at most the toll, of
   //    this token, to itself — and nothing else).
-  const paymentDel = buildPaymentDelegation({
-    buyer: orchSA.address,
-    seller: analyst.address,
-    asset: cfg.token,
-    amount: TOLL_ATOMS,
-    environment,
-  });
+  // a FRESH salt per query makes each toll its OWN 1-MVOTE delegation, so the cumulative
+  // Erc20TransferAmount allowance is never exceeded (true pay-per-query — vs one reused hash whose
+  // single-toll allowance is spent after the first redeem).
+  const paymentDel: Delegation = {
+    ...buildPaymentDelegation({ buyer: orchSA.address, seller: analyst.address, asset: cfg.token, amount: TOLL_ATOMS, environment }),
+    salt: `0x${randomBytes(32).toString('hex')}` as Hex,
+  };
   const signed = { ...paymentDel, signature: (await orchSA.signDelegation({ delegation: paymentDel })) as Hex } as Delegation;
 
   // 3) the seller redeems it on-chain — the DelegationManager enforces the caveat and pulls the toll.
