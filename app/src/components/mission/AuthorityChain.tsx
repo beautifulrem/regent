@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { Bot, Boxes, Coins, ExternalLink, Lock, Scale, Scissors, ShieldCheck, TrendingUp, User, Users, type LucideIcon } from 'lucide-react';
 import { LENSES, type LensKey, type LensVerdict } from '@mandate/shared';
 import { BASESCAN, shortHex } from '../../lib/config';
@@ -186,6 +186,7 @@ function Beam({
   tone?: 'ok' | 'brand';
 }) {
   const [geom, setGeom] = useState<Geom | null>(null);
+  const gid = useId().replace(/:/g, ''); // unique per beam — gradient ids must not collide across beams
   useEffect(() => {
     const compute = () => {
       if (!from.current || !to.current || !container.current) return;
@@ -218,7 +219,7 @@ function Beam({
     };
   }, [from, to, container, live, killed]);
   if (!geom) return null;
-  const grad = tone === 'ok' ? 'beamgradok' : 'beamgrad';
+  const grad = tone === 'ok' ? `beamgradok-${gid}` : `beamgrad-${gid}`;
   const packetColor = tone === 'ok' ? '#6ee79a' : 'var(--color-brand-soft)';
   const GAP = 11;
   const DROOP = 9;
@@ -230,11 +231,11 @@ function Beam({
     <>
       <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
         <defs>
-          <linearGradient id="beamgrad" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`beamgrad-${gid}`} gradientUnits="userSpaceOnUse" x1={geom.start.x} y1={geom.start.y} x2={geom.end.x} y2={geom.end.y}>
             <stop offset="0%" stopColor="var(--color-brand-deep)" />
             <stop offset="100%" stopColor="#ffc879" />
           </linearGradient>
-          <linearGradient id="beamgradok" x1="0" y1="0" x2="1" y2="0">
+          <linearGradient id={`beamgradok-${gid}`} gradientUnits="userSpaceOnUse" x1={geom.start.x} y1={geom.start.y} x2={geom.end.x} y2={geom.end.y}>
             <stop offset="0%" stopColor="#2f9e5a" />
             <stop offset="100%" stopColor="#6ee79a" />
           </linearGradient>

@@ -364,6 +364,18 @@ html, body { height: 100%; overflow: hidden; }
 /* ---- Venice-TEE console: "sealed enclave" hacker terminal (Matrix-flavoured) ----
    Layering: console bg → .tee-rain (code rain, z0) → .tee-crt / .tee-sweep (z1) → content (z2). */
 .tee-console { animation: teeRise 0.62s cubic-bezier(0.16, 1, 0.3, 1) both; }
+/* beautify pass 2 — committee cards (left accent + inner glow + hover), synthesis grid, verdict glow,
+   and a one-shot cyan edge-flash when the final verdict crystallizes */
+.tee-lens { position: relative; transition: transform .18s var(--ease-fluid), border-color .18s; box-shadow: inset 0 0 18px -14px var(--color-info); }
+.tee-lens::before { content: ''; position: absolute; left: 0; top: 5px; bottom: 5px; width: 2px; border-radius: 0 2px 2px 0; background: rgba(110, 168, 254, 0.5); }
+.tee-lens:hover { transform: translateY(-1px); border-color: rgba(110, 168, 254, 0.4); }
+.tee-synth { background-image: repeating-linear-gradient(180deg, rgba(110, 168, 254, 0.05) 0, rgba(110, 168, 254, 0.05) 1px, transparent 1px, transparent 5px); }
+.tee-verdict-badge { text-shadow: 0 0 8px currentColor; }
+.tee-flash { animation: teeFlash 0.65s var(--ease-fluid); }
+@keyframes teeFlash {
+  0%   { box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.18), 0 20px 50px -28px rgba(0, 0, 0, 0.8); }
+  35%  { box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.7), 0 0 30px rgba(110, 168, 254, 0.42), 0 20px 50px -28px rgba(0, 0, 0, 0.8); }
+  100% { box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.18), 0 20px 50px -28px rgba(0, 0, 0, 0.8); } }
 .tee-crt { position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0.14; mix-blend-mode: soft-light;
   background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 5px); }
 .tee-sweep { position: absolute; left: 0; right: 0; top: 0; height: 20px; z-index: 1; pointer-events: none; filter: blur(1px); mix-blend-mode: screen;
@@ -573,6 +585,8 @@ html, body { height: 100%; overflow: hidden; }
   .mc-phase.current .pd { animation: none; }
   .mc-chip.met { animation: none; }
   .mc-verdict-pop { animation: none; }
+  .tee-flash { animation: none; }
+  .tee-lens { transition: none; }
 }
 
 @media (max-width: 720px) {

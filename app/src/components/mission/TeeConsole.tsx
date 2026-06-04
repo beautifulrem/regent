@@ -49,7 +49,7 @@ export function TeeConsole({
 
   return (
     <div
-      className="tee-console relative w-full max-w-[580px] shrink-0 overflow-hidden rounded-[14px] border border-info/25 bg-[#070b14]/85 backdrop-blur"
+      className={`tee-console relative w-full max-w-[580px] shrink-0 overflow-hidden rounded-[14px] border border-info/25 bg-[#070b14]/85 backdrop-blur${showVerdict ? ' tee-flash' : ''}`}
       style={{ boxShadow: '0 0 0 1px rgba(110,168,254,0.18), 0 20px 50px -28px rgba(0,0,0,0.8)' }}
     >
       <span className="tee-sweep" aria-hidden />
@@ -99,7 +99,7 @@ export function TeeConsole({
           <div className="tee-boot mb-1.5 mt-2.5 font-mono text-[11px] text-info/75">
             [venice-tdx] {decided ? `synthesis · ${model}` : t.teeSynthesizing}
           </div>
-          <div className="hud-scroll min-h-[34px] max-h-[92px] overflow-y-auto whitespace-pre-wrap break-words font-mono text-[12px] leading-[1.5] text-[#8fb6ef]">
+          <div className="tee-synth hud-scroll min-h-[34px] max-h-[92px] overflow-y-auto whitespace-pre-wrap break-words font-mono text-[12px] leading-[1.5] text-[#8fb6ef]">
             {decided ? (
               <>
                 {text}
