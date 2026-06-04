@@ -42,10 +42,8 @@ export interface OrchestratorConfig {
   rpcUrl: string;
   orchestratorPk: Hex;
   analystPk: Hex;
-  /** VotesToken owner — mints the orchestrator SA its x402 toll budget when it runs dry. */
-  deployerPk: Hex;
-  /** the MVOTE token used both for voting power and as the x402 toll asset. */
-  token: Address;
+  /** the mUSDC token the x402 toll is paid in (the MVOTE voting token is never spent). */
+  paymentToken: Address;
   veniceCfg: VeniceConfig;
 }
 
@@ -55,6 +53,8 @@ type OrchSmartAccount = Awaited<ReturnType<typeof toMetaMaskSmartAccount>>;
  *  Cached so further proposals reuse them (no re-sign); each proposal still gets a fresh narrow redel. */
 interface ChainBundle {
   root: Delegation;
+  /** the user-signed CUMULATIVE x402 payment delegation (userSA -> analyst), reused for every toll. */
+  paymentDelegation: Delegation;
   orchSA: OrchSmartAccount;
   governor: Address;
   chainId: number;
@@ -140,15 +140,15 @@ async function cast(
 
   // 5) x402 PAY-PER-QUERY — settle the REAL toll for this query BEFORE flipping to 'voted', so the
   //    terminal status the client polls already carries it (the client stops polling once it sees
-  //    'voted'). The analyst's context feed pulls 1 MVOTE from the orchestrator SA via a scoped
-  //    ERC-7710 delegation, on-chain. Non-fatal: a missing toll never blocks an already-cast vote.
+  //    'voted'). The analyst's context feed pulls 1 mUSDC from the USER's smart account via the
+  //    cumulative scoped ERC-7710 delegation the user signed at grant. Non-fatal: a missing toll
+  //    never blocks an already-cast vote (e.g. budget exhausted, or paymentToken not deployed yet).
   let toll: TollReceipt | undefined;
   try {
-    toll = await settleToll(client, bundle.orchSA, proposalId, {
+    toll = await settleToll(client, bundle.paymentDelegation, proposalId, {
       rpcUrl: cfg.rpcUrl,
       analystPk: cfg.analystPk,
-      deployerPk: cfg.deployerPk,
-      token: cfg.token,
+      paymentToken: cfg.paymentToken,
       chainId: bundle.chainId,
     });
   } catch (err) {
@@ -178,6 +178,7 @@ export async function runVote(
     });
     const bundle: ChainBundle = {
       root: grant.rootDelegation as unknown as Delegation,
+      paymentDelegation: grant.paymentDelegation as unknown as Delegation,
       orchSA,
       governor: grant.governor as Address,
       chainId: grant.chainId,
