@@ -37,11 +37,14 @@ interface ChainNodeProps {
   killed?: boolean;
   board?: boolean;
   small?: boolean;
+  /** float the label/verdict/addr absolutely below the circle, so the node's height == the circle
+   *  and align-items:center lines ALL the main-node circles up (regardless of how much hangs below). */
+  floatBelow?: boolean;
   verdict?: { label: string; tone: string } | null;
   pips?: Pips;
 }
 
-function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee, thinking, killed, board, small, verdict, pips }: ChainNodeProps) {
+function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee, thinking, killed, board, small, floatBelow, verdict, pips }: ChainNodeProps) {
   const accent = board ? 'var(--color-ok)' : 'var(--color-brand)';
   const ringActive = !!active && !killed;
   const ringColor = board ? 'rgba(74,222,128,.55)' : 'rgba(246,133,27,.5)';
@@ -83,6 +86,7 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee,
       >
         <Icon size={small ? 19 : 24} strokeWidth={1.5} />
       </span>
+      <div style={floatBelow ? { position: 'absolute', top: '100%', left: 0, right: 0 } : undefined}>
       <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: small ? 12.5 : 15.5, color: ringActive ? accent : 'var(--color-ink)', marginTop: small ? 6 : 9 }}>
         {who}
       </div>
@@ -147,6 +151,7 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee,
           <span><span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: 999, background: 'var(--color-ink-mute)', marginRight: 4 }} />{pips.abstain}</span>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -292,7 +297,7 @@ function ScopeChip({
   attenuated: boolean;
   label: string;
 }) {
-  const [xs, setXs] = useState<{ you: number; orch: number; synth: number } | null>(null);
+  const [xs, setXs] = useState<{ you: number; orch: number; synth: number; topY: number } | null>(null);
   useEffect(() => {
     const compute = () => {
       if (!container.current || !youRef.current || !orchRef.current || !synthRef.current) return;
@@ -301,7 +306,9 @@ function ScopeChip({
         const r = n.getBoundingClientRect();
         return r.left - cr.left + r.width / 2;
       };
-      setXs({ you: cx(youRef.current), orch: cx(orchRef.current), synth: cx(synthRef.current) });
+      // float the token just above the You / Orch / Synth circle row (they share one vertical centre).
+      const orchTop = orchRef.current.getBoundingClientRect().top - cr.top;
+      setXs({ you: cx(youRef.current), orch: cx(orchRef.current), synth: cx(synthRef.current), topY: orchTop - 30 });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -317,7 +324,7 @@ function ScopeChip({
   // lenses are decision agents, not delegation hops, so the token floats over them.
   const x = xs[pos];
   return (
-    <div style={{ position: 'absolute', left: x, top: -8, transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none', transition: 'left .85s var(--ease-fluid)' }}>
+    <div style={{ position: 'absolute', left: x, top: xs.topY, transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none', transition: 'left .85s var(--ease-fluid)' }}>
       <span
         style={{
           display: 'inline-flex',
@@ -406,8 +413,8 @@ export function AuthorityChain({
 
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center' }}>
-      <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} active={connected} killed={killed} />
-      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} active={nodeLit('redelegated')} working={orchWorking} killed={killed} />
+      <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} active={connected} floatBelow killed={killed} />
+      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} active={nodeLit('redelegated')} working={orchWorking} floatBelow killed={killed} />
 
       {/* the four governance lenses (decision agents), stacked between the orchestrator and synthesis */}
       <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 12, justifyContent: 'center', alignSelf: 'center' }}>
@@ -441,9 +448,10 @@ export function AuthorityChain({
         active={nodeLit('decided')}
         working={synthWorking}
         verdict={nodeLit('decided') && synthDecision ? { label: synthDecision, tone: decisionColor(synthDecision) } : null}
+        floatBelow
         killed={killed}
       />
-      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board pips={pips} />
+      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board floatBelow pips={pips} />
 
       {/* You → Orchestrator (root), then fan-out to the lenses, fan-in to Synthesis, then to the board */}
       <Beam container={containerRef} from={youRef} to={orchRef} live={beamLive('redelegated')} killed={killed} cutting={cutting} root />

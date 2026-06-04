@@ -4,7 +4,6 @@ import type { ComponentType } from 'react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { CheckCircle2, Minus, Plus, Scissors, ShieldCheck, Vote, Zap } from 'lucide-react';
 import { grantDisabled, voteActiveDisabled } from '../../lib/flow';
-import { VOTE_PRESETS } from '../../lib/presets';
 import { MandateStats } from '../panels/MandateStats';
 import { Badge } from '../ui/Badge';
 import type { MissionVM } from '../MissionControl';
@@ -88,22 +87,6 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
       {/* pre-grant configurator */}
       {!granted && !killed && (
         <>
-          {vm.isConnected && (
-            <div className="flex flex-wrap items-center justify-center gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-mute/60">{t.presets.label}</span>
-              <StanceChip label={t.presets.default} desc={t.presetDesc.default} active={!vm.presetKey} onClick={() => vm.applyPreset('default')} />
-              {VOTE_PRESETS.map((p) => (
-                <StanceChip
-                  key={p.key}
-                  label={t.presets[p.key]}
-                  desc={t.presetDesc[p.key]}
-                  active={vm.presetKey === p.key}
-                  onClick={() => vm.applyPreset(p.key)}
-                />
-              ))}
-            </div>
-          )}
-
           <div className="mc-seg" role="tablist">
             {MODES.map((m) => (
               <button key={m.key} type="button" className={vm.boundMode === m.key ? 'on' : ''} onClick={() => vm.setBoundMode(m.key)}>
@@ -206,19 +189,5 @@ function StepBtn({
     <button type="button" className="mc-step" onClick={onClick} disabled={disabled} aria-label={label}>
       <Icon className="size-4" strokeWidth={2.5} />
     </button>
-  );
-}
-
-/** A voting-stance chip with a content-sized bubble (on hover/focus) explaining what it does. */
-function StanceChip({ label, desc, active, onClick }: { label: string; desc: string; active: boolean; onClick: () => void }) {
-  return (
-    <span className="mc-stance">
-      <button type="button" className={`mc-preset${active ? ' on' : ''}`} aria-pressed={active} onClick={onClick}>
-        {label}
-      </button>
-      <span role="tooltip" className="mc-stance-tip">
-        {desc}
-      </span>
-    </span>
   );
 }
