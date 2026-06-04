@@ -18,6 +18,3 @@ export const decisionTone = (d?: string): 'ok' | 'bad' | 'warn' =>
 /** Run status → tone for the status badge. */
 export const statusTone = (status: string): 'ok' | 'bad' | 'warn' =>
   status === 'voted' ? 'ok' : status === 'failed' || status === 'revoked' ? 'bad' : 'warn';
-
-/** Shared overshoot easing for mission-control motion. */
-export const EASE_FLUID: [number, number, number, number] = [0.16, 1, 0.3, 1];

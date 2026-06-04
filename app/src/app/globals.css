@@ -278,7 +278,7 @@ html, body { height: 100%; overflow: hidden; }
 
 /* centered focal column (the only scroller) */
 .mc-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
-  justify-content: safe center; gap: 9px; padding: 52px 80px 10px; overflow: auto; }
+  justify-content: safe center; gap: 16px; padding: 48px 80px 20px; overflow: auto; }
 .mc-center::-webkit-scrollbar { width: 0; }
 
 /* proposal HUD */
