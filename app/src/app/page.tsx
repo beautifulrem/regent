@@ -215,6 +215,8 @@ export default function Home() {
         governor: VOTE_BOARD_ADDRESS,
         proposalId: activeProposal.id.toString(),
         orchestratorSA: cfg.orchestratorSA,
+        paymentToken: cfg.paymentToken,
+        analyst: cfg.analyst,
         proposalText: activeProposal.body.en,
         maxVotes: boundMode === 'days' ? undefined : maxVotes,
         ttlDays: boundMode === 'votes' ? undefined : ttlDays,

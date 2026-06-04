@@ -11,8 +11,9 @@ import {
   Implementation,
   toMetaMaskSmartAccount,
 } from '@metamask/smart-accounts-kit';
-import { buildStandingVoteDelegation, withVotingPolicy, type Delegation } from '@mandate/shared';
+import { buildPaymentDelegation, buildStandingVoteDelegation, withVotingPolicy, type Delegation } from '@mandate/shared';
 import { CHAIN_ID, DEMO_PROPOSAL, RPC_URL } from './config';
+import { DEFAULT_QUERY_BUDGET, TOLL_PRICE_ATOMS } from './x402-toll';
 
 export type SmartAccount = Awaited<ReturnType<typeof toMetaMaskSmartAccount>>;
 
@@ -39,6 +40,10 @@ export interface GrantTarget {
   governor: Address;
   proposalId: string;
   orchestratorSA: Address;
+  /** the mUSDC token the AI's x402 budget is denominated in. */
+  paymentToken: Address;
+  /** the data-feed seller (analyst) that redeems the x402 budget. */
+  analyst: Address;
   /** The proposal text the analyst privately evaluates in the Venice TEE (defaults to DEMO_PROPOSAL). */
   proposalText?: string;
   /** Standing-grant guardrails — user-configurable; omit one to bound only by the other. Baked on-chain. */
@@ -67,11 +72,27 @@ export async function signGrant(userSA: SmartAccount, target: GrantTarget) {
   });
   const signature = (await userSA.signDelegation({ delegation: root })) as Hex;
   const rootDelegation: Delegation = { ...root, signature };
+
+  // SECOND signature — the AI's x402 budget: a CUMULATIVE Erc20TransferAmount delegation that lets the
+  // data-feed seller pull AT MOST (maxVotes ?? DEFAULT_QUERY_BUDGET) x 1 mUSDC from YOUR smart account,
+  // to the seller, and nothing else. Reused for every vote's toll; MVOTE voting power is never touched.
+  const budgetQueries = BigInt(target.maxVotes ?? DEFAULT_QUERY_BUDGET);
+  const payment = buildPaymentDelegation({
+    buyer: userSA.address,
+    seller: target.analyst,
+    asset: target.paymentToken,
+    amount: budgetQueries * TOLL_PRICE_ATOMS,
+    environment,
+  });
+  const paymentSignature = (await userSA.signDelegation({ delegation: payment })) as Hex;
+  const paymentDelegation: Delegation = { ...payment, signature: paymentSignature };
+
   return {
     chainId: CHAIN_ID,
     governor: target.governor,
     proposalId: target.proposalId,
     proposalText: withVotingPolicy(target.proposalText ?? DEMO_PROPOSAL, target.policy),
     rootDelegation,
+    paymentDelegation,
   };
 }
