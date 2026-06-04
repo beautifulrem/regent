@@ -107,6 +107,7 @@ export type {
   RunState,
   RunStatus,
   Support,
+  TollReceipt,
   VeniceTrace,
   VoteReceipt,
 } from './api.js';
@@ -129,6 +130,7 @@ export {
   SUPPORT,
   SupportSchema,
   supportToDecision,
+  TollReceiptSchema,
   UintStringSchema,
   VeniceTraceSchema,
   VoteReceiptSchema,

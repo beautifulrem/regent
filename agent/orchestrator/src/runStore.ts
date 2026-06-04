@@ -11,6 +11,7 @@ import {
   type RunError,
   type RunState,
   type RunStatus,
+  type TollReceipt,
   type VeniceTrace,
   type VoteReceipt,
 } from '@mandate/shared';
@@ -28,6 +29,7 @@ export interface RunPatch {
   lenses?: LensVerdict[];
   venice?: VeniceTrace;
   vote?: VoteReceipt;
+  toll?: TollReceipt;
   revokeTxHash?: Hex;
   error?: RunError;
 }
@@ -72,6 +74,7 @@ export class RunStore {
       ...(patch.lenses ? { lenses: patch.lenses } : {}),
       ...(patch.venice ? { venice: patch.venice } : {}),
       ...(patch.vote ? { vote: patch.vote } : {}),
+      ...(patch.toll ? { toll: patch.toll } : {}),
       ...(patch.revokeTxHash ? { revokeTxHash: patch.revokeTxHash } : {}),
       ...(patch.error ? { error: patch.error } : {}),
       updatedAt,

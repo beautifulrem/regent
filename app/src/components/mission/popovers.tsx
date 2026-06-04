@@ -40,7 +40,16 @@ export function PopoverBody({
     case 'tally':
       return <VoteTally tally={tally} voters={voters} live={live} you={vm.userSA?.address} t={vm.t} bare />;
     case 'x402':
-      return vm.cfg ? <X402TollGate cfg={vm.cfg} t={vm.t} bare /> : null;
+      return vm.cfg ? (
+        <X402TollGate
+          cfg={vm.cfg}
+          t={vm.t}
+          bare
+          toll={vm.killed ? undefined : vm.run?.toll}
+          queryCount={vm.votesUsed}
+          proposalId={vm.grantedProposalId ?? vm.activeProposal.id}
+        />
+      ) : null;
     case 'oneshot':
       return <OneShotFinale t={vm.t} bare />;
     case 'run':

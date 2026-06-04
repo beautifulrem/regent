@@ -35,11 +35,16 @@ import {
 } from '@mandate/shared';
 import { castVote } from '@mandate/analyst';
 import type { RunStore } from './runStore.js';
+import { settleToll } from './toll.js';
 
 export interface OrchestratorConfig {
   rpcUrl: string;
   orchestratorPk: Hex;
   analystPk: Hex;
+  /** VotesToken owner — mints the orchestrator SA its x402 toll budget when it runs dry. */
+  deployerPk: Hex;
+  /** the MVOTE token used both for voting power and as the x402 toll asset. */
+  token: Address;
   veniceCfg: VeniceConfig;
 }
 
@@ -132,6 +137,22 @@ async function cast(
     { chain: [redelSigned, bundle.root], governor: bundle.governor, proposalId, support: synthesis.decision.support },
   );
   store.patch(runId, { status: 'voted', vote });
+
+  // 5) x402 PAY-PER-QUERY — settle the REAL toll for this query: the analyst's context feed pulls 1
+  //    MVOTE from the orchestrator SA via a scoped ERC-7710 delegation, on-chain. Non-fatal: a missing
+  //    toll (e.g. an unfunded buyer) never fails an already-cast vote.
+  try {
+    const toll = await settleToll(client, bundle.orchSA, proposalId, {
+      rpcUrl: cfg.rpcUrl,
+      analystPk: cfg.analystPk,
+      deployerPk: cfg.deployerPk,
+      token: cfg.token,
+      chainId: bundle.chainId,
+    });
+    store.patch(runId, { toll });
+  } catch (err) {
+    console.error('x402 toll settlement failed (non-fatal):', err instanceof Error ? err.message : err);
+  }
 }
 
 /** Establish the STANDING mandate for a grant: cache the broad chain (root + orchestrator SA). It does

@@ -32,6 +32,8 @@ const cfg: OrchestratorConfig = {
   rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || 'https://base-sepolia-rpc.publicnode.com',
   orchestratorPk: (process.env.ORCHESTRATOR_PK ?? '') as Hex,
   analystPk: (process.env.ANALYST_PK ?? '') as Hex,
+  deployerPk: (process.env.DEPLOYER_PK ?? '') as Hex,
+  token: ADDRESSES.baseSepolia.token as Address,
   veniceCfg: {
     apiUrl: process.env.VENICE_API_URL || 'https://api.venice.ai/api/v1',
     apiKey: process.env.VENICE_API_KEY || '',

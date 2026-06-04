@@ -7,7 +7,8 @@ import { baseSepolia } from 'viem/chains';
 import { AlertTriangle, Coins, Receipt, ShieldCheck, Wallet } from 'lucide-react';
 import { BASESCAN, RPC_URL, shortHex } from '../lib/config';
 import { cn } from '../lib/cn';
-import { TOLL_DECIMALS, TOLL_SYMBOL, X402_PHASES, formatTokenAmount, tollChallenge } from '../lib/x402-toll';
+import type { RunStatus } from '@mandate/shared';
+import { TOLL_DECIMALS, TOLL_SYMBOL, X402_PHASES, formatTokenAmount, tollChallenge, tollResource } from '../lib/x402-toll';
 import type { DemoConfig } from '../lib/orchestrator';
 import type { Dict } from '../lib/i18n';
 import { Panel, PanelHeader } from './ui/Panel';
@@ -27,15 +28,36 @@ function Row({ k, v }: { k: string; v: ReactNode }) {
  * Erc20TransferAmount delegation that settles it, then traces the 402 -> sign -> redeem -> 200
  * lifecycle and reads the seller's live MVOTE balance on-chain (read-only — no spend).
  */
-export function X402TollGate({ cfg, t, bare = false }: { cfg: DemoConfig; t: Dict; bare?: boolean }) {
+export function X402TollGate({
+  cfg,
+  t,
+  bare = false,
+  toll,
+  queryCount = 0,
+  proposalId,
+}: {
+  cfg: DemoConfig;
+  t: Dict;
+  bare?: boolean;
+  /** a REAL per-vote toll the analyst pulled on-chain (present once a vote has settled one). */
+  toll?: RunStatus['toll'];
+  /** how many queries have been billed under the current mandate (drives the running count). */
+  queryCount?: number;
+  /** the proposal being priced — its #id is shown in the resource path. */
+  proposalId?: bigint | string | null;
+}) {
   const reduce = useReducedMotion();
   const [step, setStep] = useState(0);
   const [tracing, setTracing] = useState(false);
   const [bal, setBal] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  const req = tollChallenge({ asset: cfg.token, payTo: cfg.analyst, chainId: cfg.chainId }).accepts[0];
+  // when a real toll has settled, the rail shows live on-chain proof; otherwise it traces the lifecycle.
+  const resource = toll?.resource ?? tollResource(proposalId);
+  const req = tollChallenge({ asset: cfg.token, payTo: cfg.analyst, chainId: cfg.chainId, resource }).accepts[0];
   const price = formatTokenAmount(BigInt(req.maxAmountRequired), TOLL_DECIMALS);
+  const phaseStep = toll ? X402_PHASES.length : step; // a real settlement marks the whole lifecycle done
+  const sellerBalanceFmt = toll ? formatTokenAmount(BigInt(toll.sellerBalance), TOLL_DECIMALS) : bal;
 
   async function trace() {
     setTracing(true);
@@ -116,7 +138,7 @@ export function X402TollGate({ cfg, t, bare = false }: { cfg: DemoConfig; t: Dic
       {/* lifecycle — a vertical step log; each phase explains what actually happens */}
       <div className="mt-4 flex flex-col gap-2.5">
         {X402_PHASES.map((p, i) => {
-          const state = step === 0 ? 'idle' : step > i ? 'done' : step === i ? 'current' : 'idle';
+          const state = phaseStep === 0 ? 'idle' : phaseStep > i ? 'done' : phaseStep === i ? 'current' : 'idle';
           return (
             <div key={p.key} className={cn('flex gap-2.5 transition-opacity', state === 'idle' ? 'opacity-45' : 'opacity-100')}>
               <span className={cn('mt-1 size-2.5 shrink-0 rounded-full', state === 'done' ? 'bg-ok' : state === 'current' ? 'bg-brand motion-safe:animate-glow' : 'bg-line')} />
@@ -132,33 +154,57 @@ export function X402TollGate({ cfg, t, bare = false }: { cfg: DemoConfig; t: Dic
         })}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-        <button onClick={trace} disabled={tracing} className="inline-flex items-center gap-2">
-          <Wallet className="size-4" /> {tracing ? t.x402.tracing : t.x402.trace}
-        </button>
-        {tracing && step >= X402_PHASES.length && bal === null && (
-          <span className="font-mono text-[11px] text-ink-mute motion-safe:animate-pulse">{t.x402.reading}</span>
-        )}
-        {err && (
-          <span className="flex items-center gap-1.5 text-[12px] text-bad">
-            <AlertTriangle className="size-3.5" /> {err}
-          </span>
-        )}
-      </div>
-
-      {/* result — plain-language outcome + the seller's real on-chain balance (the actual proof) */}
-      {bal !== null && (
-        <div className="mt-3 rounded-xl border border-ok/25 bg-ok/[0.06] px-4 py-3.5">
+      {toll ? (
+        /* a REAL per-vote settlement — the on-chain redeem tx + the seller's real balance + running count */
+        <div className="mt-4 rounded-xl border border-ok/25 bg-ok/[0.06] px-4 py-3.5">
           <p className="text-[12.5px] leading-relaxed text-ink-soft">{t.x402.result}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <Badge tone="ok">
-              <Wallet className="size-3" /> {t.x402.sellerBalance}: {bal} {TOLL_SYMBOL}
+              <Receipt className="size-3" /> {t.x402.settled}
+              {queryCount > 0 ? ` · ${queryCount}` : ''}
+            </Badge>
+            <a className="font-mono text-[12px] text-info hover:underline" href={`${BASESCAN}/tx/${toll.txHash}`} target="_blank" rel="noreferrer">
+              {shortHex(toll.txHash, 5)} ↗
+            </a>
+            <Badge tone="ok">
+              <Wallet className="size-3" /> {t.x402.sellerBalance}: {sellerBalanceFmt} {TOLL_SYMBOL}
             </Badge>
             <span className="inline-flex items-center gap-1.5 rounded-chip border border-info/30 bg-info/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-info">
               <span className="size-1.5 rounded-full bg-info motion-safe:animate-pulse" /> {t.x402.liveRead}
             </span>
           </div>
         </div>
+      ) : (
+        <>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <button onClick={trace} disabled={tracing} className="inline-flex items-center gap-2">
+              <Wallet className="size-4" /> {tracing ? t.x402.tracing : t.x402.trace}
+            </button>
+            {tracing && step >= X402_PHASES.length && bal === null && (
+              <span className="font-mono text-[11px] text-ink-mute motion-safe:animate-pulse">{t.x402.reading}</span>
+            )}
+            {err && (
+              <span className="flex items-center gap-1.5 text-[12px] text-bad">
+                <AlertTriangle className="size-3.5" /> {err}
+              </span>
+            )}
+          </div>
+
+          {/* result — plain-language outcome + the seller's real on-chain balance (the actual proof) */}
+          {bal !== null && (
+            <div className="mt-3 rounded-xl border border-ok/25 bg-ok/[0.06] px-4 py-3.5">
+              <p className="text-[12.5px] leading-relaxed text-ink-soft">{t.x402.result}</p>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <Badge tone="ok">
+                  <Wallet className="size-3" /> {t.x402.sellerBalance}: {bal} {TOLL_SYMBOL}
+                </Badge>
+                <span className="inline-flex items-center gap-1.5 rounded-chip border border-info/30 bg-info/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-info">
+                  <span className="size-1.5 rounded-full bg-info motion-safe:animate-pulse" /> {t.x402.liveRead}
+                </span>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </Panel>
   );

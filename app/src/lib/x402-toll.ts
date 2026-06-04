@@ -11,6 +11,11 @@ export const TOLL_DECIMALS = 18;
 export const TOLL_SYMBOL = 'MVOTE';
 export const TOLL_RESOURCE = '/context/proposal-42';
 
+/** The priced resource for a proposal — `/context/proposal-<last-6-of-id>` (matches the HUD's #id). */
+export function tollResource(proposalId?: bigint | string | null): string {
+  return proposalId != null && proposalId !== '' ? `/context/proposal-${String(proposalId).slice(-6)}` : TOLL_RESOURCE;
+}
+
 /** The 402 -> sign-scope -> settle -> 200 toll lifecycle, shown as an animated stepper. */
 export const X402_PHASES = [
   { key: 'require', code: 402 },
@@ -32,12 +37,12 @@ export function formatTokenAmount(atoms: bigint, decimals: number): string {
 }
 
 /** Build the real x402 (scheme erc7710) 402 challenge for the per-query data toll. */
-export function tollChallenge(opts: { asset: Address; payTo: Address; chainId: number }) {
+export function tollChallenge(opts: { asset: Address; payTo: Address; chainId: number; resource?: string }) {
   return build402({
     asset: opts.asset,
     payTo: opts.payTo,
     amount: TOLL_PRICE_ATOMS,
     chainId: opts.chainId,
-    resource: TOLL_RESOURCE,
+    resource: opts.resource ?? TOLL_RESOURCE,
   });
 }

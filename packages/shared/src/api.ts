@@ -147,6 +147,25 @@ export const VoteReceiptSchema = z.object({
 });
 export type VoteReceipt = z.infer<typeof VoteReceiptSchema>;
 
+/** A REAL x402 pay-per-query settlement: the analyst's context feed (seller) pulled the toll from the
+ *  orchestrator (buyer) via a scoped ERC-7710 Erc20TransferAmount delegation, on-chain, for THIS query. */
+export const TollReceiptSchema = z.object({
+  txHash: Bytes32Schema,
+  /** the toll token (MVOTE). */
+  asset: AddressSchema,
+  /** the buyer the toll was pulled FROM (orchestrator SA). */
+  buyer: AddressSchema,
+  /** the seller the toll was paid TO (analyst / context feed). */
+  seller: AddressSchema,
+  /** the toll charged for this query, in atoms. */
+  amount: UintStringSchema,
+  /** the seller's MVOTE balance AFTER this settlement, in atoms — the live, on-chain proof. */
+  sellerBalance: UintStringSchema,
+  /** the priced resource, e.g. /context/proposal-<id>. */
+  resource: z.string(),
+});
+export type TollReceipt = z.infer<typeof TollReceiptSchema>;
+
 export const RunErrorSchema = z.object({
   code: z.enum(['INVALID_GRANT', 'SIMULATION_FAILED', 'VENICE_FAILED', 'VOTE_REVERTED', 'INTERNAL']),
   message: z.string(),
@@ -166,6 +185,8 @@ export const RunStatusSchema = z.object({
   venice: VeniceTraceSchema.optional(),
   /** present from 'voted'. */
   vote: VoteReceiptSchema.optional(),
+  /** the real x402 toll settled for this query (present once the per-vote toll has cleared on-chain). */
+  toll: TollReceiptSchema.optional(),
   /** present when 'revoked'. */
   revokeTxHash: Bytes32Schema.optional(),
   /** present when 'failed'. */
