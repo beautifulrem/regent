@@ -72,8 +72,8 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
       {/* scope sentence */}
       {sentence && <p className="m-0 max-w-[560px] text-center text-[15px] text-ink-soft">{sentence}</p>}
 
-      {/* on-chain-enforced chip row */}
-      {!killed && (
+      {/* on-chain-enforced chip row — pre-grant only; once granted, MandateStats + the CTA carry it */}
+      {!granted && !killed && (
         <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 text-[12.5px] font-semibold text-brand">
           <span className="inline-flex items-center gap-1.5">
             <ShieldCheck className="size-3.5" /> {t.scopeEnforced}

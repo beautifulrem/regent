@@ -30,6 +30,7 @@ export function Popover({
     <div
       className={`mc-pop ${side}`}
       role="dialog"
+      aria-modal="true"
       aria-label={title}
       style={{ top: anchorTop, maxHeight: `calc(100vh - ${anchorTop}px - 22px)` }}
     >

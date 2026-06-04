@@ -44,10 +44,10 @@ export function ProposalHUD({
       <h1 className="mc-title">{proposal.title[lang]}</h1>
       <p className="mc-body">{proposal.body[lang]}</p>
 
-      <div className="mc-tallybar mt-3.5">
-        <span style={{ flexGrow: forV, background: 'var(--color-ok)' }} />
-        <span style={{ flexGrow: against, background: 'var(--color-bad)' }} />
-        <span style={{ flexGrow: abstain, background: 'var(--color-ink-mute)' }} />
+      <div className="mc-tallybar mt-3.5" role="img" aria-label={`${forV} ${t.tally.for} · ${against} ${t.tally.against} · ${abstain} ${t.tally.abstain}`}>
+        <span aria-hidden="true" style={{ flexGrow: forV, background: 'var(--color-ok)' }} />
+        <span aria-hidden="true" style={{ flexGrow: against, background: 'var(--color-bad)' }} />
+        <span aria-hidden="true" style={{ flexGrow: abstain, background: 'var(--color-ink-mute)' }} />
       </div>
       <div className="mt-2 flex gap-4 text-[12.5px] font-semibold">
         <span className="text-ok">{forV} {t.tally.for}</span>
