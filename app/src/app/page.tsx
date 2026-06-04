@@ -223,7 +223,7 @@ export default function Home() {
       setRun(null);
       setRunId(id);
       setGrantRunId(id);
-      setVotesUsed(1);
+      setVotesUsed(0); // the grant only establishes the standing mandate — no vote cast yet
       setGrantedAt(Date.now());
     } catch (e) {
       if (session.current === mine) setError(e instanceof Error ? e.message : String(e));
@@ -299,7 +299,10 @@ export default function Home() {
     analystAddr: run?.delegations.participants?.analyst ?? cfg?.analyst,
     killed,
     terminal,
-    running: !!run && !terminal,
+    // 'granted' is the resting standing-mandate state (the run sleeps there after a grant — no vote
+    // in flight), so it must NOT count as "running", or the "let AI vote" button stays disabled forever.
+    // Only the redelegate→analyzing→deciding→voting stages are a vote actually in flight.
+    running: !!run && !terminal && s !== 'granted',
     statusKey: killed ? 'revoked' : (run?.status ?? ''),
     authorityPct: run && !killed ? 100 : 0,
     maxVotes,

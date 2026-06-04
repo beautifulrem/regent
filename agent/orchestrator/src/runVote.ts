@@ -134,7 +134,9 @@ async function cast(
   store.patch(runId, { status: 'voted', vote });
 }
 
-/** Drive one grant end-to-end: cache the broad standing chain → cast the first proposal. */
+/** Establish the STANDING mandate for a grant: cache the broad chain (root + orchestrator SA). It does
+ *  NOT cast a vote — granting the authority and exercising it are separated. The actual vote is an
+ *  explicit user action ("let AI vote on this proposal") → voteAgain, which reuses this cached chain. */
 export async function runVote(
   store: RunStore,
   runId: string,
@@ -158,7 +160,8 @@ export async function runVote(
       chainId: grant.chainId,
     };
     chains.set(runId, bundle);
-    await cast(store, runId, bundle, BigInt(grant.proposalId), grant.proposalText, cfg);
+    // Standing mandate established — the run rests at 'granted'. No vote is cast here; the user
+    // triggers each vote explicitly via "let AI vote on this proposal" (→ voteAgain).
   } catch (err) {
     store.patch(runId, {
       status: 'failed',
