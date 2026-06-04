@@ -1,25 +1,34 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { Bot, Boxes, ExternalLink, Lock, ScanSearch, Scissors, User, type LucideIcon } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { Bot, Boxes, Coins, ExternalLink, Lock, Scale, Scissors, ShieldCheck, TrendingUp, User, Users, type LucideIcon } from 'lucide-react';
+import { LENSES, type LensKey, type LensVerdict } from '@mandate/shared';
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
 import { useRatchet } from '../../lib/useRatchet';
+import { decisionColor } from './teeStream';
 import type { Dict } from '../../lib/i18n';
 
 type Pips = { for_: number; against: number; abstain: number };
 type DivRef = RefObject<HTMLDivElement | null>;
 
-// Packet-travel time: a node turns ON this long after its incoming beam goes live, so the light
-// visibly crosses the wire first and *then* the Orchestrator / Analyst lights up. Matches beamTravel.
-// (The per-stage hold lives in the cockpit now — it drives the chain AND the TEE console together.)
+// A node turns ON this long after its incoming beam goes live (the light crosses the wire first).
 const PACKET_MS = 850;
+// The four lenses light one-by-one this far apart, so the committee "reports in" in sequence.
+const LENS_STAGGER_MS = 480;
+
+const LENS_ICON: Record<LensKey, LucideIcon> = {
+  fiscal: Coins,
+  growth: TrendingUp,
+  security: ShieldCheck,
+  participation: Users,
+};
 
 interface ChainNodeProps {
   nodeRef: DivRef;
   icon: LucideIcon;
   who: string;
-  role: string;
+  role?: string;
   addr?: string;
   active?: boolean;
   working?: boolean;
@@ -27,14 +36,17 @@ interface ChainNodeProps {
   thinking?: string;
   killed?: boolean;
   board?: boolean;
+  small?: boolean;
+  verdict?: { label: string; tone: string } | null;
   pips?: Pips;
 }
 
-function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee, thinking, killed, board, pips }: ChainNodeProps) {
+function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee, thinking, killed, board, small, verdict, pips }: ChainNodeProps) {
   const accent = board ? 'var(--color-ok)' : 'var(--color-brand)';
   const ringActive = !!active && !killed;
   const ringColor = board ? 'rgba(74,222,128,.55)' : 'rgba(246,133,27,.5)';
   const ringBg = board ? 'rgba(74,222,128,.12)' : 'rgba(246,133,27,.15)';
+  const size = small ? 44 : 60;
   return (
     <div
       ref={nodeRef}
@@ -42,7 +54,7 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee,
       style={{
         position: 'relative',
         zIndex: 1,
-        flex: 1,
+        flex: small ? '0 0 auto' : 1,
         minWidth: 0,
         textAlign: 'center',
         opacity: killed && !board ? 0.4 : 1,
@@ -53,8 +65,8 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee,
       <span
         style={{
           margin: '0 auto',
-          width: 60,
-          height: 60,
+          width: size,
+          height: size,
           display: 'grid',
           placeItems: 'center',
           borderRadius: 999,
@@ -69,20 +81,41 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee,
           animation: working && !killed ? 'glow 2.8s ease-in-out infinite' : 'none',
         }}
       >
-        <Icon size={24} strokeWidth={1.5} />
+        <Icon size={small ? 19 : 24} strokeWidth={1.5} />
       </span>
-      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15.5, color: ringActive ? accent : 'var(--color-ink)', marginTop: 9 }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: small ? 12.5 : 15.5, color: ringActive ? accent : 'var(--color-ink)', marginTop: small ? 6 : 9 }}>
         {who}
       </div>
-      <div style={{ marginTop: 2, fontSize: 12, color: 'var(--color-ink-mute)' }}>{role}</div>
-      {tee && !killed && (
+      {role && <div style={{ marginTop: 2, fontSize: 12, color: 'var(--color-ink-mute)' }}>{role}</div>}
+
+      {verdict && !killed && (
+        <span
+          className="mc-verdict-pop"
+          style={{
+            marginTop: 6,
+            display: 'inline-flex',
+            alignItems: 'center',
+            borderRadius: 999,
+            padding: '2px 9px',
+            fontSize: 10.5,
+            fontWeight: 700,
+            whiteSpace: 'nowrap',
+            border: `1px solid ${verdict.tone}66`,
+            background: `${verdict.tone}1f`,
+            color: verdict.tone,
+          }}
+        >
+          {verdict.label}
+        </span>
+      )}
+      {tee && !verdict && !killed && (
         <div
           className="mc-thinking"
           style={{
-            margin: '8px auto 0',
+            margin: small ? '6px auto 0' : '8px auto 0',
             maxWidth: 130,
             display: 'flex',
-            height: 22,
+            height: small ? 18 : 22,
             alignItems: 'center',
             justifyContent: 'center',
             gap: 6,
@@ -91,6 +124,7 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee,
             background: 'rgba(110,168,254,.1)',
             color: 'var(--color-info)',
             fontSize: 10.5,
+            padding: '0 7px',
           }}
         >
           <Lock size={11} /> {thinking}
@@ -152,12 +186,20 @@ function Beam({
       const cr = container.current.getBoundingClientRect();
       const a = from.current.getBoundingClientRect();
       const b = to.current.getBoundingClientRect();
-      const iconY = 30; // icon-circle centre row, not the node centre
-      const start = { x: a.right - cr.left - a.width / 2 + 46, y: a.top - cr.top + iconY };
-      const end = { x: b.left - cr.left + b.width / 2 - 46, y: b.top - cr.top + iconY };
-      const mx = (start.x + end.x) / 2;
-      const my = (start.y + end.y) / 2;
-      setGeom({ w: cr.width, h: cr.height, d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`, start, end, mid: { x: mx, y: my } });
+      // connect the icon-circle centres (top of each node), then trim along the beam so it starts/
+      // ends just outside each circle — works for the angled fan-out/fan-in beams too.
+      const iconY = (r: DOMRect) => r.top - cr.top + (r.width >= 56 ? 30 : 22); // small nodes have a smaller circle
+      const aC = { x: a.left - cr.left + a.width / 2, y: iconY(a) };
+      const bC = { x: b.left - cr.left + b.width / 2, y: iconY(b) };
+      const dx = bC.x - aC.x;
+      const dy = bC.y - aC.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ax = a.width >= 56 ? 34 : 26; // trim ≈ circle radius + a little
+      const bx = b.width >= 56 ? 34 : 26;
+      const start = { x: aC.x + (dx / len) * ax, y: aC.y + (dy / len) * ax };
+      const end = { x: bC.x - (dx / len) * bx, y: bC.y - (dy / len) * bx };
+      const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+      setGeom({ w: cr.width, h: cr.height, d: `M ${start.x} ${start.y} L ${end.x} ${end.y}`, start, end, mid });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -237,7 +279,7 @@ function ScopeChip({
   container,
   youRef,
   orchRef,
-  analystRef,
+  synthRef,
   pos,
   attenuated,
   label,
@@ -245,21 +287,21 @@ function ScopeChip({
   container: DivRef;
   youRef: DivRef;
   orchRef: DivRef;
-  analystRef: DivRef;
-  pos: 'you' | 'orch' | 'analyst';
+  synthRef: DivRef;
+  pos: 'you' | 'orch' | 'synth';
   attenuated: boolean;
   label: string;
 }) {
-  const [xs, setXs] = useState<{ you: number; orch: number; analyst: number } | null>(null);
+  const [xs, setXs] = useState<{ you: number; orch: number; synth: number } | null>(null);
   useEffect(() => {
     const compute = () => {
-      if (!container.current || !youRef.current || !orchRef.current || !analystRef.current) return;
+      if (!container.current || !youRef.current || !orchRef.current || !synthRef.current) return;
       const cr = container.current.getBoundingClientRect();
       const cx = (n: HTMLDivElement) => {
         const r = n.getBoundingClientRect();
         return r.left - cr.left + r.width / 2;
       };
-      setXs({ you: cx(youRef.current), orch: cx(orchRef.current), analyst: cx(analystRef.current) });
+      setXs({ you: cx(youRef.current), orch: cx(orchRef.current), synth: cx(synthRef.current) });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -269,13 +311,13 @@ function ScopeChip({
       ro.disconnect();
       window.removeEventListener('resize', compute);
     };
-  }, [container, youRef, orchRef, analystRef]);
+  }, [container, youRef, orchRef, synthRef]);
   if (!xs) return null;
-  // Rides with the light packet — You → Orchestrator → Analyst, one beam per stage. The `left`
-  // transition matches the packet's 0.85s travel so the token and the light move as one.
+  // The scope token (the delegation) rides You → Orchestrator → Synthesis (the cast point); the four
+  // lenses are decision agents, not delegation hops, so the token floats over them.
   const x = xs[pos];
   return (
-    <div style={{ position: 'absolute', left: x, top: -14, transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none', transition: 'left .85s var(--ease-fluid)' }}>
+    <div style={{ position: 'absolute', left: x, top: -8, transform: 'translateX(-50%)', zIndex: 3, pointerEvents: 'none', transition: 'left .85s var(--ease-fluid)' }}>
       <span
         style={{
           display: 'inline-flex',
@@ -307,10 +349,11 @@ export interface ChainParties {
 }
 
 /**
- * The live authority graph: You → Orchestrator → Analyst → VoteBoard. Beams light + a permission
- * packet travels left→right as the run advances; the floating scope token slides from the
- * orchestrator to the analyst as the permission is attenuated; Recall plays the scissors snip +
- * spark and the cables recoil apart (the kill-the-chain fracture).
+ * The live authority graph: You → Orchestrator → (four governance lenses) → Synthesis → VoteBoard.
+ * The orchestrator fans the proposal out to four specialist lenses (each a private TEE analysis),
+ * which report a verdict in sequence; the Synthesis node weighs them into the final vote. Beams light
+ * + a permission packet travels as the run advances; the scope token rides You→Orch→Synthesis (the
+ * lenses are decision agents, not delegation hops); Recall snips the root and the cables recoil.
  */
 export function AuthorityChain({
   t,
@@ -321,6 +364,8 @@ export function AuthorityChain({
   cutting,
   connected,
   pips,
+  lenses,
+  synthDecision,
 }: {
   t: Dict;
   parties: ChainParties;
@@ -330,59 +375,88 @@ export function AuthorityChain({
   cutting: boolean;
   connected: boolean;
   pips: Pips;
+  lenses: LensVerdict[] | undefined;
+  synthDecision?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const youRef = useRef<HTMLDivElement>(null);
   const orchRef = useRef<HTMLDivElement>(null);
-  const analystRef = useRef<HTMLDivElement>(null);
+  const synthRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
+  const lensRefs = useMemo<DivRef[]>(() => LENSES.map(() => ({ current: null })), []);
   const s = status;
   const live = !!s && !['', 'idle'].includes(s);
 
-  // `shownIdx` (the staged reveal index) arrives from the cockpit, so the chain and the TEE console
-  // advance off the SAME beat. Beams + the scope token use it directly; nodes light one packet-travel
-  // later — `litIdx` ratchets toward shownIdx so a node only turns on once its packet has arrived.
   const litIdx = useRatchet(shownIdx, PACKET_MS, killed);
-
   const idxOf = (target: string) => (ORDER as readonly string[]).indexOf(target);
-  const beamLive = (target: string) => shownIdx >= idxOf(target); // packet travels the wire
-  const nodeLit = (target: string) => litIdx >= idxOf(target); //    node turns on once it arrives
+  const beamLive = (target: string) => shownIdx >= idxOf(target);
+  const nodeLit = (target: string) => litIdx >= idxOf(target);
+
+  // The four lenses light one-by-one once 'analyzing' is revealed (the committee reports in).
+  const lensTarget = beamLive('analyzing') ? LENSES.length - 1 : -1;
+  const lensLit = useRatchet(lensTarget, LENS_STAGGER_MS, killed);
+
   const orchWorking = nodeLit('redelegated') && !beamLive('analyzing'); // lit, holding the scope
-  const analystWorking = nodeLit('analyzing') && shownIdx < idxOf('decided'); // lit, deciding
-  const analystTee = analystWorking; // "thinking…" pill while deciding
-  // The scope token rides with the packets: held by You, → Orchestrator on the You→Orch beam, then →
-  // Analyst on the Orch→Analyst beam (attenuated). Same thresholds as the beams ⇒ moves in lockstep
-  // with the light, instead of teleporting to the analyst the moment the first beam fires.
-  const chipPos: 'you' | 'orch' | 'analyst' = beamLive('analyzing') ? 'analyst' : beamLive('redelegated') ? 'orch' : 'you';
-  const chipAttenuated = beamLive('analyzing');
-  // Held by You it's the full grant; the orchestrator's root delegation reads as its caveats; once
-  // attenuated it's the narrowed scope.
-  const chipLabel = chipPos === 'analyst' ? t.scopeChipAttenuated : chipPos === 'orch' ? t.scopeChip : t.scopeChipOrigin;
+  const synthWorking = nodeLit('decided') && shownIdx < idxOf('voting'); // lit, finalizing the vote
+  const verdictFor = (key: LensKey) => lenses?.find((l) => l.lens === key);
+
+  // The scope token rides You → Orchestrator → Synthesis (the per-proposal narrowed cast point).
+  const chipPos: 'you' | 'orch' | 'synth' = beamLive('decided') ? 'synth' : beamLive('redelegated') ? 'orch' : 'you';
+  const chipLabel = chipPos === 'synth' ? t.scopeChipAttenuated : chipPos === 'orch' ? t.scopeChip : t.scopeChipOrigin;
 
   return (
-    <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1080 }}>
+    <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center' }}>
       <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} active={connected} killed={killed} />
       <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} active={nodeLit('redelegated')} working={orchWorking} killed={killed} />
+
+      {/* the four governance lenses (decision agents), stacked between the orchestrator and synthesis */}
+      <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 12, justifyContent: 'center', alignSelf: 'center' }}>
+        {LENSES.map((lens, i) => {
+          const lit = lensLit >= i;
+          const v = verdictFor(lens.key);
+          return (
+            <ChainNode
+              key={lens.key}
+              nodeRef={lensRefs[i]}
+              icon={LENS_ICON[lens.key]}
+              who={t.presets[lens.key]}
+              active={lit}
+              working={lit && !v}
+              tee={lit && !v}
+              thinking={t.thinking}
+              verdict={lit && v ? { label: v.decision, tone: decisionColor(v.decision) } : null}
+              killed={killed}
+              small
+            />
+          );
+        })}
+      </div>
+
       <ChainNode
-        nodeRef={analystRef}
-        icon={ScanSearch}
-        who={t.nodes.analyst.who}
-        role={t.nodes.analyst.role}
+        nodeRef={synthRef}
+        icon={Scale}
+        who={t.nodes.synthesis.who}
+        role={t.nodes.synthesis.role}
         addr={parties.analyst}
-        active={nodeLit('analyzing')}
-        working={analystWorking}
-        tee={analystTee}
-        thinking={t.thinking}
+        active={nodeLit('decided')}
+        working={synthWorking}
+        verdict={nodeLit('decided') && synthDecision ? { label: synthDecision, tone: decisionColor(synthDecision) } : null}
         killed={killed}
       />
       <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board pips={pips} />
 
+      {/* You → Orchestrator (root), then fan-out to the lenses, fan-in to Synthesis, then to the board */}
       <Beam container={containerRef} from={youRef} to={orchRef} live={beamLive('redelegated')} killed={killed} cutting={cutting} root />
-      <Beam container={containerRef} from={orchRef} to={analystRef} live={beamLive('analyzing')} killed={killed} cutting={cutting} />
-      <Beam container={containerRef} from={analystRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone="ok" />
+      {LENSES.map((lens, i) => (
+        <Beam key={`out-${lens.key}`} container={containerRef} from={orchRef} to={lensRefs[i]} live={beamLive('analyzing')} killed={killed} cutting={cutting} />
+      ))}
+      {LENSES.map((lens, i) => (
+        <Beam key={`in-${lens.key}`} container={containerRef} from={lensRefs[i]} to={synthRef} live={beamLive('decided')} killed={killed} cutting={cutting} />
+      ))}
+      <Beam container={containerRef} from={synthRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone="ok" />
 
       {live && !killed && !cutting && (
-        <ScopeChip container={containerRef} youRef={youRef} orchRef={orchRef} analystRef={analystRef} pos={chipPos} attenuated={chipAttenuated} label={chipLabel} />
+        <ScopeChip container={containerRef} youRef={youRef} orchRef={orchRef} synthRef={synthRef} pos={chipPos} attenuated={chipPos === 'synth'} label={chipLabel} />
       )}
     </div>
   );

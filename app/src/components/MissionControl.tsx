@@ -168,6 +168,8 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
             cutting={vm.recalling}
             connected={vm.isConnected}
             pips={pips}
+            lenses={vm.lenses}
+            synthDecision={vm.venice?.decision}
           />
         </div>
 
