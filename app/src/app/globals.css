@@ -540,7 +540,7 @@ html, body { height: 100%; overflow: hidden; }
 .beam-svg { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: visible; }
 .beam-base { fill: none; stroke: var(--color-line); stroke-width: 2; stroke-linecap: round; transition: stroke 0.3s; }
 .beam-base.killed { stroke: var(--color-bad); stroke-dasharray: 5 7; opacity: 0.7; }
-.beam-pulse { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 7 14; animation: beamFlow 0.55s linear infinite; filter: drop-shadow(0 0 6px currentColor); }
+.beam-pulse { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 7 14; animation: beamFlow 0.8s linear infinite; filter: drop-shadow(0 0 6px currentColor); }
 @keyframes beamFlow { to { stroke-dashoffset: -22; } }
 @keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
 

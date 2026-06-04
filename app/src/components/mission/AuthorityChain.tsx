@@ -568,7 +568,7 @@ function PaymentFlow({
       place(geom.you, 1);
       repulse(youWalletRef);
       const controls = animate(0, 1, {
-        duration: 2,
+        duration: 3.6,
         ease: 'linear',
         repeat: Infinity,
         onUpdate: (p) => {

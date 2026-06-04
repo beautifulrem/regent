@@ -44,8 +44,8 @@ export function NetworkField() {
       nodes = Array.from({ length: COUNT }, () => ({
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.12,
-        vy: (Math.random() - 0.5) * 0.12,
+        vx: (Math.random() - 0.5) * 0.085,
+        vy: (Math.random() - 0.5) * 0.085,
         cyan: Math.random() < 0.32,
         r: Math.random() * 1.4 + 0.6,
       }));
@@ -66,7 +66,7 @@ export function NetworkField() {
           const b = nodes[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < LINK) {
-            const o = (1 - d / LINK) * 0.22;
+            const o = (1 - d / LINK) * 0.15;
             ctx.strokeStyle = a.cyan || b.cyan ? `rgba(56,224,255,${o})` : `rgba(246,133,27,${o})`;
             ctx.lineWidth = 1.2;
             ctx.beginPath();
@@ -77,7 +77,7 @@ export function NetworkField() {
         }
       }
       for (const n of nodes) {
-        ctx.fillStyle = n.cyan ? 'rgba(56,224,255,0.6)' : 'rgba(246,133,27,0.55)';
+        ctx.fillStyle = n.cyan ? 'rgba(56,224,255,0.5)' : 'rgba(246,133,27,0.45)';
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
         ctx.fill();
