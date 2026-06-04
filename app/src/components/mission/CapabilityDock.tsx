@@ -31,7 +31,7 @@ export function CapabilityDock({ t, onOpen, connected, revealIdx, killed }: { t:
             <span className="mc-cap-k">
               x402 <span className="live-dot" />
             </span>
-            <span className="mc-cap-v">0.01 MVOTE / {t.x402.perQuery}</span>
+            <span className="mc-cap-v">1 mUSDC / {t.x402.perQuery}</span>
           </span>
         </button>
 
