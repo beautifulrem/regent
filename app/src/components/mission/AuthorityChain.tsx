@@ -6,7 +6,6 @@ import { LENSES, type Decision, type LensKey, type LensVerdict } from '@mandate/
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
 import { useRatchet } from '../../lib/useRatchet';
-import { decisionColor } from './teeStream';
 import type { Dict } from '../../lib/i18n';
 
 type Pips = { for_: number; against: number; abstain: number };
@@ -24,6 +23,22 @@ const LENS_ICON: Record<LensKey, LucideIcon> = {
   participation: Users,
 };
 
+// Every circle + beam is colored by ONE tone. `accent` drives the icon/label; ring/bg/glow are the
+// circle's halo (rgba so inline styles can alpha them); beamDeep→beamLight is the beam gradient and
+// `packet` the travelling light. For=ok(green) · Against=bad(red) · Abstain=warn(amber) · brand=orange
+// (the spine / our cast landed) · info=cold blue (a lens still thinking).
+type ToneKey = 'brand' | 'info' | 'ok' | 'bad' | 'warn';
+const TONES: Record<ToneKey, { accent: string; ring: string; bg: string; glow: string; beamDeep: string; beamLight: string; packet: string }> = {
+  brand: { accent: 'var(--color-brand)', ring: 'rgba(246,133,27,.5)', bg: 'rgba(246,133,27,.15)', glow: 'rgba(246,133,27,.06)', beamDeep: 'var(--color-brand-deep)', beamLight: '#ffc879', packet: 'var(--color-brand-soft)' },
+  info: { accent: 'var(--color-info)', ring: 'rgba(110,168,254,.5)', bg: 'rgba(110,168,254,.13)', glow: 'rgba(110,168,254,.07)', beamDeep: '#3b6fd0', beamLight: '#8fb6ef', packet: '#8fb6ef' },
+  ok: { accent: 'var(--color-ok)', ring: 'rgba(74,222,128,.55)', bg: 'rgba(74,222,128,.12)', glow: 'rgba(74,222,128,.06)', beamDeep: '#2f9e5a', beamLight: '#6ee79a', packet: '#6ee79a' },
+  bad: { accent: 'var(--color-bad)', ring: 'rgba(248,113,113,.55)', bg: 'rgba(248,113,113,.12)', glow: 'rgba(248,113,113,.06)', beamDeep: '#a23b3b', beamLight: '#f87171', packet: '#f87171' },
+  warn: { accent: 'var(--color-warn)', ring: 'rgba(251,191,36,.55)', bg: 'rgba(251,191,36,.13)', glow: 'rgba(251,191,36,.07)', beamDeep: '#a87514', beamLight: '#fbbf24', packet: '#fbbf24' },
+};
+
+/** A vote decision → its tone key (For=green, Against=red, Abstain=amber); anything else → brand. */
+const decisionToneKey = (d?: string): ToneKey => (d === 'For' ? 'ok' : d === 'Against' ? 'bad' : d === 'Abstain' ? 'warn' : 'brand');
+
 interface ChainNodeProps {
   nodeRef: DivRef;
   icon: LucideIcon;
@@ -40,51 +55,23 @@ interface ChainNodeProps {
   /** float the label/verdict/addr absolutely below the circle, so the node's height == the circle
    *  and align-items:center lines ALL the main-node circles up (regardless of how much hangs below). */
   floatBelow?: boolean;
-  /** When set, colors the circle (ring + glow + icon) by decision result. Keeps cold-blue "thinking" state when absent. */
+  /** the verdict word, kept only for the title/aria-label (colorblind-safe); the color comes from `tone`. */
   result?: Decision;
+  /** the circle's color tone (icon + ring + glow). Defaults: board=ok, lens=info, else brand. */
+  tone?: ToneKey;
   pips?: Pips;
 }
 
-function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee, thinking, killed, board, small, floatBelow, result, pips }: ChainNodeProps) {
-  // the four lenses + the final Arbiter (终裁 / caster) color their circles by result once decided.
-  // "thinking" state for lenses stays cold info-blue until the verdict arrives.
-  const resultTone = result ? decisionColor(result) : undefined;
-  const accent = board ? 'var(--color-ok)' : resultTone ? resultTone : small ? 'var(--color-info)' : 'var(--color-brand)';
+function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee, thinking, killed, board, small, floatBelow, result, tone, pips }: ChainNodeProps) {
+  // One tone drives the whole circle (icon + ring + glow). Callers pass it explicitly: the lenses and
+  // the Arbiter (终裁) by their verdict, the VoteBoard by the live tally (or brand once our vote lands).
+  // You/Orchestrator default brand; a lens with no verdict yet stays cold info-blue.
+  const T = TONES[tone ?? (board ? 'ok' : small ? 'info' : 'brand')];
+  const accent = T.accent;
   const ringActive = !!active && !killed;
-  // result rings use matching alpha tints (green/red/amber) so the decided nodes pop in the graph
-  const ringColor = board
-    ? 'rgba(74,222,128,.55)'
-    : result === 'For'
-    ? 'rgba(74,222,128,.55)'
-    : result === 'Against'
-    ? 'rgba(248,113,113,.55)'
-    : result === 'Abstain'
-    ? 'rgba(251,191,36,.55)'
-    : small
-    ? 'rgba(110,168,254,.5)'
-    : 'rgba(246,133,27,.5)';
-  const ringBg = board
-    ? 'rgba(74,222,128,.12)'
-    : result === 'For'
-    ? 'rgba(74,222,128,.12)'
-    : result === 'Against'
-    ? 'rgba(248,113,113,.12)'
-    : result === 'Abstain'
-    ? 'rgba(251,191,36,.13)'
-    : small
-    ? 'rgba(110,168,254,.13)'
-    : 'rgba(246,133,27,.15)';
-  const glowRing = board
-    ? 'rgba(74,222,128,.06)'
-    : result === 'For'
-    ? 'rgba(74,222,128,.06)'
-    : result === 'Against'
-    ? 'rgba(248,113,113,.06)'
-    : result === 'Abstain'
-    ? 'rgba(251,191,36,.07)'
-    : small
-    ? 'rgba(110,168,254,.07)'
-    : 'rgba(246,133,27,.06)';
+  const ringColor = T.ring;
+  const ringBg = T.bg;
+  const glowRing = T.glow;
   const size = small ? 38 : 60;
   return (
     <div
@@ -128,9 +115,9 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, tee,
       </div>
       {role && <div style={{ marginTop: 2, fontSize: 12, color: 'var(--color-ink-mute)' }}>{role}</div>}
 
-      {/* verdict pills intentionally removed from graph nodes; circles are colored by result (see above).
+      {/* verdict pills intentionally removed from graph nodes; circles are colored by `tone` (see above).
           The TeeConsole committee cards + synth verdict row continue to show explicit "For"/"Against" text. */}
-      {tee && !result && !killed && (
+      {tee && !killed && (
         <div
           className="mc-thinking"
           style={{
@@ -200,7 +187,7 @@ function Beam({
   killed?: boolean;
   cutting?: boolean;
   root?: boolean;
-  tone?: 'ok' | 'brand';
+  tone?: ToneKey;
 }) {
   const [geom, setGeom] = useState<Geom | null>(null);
   const gid = useId().replace(/:/g, ''); // unique per beam — gradient ids must not collide across beams
@@ -236,8 +223,8 @@ function Beam({
     };
   }, [from, to, container, live, killed]);
   if (!geom) return null;
-  const grad = tone === 'ok' ? `beamgradok-${gid}` : `beamgrad-${gid}`;
-  const packetColor = tone === 'ok' ? '#6ee79a' : 'var(--color-brand-soft)';
+  const T = TONES[tone ?? 'brand'];
+  const packetColor = T.packet;
   const GAP = 11;
   const DROOP = 9;
   const midL = { x: geom.mid.x - GAP, y: geom.mid.y + DROOP };
@@ -249,12 +236,8 @@ function Beam({
       <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
         <defs>
           <linearGradient id={`beamgrad-${gid}`} gradientUnits="userSpaceOnUse" x1={geom.start.x} y1={geom.start.y} x2={geom.end.x} y2={geom.end.y}>
-            <stop offset="0%" stopColor="var(--color-brand-deep)" />
-            <stop offset="100%" stopColor="#ffc879" />
-          </linearGradient>
-          <linearGradient id={`beamgradok-${gid}`} gradientUnits="userSpaceOnUse" x1={geom.start.x} y1={geom.start.y} x2={geom.end.x} y2={geom.end.y}>
-            <stop offset="0%" stopColor="#2f9e5a" />
-            <stop offset="100%" stopColor="#6ee79a" />
+            <stop offset="0%" stopColor={T.beamDeep} />
+            <stop offset="100%" stopColor={T.beamLight} />
           </linearGradient>
         </defs>
         {killed ? (
@@ -265,7 +248,7 @@ function Beam({
         ) : (
           <>
             <path className="beam-base" d={geom.d} />
-            {live && <path className="beam-pulse" d={geom.d} stroke={`url(#${grad})`} />}
+            {live && <path className="beam-pulse" d={geom.d} stroke={`url(#beamgrad-${gid})`} />}
           </>
         )}
       </svg>
@@ -431,6 +414,11 @@ export function AuthorityChain({
   const chipPos: 'you' | 'orch' | 'synth' = beamLive('decided') ? 'synth' : beamLive('redelegated') ? 'orch' : 'you';
   const chipLabel = chipPos === 'synth' ? t.scopeChipAttenuated : chipPos === 'orch' ? t.scopeChip : t.scopeChipOrigin;
 
+  // VoteBoard color = the live tally result (passing=green / failing=red), flipping to brand-orange the
+  // moment our vote lands. The fan-in beams (lens→Arbiter) and the cast beam (Arbiter→board) now carry
+  // the verdict color instead of the old fixed orange / green.
+  const boardTone: ToneKey = nodeLit('voted') ? 'brand' : pips.for_ > pips.against ? 'ok' : 'bad';
+
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center' }}>
       <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} active={connected} floatBelow killed={killed} />
@@ -452,6 +440,7 @@ export function AuthorityChain({
               tee={lit && !v}
               thinking={t.thinking}
               result={v ? v.decision : undefined}
+              tone={v ? decisionToneKey(v.decision) : 'info'}
               killed={killed}
               small
             />
@@ -468,10 +457,11 @@ export function AuthorityChain({
         active={nodeLit('decided')}
         working={synthWorking}
         result={nodeLit('decided') && synthDecision ? (synthDecision as Decision) : undefined}
+        tone={nodeLit('decided') && synthDecision ? decisionToneKey(synthDecision) : 'brand'}
         floatBelow
         killed={killed}
       />
-      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board floatBelow pips={pips} />
+      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board tone={boardTone} floatBelow pips={pips} />
 
       {/* You → Orchestrator (root), then fan-out to the lenses, fan-in to Arbiter (终裁), then to the board */}
       <Beam container={containerRef} from={youRef} to={orchRef} live={beamLive('redelegated')} killed={killed} cutting={cutting} root />
@@ -479,9 +469,18 @@ export function AuthorityChain({
         <Beam key={`out-${lens.key}`} container={containerRef} from={orchRef} to={lensRefs[i]} live={beamLive('analyzing')} killed={killed} cutting={cutting} />
       ))}
       {LENSES.map((lens, i) => (
-        <Beam key={`in-${lens.key}`} container={containerRef} from={lensRefs[i]} to={synthRef} live={beamLive('decided')} killed={killed} cutting={cutting} />
+        <Beam
+          key={`in-${lens.key}`}
+          container={containerRef}
+          from={lensRefs[i]}
+          to={synthRef}
+          live={beamLive('decided')}
+          killed={killed}
+          cutting={cutting}
+          tone={decisionToneKey(verdictFor(lens.key)?.decision)}
+        />
       ))}
-      <Beam container={containerRef} from={synthRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone="ok" />
+      <Beam container={containerRef} from={synthRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
 
       {live && !killed && !cutting && (
         <ScopeChip container={containerRef} youRef={youRef} orchRef={orchRef} synthRef={synthRef} pos={chipPos} attenuated={chipPos === 'synth'} label={chipLabel} />
