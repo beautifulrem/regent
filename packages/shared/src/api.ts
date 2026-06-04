@@ -31,6 +31,11 @@ export function supportToDecision(support: Support): Decision {
 export const SupportSchema = z.union([z.literal(0), z.literal(1), z.literal(2)]);
 export const DecisionSchema = z.enum(['Against', 'For', 'Abstain']);
 
+/** The four governance lenses a proposal is fanned out to before the orchestrator synthesizes. */
+export const LENS_KEYS = ['fiscal', 'growth', 'security', 'participation'] as const;
+export const LensKeySchema = z.enum(LENS_KEYS);
+export type LensKey = (typeof LENS_KEYS)[number];
+
 // --- delegations (wire format mirrors the on-chain SAK Delegation) -----------
 
 export const CaveatSchema = z.object({
@@ -114,6 +119,25 @@ export const VeniceTraceSchema = z
   });
 export type VeniceTrace = z.infer<typeof VeniceTraceSchema>;
 
+/** One lens's private verdict: a Venice TEE analysis of the proposal under that lens's mandate,
+ *  produced during fan-out before the orchestrator synthesizes them into the final `venice` trace. */
+export const LensVerdictSchema = z
+  .object({
+    lens: LensKeySchema,
+    model: z.string().min(1),
+    support: SupportSchema,
+    decision: DecisionSchema,
+    rationale: z.string(),
+    /** the lens's capped private reasoning, for the UI's per-lens TEE stream. */
+    reasoning: z.string().optional(),
+    teeVerified: z.boolean(),
+  })
+  .refine((v) => supportToDecision(v.support) === v.decision, {
+    message: 'lens.decision does not match lens.support',
+    path: ['decision'],
+  });
+export type LensVerdict = z.infer<typeof LensVerdictSchema>;
+
 export const VoteReceiptSchema = z.object({
   txHash: Bytes32Schema,
   support: SupportSchema,
@@ -136,7 +160,9 @@ export const RunStatusSchema = z.object({
   proposalId: UintStringSchema,
   status: RunStatusEnum,
   delegations: DelegationChainSchema,
-  /** present from 'decided' onward. */
+  /** the four lens verdicts from fan-out (present from 'decided', alongside the synthesized `venice`). */
+  lenses: z.array(LensVerdictSchema).optional(),
+  /** the SYNTHESIZED final decision (present from 'decided' onward). */
   venice: VeniceTraceSchema.optional(),
   /** present from 'voted'. */
   vote: VoteReceiptSchema.optional(),

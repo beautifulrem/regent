@@ -27,6 +27,7 @@ export {
 } from './delegation.js';
 export type {
   AnalysisResult,
+  LensInput,
   TeeAttestation,
   TeeProof,
   VeniceConfig,
@@ -35,6 +36,7 @@ export type {
 } from './venice.js';
 export {
   analyzeProposal,
+  buildSynthesisUser,
   fetchAttestation,
   fetchModels,
   GOVERNANCE_SYSTEM_PROMPT,
@@ -42,9 +44,13 @@ export {
   parseDecision,
   resolveModel,
   resolveTeeModel,
+  SYNTHESIS_SYSTEM_PROMPT,
+  synthesizeVerdict,
   toVeniceTrace,
   withVotingPolicy,
 } from './venice.js';
+export type { Lens } from './lenses.js';
+export { LENSES, lensFor } from './lenses.js';
 export type {
   CapabilitiesResult,
   ChainCapabilities,
@@ -95,6 +101,8 @@ export type {
   DelegationChain,
   GrantRequest,
   GrantResponse,
+  LensKey,
+  LensVerdict,
   RunError,
   RunState,
   RunStatus,
@@ -112,6 +120,9 @@ export {
   GrantRequestSchema,
   GrantResponseSchema,
   HexSchema,
+  LENS_KEYS,
+  LensKeySchema,
+  LensVerdictSchema,
   RunErrorSchema,
   RunStatusEnum,
   RunStatusSchema,

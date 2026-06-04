@@ -170,21 +170,29 @@ export function toVeniceTrace(result: AnalysisResult, attestation?: TeeAttestati
   };
 }
 
-/** Run the private TEE analysis and return the decision + per-completion TEE proof. */
-export async function analyzeProposal(cfg: VeniceConfig, proposalText: string): Promise<AnalysisResult> {
-  // resolveModel honours cfg.model when it is a live TEE model, else self-heals to a default
-  // (so a stale VENICE_MODEL from .env doesn't break the run).
-  const model = await resolveModel(cfg);
+/**
+ * Run one TEE chat-completion (system + user), parse {decision, rationale}, and return it with the
+ * per-completion TEE proof + capped reasoning. `model` may be PRE-RESOLVED (the orchestrator resolves
+ * once and reuses it across the 4 lenses + synthesis, saving 4 /models round-trips); otherwise
+ * resolveModel self-heals from cfg.model (so a stale VENICE_MODEL from .env doesn't break the run).
+ */
+async function completeDecision(
+  cfg: VeniceConfig,
+  system: string,
+  user: string,
+  model?: string,
+): Promise<AnalysisResult> {
+  const resolved = model ?? (await resolveModel(cfg));
   const res = await veniceFetch(cfg, '/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model,
+      model: resolved,
       max_tokens: 2048, // reasoning models need room to finish before the final JSON line
       temperature: 0,
       messages: [
-        { role: 'system', content: GOVERNANCE_SYSTEM_PROMPT },
-        { role: 'user', content: proposalText },
+        { role: 'system', content: system },
+        { role: 'user', content: user },
       ],
     }),
   });
@@ -199,7 +207,43 @@ export async function analyzeProposal(cfg: VeniceConfig, proposalText: string): 
   const message = json.choices?.[0]?.message;
   const content = message?.content || message?.reasoning_content || '';
   const reasoning = capExcerpt((message?.reasoning_content ?? '').trim(), 600) || undefined;
-  return { decision: parseDecision(content), model, tee, usage: json.usage, reasoning };
+  return { decision: parseDecision(content), model: resolved, tee, usage: json.usage, reasoning };
+}
+
+/** Run the private TEE analysis under the governance system prompt. `model` optional (see completeDecision). */
+export async function analyzeProposal(cfg: VeniceConfig, proposalText: string, model?: string): Promise<AnalysisResult> {
+  return completeDecision(cfg, GOVERNANCE_SYSTEM_PROMPT, proposalText, model);
+}
+
+/** The coordinator system prompt: read four specialist verdicts + the proposal, decide the final vote. */
+export const SYNTHESIS_SYSTEM_PROMPT =
+  'You are the coordinator of a DAO governance committee. Four specialist analysts each reviewed the ' +
+  'same proposal under a different mandate (fiscal, growth, security, participation) and returned a ' +
+  'verdict. Weigh their verdicts and the proposal, resolve the disagreement, and decide the committee ' +
+  'vote. After any reasoning, output ONLY one line of minified JSON: ' +
+  '{"decision":"For|Against|Abstain","rationale":"<=24 words; reference the lenses that drove it"}';
+
+/** One specialist verdict fed into synthesis (the orchestrator builds these from the lens analyses). */
+export interface LensInput {
+  label: string;
+  decision: Decision;
+  rationale: string;
+}
+
+/** Pure: build the synthesis user message from the proposal + the four lens verdicts. */
+export function buildSynthesisUser(proposalText: string, lenses: LensInput[]): string {
+  const panel = lenses.map((l) => `- ${l.label}: ${l.decision} — ${l.rationale || '(no rationale)'}`).join('\n');
+  return `PROPOSAL:\n${proposalText}\n\nCOMMITTEE VERDICTS:\n${panel}\n\nDecide the final committee vote.`;
+}
+
+/** Run the orchestrator's synthesis TEE pass over the four lens verdicts → the final decision. */
+export async function synthesizeVerdict(
+  cfg: VeniceConfig,
+  proposalText: string,
+  lenses: LensInput[],
+  model?: string,
+): Promise<AnalysisResult> {
+  return completeDecision(cfg, SYNTHESIS_SYSTEM_PROMPT, buildSynthesisUser(proposalText, lenses), model);
 }
 
 /**
