@@ -602,6 +602,19 @@ html, body { height: 100%; overflow: hidden; }
   transform: translate(-50%, -50%); background: var(--color-cyan); box-shadow: 0 0 9px 1px var(--color-cyan-soft);
   animation: beamTravel 0.6s var(--ease-snappy) forwards; }
 
+/* Venice-TEE enclave — a faint sealed-platform box drawn AROUND the 4-lens committee, so the lenses
+   visibly run INSIDE Venice (containment expresses the per-lens queries; no crossing lines needed). Sits
+   behind the lens nodes (z0 < node z1), brightens via inline opacity while the committee analyzes. */
+.pay-enclave { position: absolute; z-index: 0; pointer-events: none; border-radius: 13px;
+  border: 1.5px solid rgba(110, 168, 254, 0.2); background: rgba(110, 168, 254, 0.035);
+  box-shadow: inset 0 0 26px rgba(110, 168, 254, 0.05); transition: opacity 0.4s var(--ease-fluid); }
+/* legend pill straddling the bottom edge (top edge sits too close to the proposal dots) — the
+   cut-through dark bg labels the box as the platform without touching the HUD above */
+.pay-enclave-tag { position: absolute; top: 100%; left: 50%; transform: translate(-50%, -50%);
+  display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 1.5px 8px; border-radius: 999px;
+  background: rgba(9, 12, 19, 0.92); border: 1px solid rgba(110, 168, 254, 0.24); color: var(--color-info);
+  font-family: var(--font-display); font-size: 9px; font-weight: 700; letter-spacing: 0.05em; }
+
 @keyframes ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .mc-thinking { animation: pulse 1.6s ease-in-out infinite; }
@@ -624,6 +637,7 @@ html, body { height: 100%; overflow: hidden; }
   .pay-ring { animation: none; opacity: 0; }
   .pay-wallet.pulse { animation: none; }
   .data-packet { animation: none; opacity: 0; }
+  .pay-enclave { transition: none; }
   .mc-thinking { animation: none; }
   .mc-pop.right, .mc-pop.left { animation: none; }
   .mc-phase.current .pd { animation: none; }

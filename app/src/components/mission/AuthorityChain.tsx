@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { animate, useReducedMotion } from 'motion/react';
 import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Receipt, Scale, Scissors, ShieldCheck, Sparkles, TrendingUp, User, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { LENSES, type Decision, type LensKey, type LensVerdict } from '@mandate/shared';
@@ -356,24 +356,24 @@ interface PayGeom {
   h: number;
   youWallet: PayPoint;
   synthWallet: PayPoint;
-  venice: PayPoint;
-  lensSegs: PaySeg[]; // Venice↔each lens (from = lens rim, to = Venice rim)
-  synthSeg: PaySeg; // Venice↔终裁 (from = synth rim, to = Venice rim)
+  enclave: { x: number; y: number; w: number; h: number }; // the Venice-TEE box the lens committee runs inside
+  synthSeg: PaySeg; // 终裁↔Venice synthesis tap (from = synth rim, to = enclave right edge)
 }
 
 /**
  * The x402 payment sub-flow welded onto the spine. Persistent once granted: a flat wallet at You and
- * at the seller (终裁), plus the Venice AI satellite the seller queries. When the AI starts paying
- * (analyzing) it fires ONCE: a flat coin is withdrawn from You's wallet, arcs over to the seller's
- * wallet (its own lane, not on the beam), is deposited (ring), then the AI data the buyer paid for
- * exchanges seller↔Venice (request → response). One-shot — nothing loops; the coin is gone after.
+ * at the seller (终裁), plus a faint "Venice AI · TEE" enclave drawn AROUND the 4-lens committee — the
+ * lenses visibly run INSIDE the inference platform (containment, so no crossing query lines clutter the
+ * fan-in diamond). When the AI pays (终裁 lights) it fires ONCE: a flat coin is withdrawn from You's
+ * wallet, arcs to the seller's wallet (its own lane, not on the beam), is deposited (ring), then the
+ * seller's synthesis query exchanges 终裁↔Venice (request → response) along the single tap. One-shot.
  */
 function PaymentFlow({
   container,
   youRef,
   synthRef,
   lensRefs,
-  lensLit,
+  active,
   decidedLit,
   killed,
 }: {
@@ -381,8 +381,8 @@ function PaymentFlow({
   youRef: DivRef;
   synthRef: DivRef;
   lensRefs: DivRef[];
-  /** how many lenses have lit — drives each lens's Venice query as it lights. */
-  lensLit: number;
+  /** the committee is analyzing — brightens the Venice enclave while the lenses work inside it. */
+  active: boolean;
   /** the 终裁/Arbiter node is lit — drives the coin payment + the 终裁↔Venice query. */
   decidedLit: boolean;
   killed: boolean;
@@ -392,9 +392,7 @@ function PaymentFlow({
   const youWalletRef = useRef<HTMLSpanElement>(null);
   const synthWalletRef = useRef<HTMLSpanElement>(null);
   const [geom, setGeom] = useState<PayGeom | null>(null);
-  const [lensPhase, setLensPhase] = useState<DataPhase[]>(['idle', 'idle', 'idle', 'idle']);
   const [synthPhase, setSynthPhase] = useState<DataPhase>('idle');
-  const lensFired = useRef([false, false, false, false]);
   const synthFired = useRef(false);
 
   useEffect(() => {
@@ -411,24 +409,27 @@ function PaymentFlow({
       };
       const youC = center(youRef.current.getBoundingClientRect());
       const synthC = center(synthRef.current.getBoundingClientRect());
-      const lensC = lensRefs.map((r) => center(r.current!.getBoundingClientRect()));
-      const lensMidY = (lensC[0].y + lensC[lensC.length - 1].y) / 2;
-      // Venice sits right of the lens column, centered on it — reaches all 4 lenses + 终裁 without
-      // crossing other node circles (终裁 is further right; VoteBoard + the TEE console stay clear).
-      const venice: PayPoint = { x: lensC[0].x + 92, y: lensMidY };
-      const VEN_R = 16;
-      const lensSegs: PaySeg[] = lensC.map((lc) => ({ from: along(lc, venice, 19 + 4), to: along(venice, lc, VEN_R + 3) }));
+      // The Venice-TEE enclave = the tight bounding box of the 4 lens nodes (circles + labels) + a pad.
+      // The committee literally sits INSIDE Venice — containment expresses the per-lens queries, so no
+      // crossing lines are drawn into the fan-in. Only the seller's synthesis tap connects to it.
+      const lensRects = lensRefs.map((r) => r.current!.getBoundingClientRect());
+      const PAD = 9;
+      const ex0 = Math.min(...lensRects.map((r) => r.left)) - cr.left - PAD;
+      const ey0 = Math.min(...lensRects.map((r) => r.top)) - cr.top - PAD;
+      const ex1 = Math.max(...lensRects.map((r) => r.right)) - cr.left + PAD;
+      const ey1 = Math.max(...lensRects.map((r) => r.bottom)) - cr.top + PAD;
+      const enclave = { x: ex0, y: ey0, w: ex1 - ex0, h: ey1 - ey0 };
+      const enclaveRight: PayPoint = { x: enclave.x + enclave.w, y: enclave.y + enclave.h / 2 };
       const synthSeg: PaySeg = {
-        from: along(synthC, venice, rad(synthRef.current!.getBoundingClientRect()) + 4),
-        to: along(venice, synthC, VEN_R + 3),
+        from: along(synthC, enclaveRight, rad(synthRef.current!.getBoundingClientRect()) + 4),
+        to: along(enclaveRight, synthC, 2),
       };
       setGeom({
         w: cr.width,
         h: cr.height,
         youWallet: { x: youC.x + 21, y: youC.y + 21 },
         synthWallet: { x: synthC.x - 21, y: synthC.y + 21 },
-        venice,
-        lensSegs,
+        enclave,
         synthSeg,
       });
     };
@@ -442,31 +443,14 @@ function PaymentFlow({
     };
   }, [container, youRef, synthRef, lensRefs]);
 
-  // reset all one-shot ratchets when the run rewinds (a fresh vote) or the chain is severed
+  // reset the one-shot ratchet when the run rewinds (a fresh vote) or the chain is severed
   useEffect(() => {
-    if (killed || (lensLit < 0 && !decidedLit)) {
-      lensFired.current = [false, false, false, false];
+    if (killed || (!active && !decidedLit)) {
       synthFired.current = false;
-      setLensPhase(['idle', 'idle', 'idle', 'idle']);
       setSynthPhase('idle');
       if (coinRef.current) coinRef.current.style.opacity = '0';
     }
-  }, [killed, lensLit, decidedLit]);
-
-  // each lens queries Venice once, as it lights (staggered through 'analyzing')
-  useEffect(() => {
-    if (!geom || killed || reduce) return;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    lensRefs.forEach((_, i) => {
-      if (lensLit >= i && !lensFired.current[i]) {
-        lensFired.current[i] = true;
-        setLensPhase((p) => p.map((v, j) => (j === i ? 'req' : v)));
-        timers.push(setTimeout(() => setLensPhase((p) => p.map((v, j) => (j === i ? 'resp' : v))), 560));
-        timers.push(setTimeout(() => setLensPhase((p) => p.map((v, j) => (j === i ? 'done' : v))), 1120));
-      }
-    });
-    return () => timers.forEach(clearTimeout);
-  }, [geom, lensLit, killed, reduce, lensRefs]);
+  }, [killed, active, decidedLit]);
 
   // coin payment 你→终裁 + 终裁↔Venice synthesis query — fire once when 终裁 lights
   useEffect(() => {
@@ -527,20 +511,20 @@ function PaymentFlow({
   };
   return (
     <>
-      {/* dashed Venice channels (persistent once granted): Venice to each lens + Venice to the seller */}
-      <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
-        {geom.lensSegs.map((s, i) => (
-          <line key={i} x1={s.from.x} y1={s.from.y} x2={s.to.x} y2={s.to.y} stroke="var(--color-info)" strokeWidth={1.25} strokeDasharray="3 5" opacity={0.3} />
-        ))}
-        <line x1={geom.synthSeg.from.x} y1={geom.synthSeg.from.y} x2={geom.synthSeg.to.x} y2={geom.synthSeg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={0.4} />
-      </svg>
-      {/* Venice AI node — the inference platform all the agents query */}
-      <div style={{ position: 'absolute', left: geom.venice.x, top: geom.venice.y, transform: 'translate(-50%,-50%)', zIndex: 3, pointerEvents: 'none', textAlign: 'center', ...dim }}>
-        <span style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, margin: '0 auto', borderRadius: 999, border: '1.5px solid var(--color-info)', background: 'rgba(20,25,37,.7)', color: 'var(--color-info)', boxShadow: '0 0 0 4px rgba(110,168,254,.10)' }}>
-          <Sparkles size={16} />
+      {/* the Venice-TEE enclave: the 4-lens committee runs INSIDE the inference platform (containment, so
+          the per-lens queries need no crossing lines). Brightens while the committee is analyzing. */}
+      <div
+        className="pay-enclave"
+        style={{ left: geom.enclave.x, top: geom.enclave.y, width: geom.enclave.w, height: geom.enclave.h, opacity: killed ? 0.3 : active ? 1 : 0.58, filter: killed ? 'grayscale(1)' : undefined }}
+      >
+        <span className="pay-enclave-tag">
+          <Sparkles size={11} /> Venice AI · TEE
         </span>
-        <div style={{ marginTop: 3, fontFamily: 'var(--font-display)', fontSize: 9.5, fontWeight: 700, color: 'var(--color-info)', whiteSpace: 'nowrap' }}>Venice AI</div>
       </div>
+      {/* the seller's single synthesis tap: 终裁 ↔ Venice (faint persistent line + a data pulse on query) */}
+      <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
+        <line x1={geom.synthSeg.from.x} y1={geom.synthSeg.from.y} x2={geom.synthSeg.to.x} y2={geom.synthSeg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={killed ? 0.12 : 0.32} />
+      </svg>
       {/* flat wallets at You + the seller */}
       <span ref={youWalletRef} className="pay-wallet" style={{ left: geom.youWallet.x, top: geom.youWallet.y, ...dim }}>
         <Wallet size={12} />
@@ -552,15 +536,8 @@ function PaymentFlow({
       <div ref={coinRef} className="pay-coin" style={{ opacity: 0 }}>
         <div className="pay-coin-face" />
       </div>
-      {/* deposit ring + transient AI-data: each lens↔Venice as it lights, then seller↔Venice */}
+      {/* deposit ring at the seller + the transient 终裁↔Venice synthesis data (request → response) */}
       {!killed && synthPhase === 'req' && <span key="pay-ring" className="pay-ring" style={{ left: geom.synthWallet.x, top: geom.synthWallet.y }} />}
-      {!killed &&
-        geom.lensSegs.map((s, i) => (
-          <Fragment key={`lens-${i}`}>
-            {lensPhase[i] === 'req' && particles(s, 'req', `lreq-${i}`)}
-            {lensPhase[i] === 'resp' && particles(s, 'resp', `lresp-${i}`)}
-          </Fragment>
-        ))}
       {!killed && synthPhase === 'req' && particles(geom.synthSeg, 'req', 'sreq')}
       {!killed && synthPhase === 'resp' && particles(geom.synthSeg, 'resp', 'sresp')}
     </>
@@ -788,15 +765,15 @@ export function AuthorityChain({
         />
       )}
 
-      {/* x402 sub-flow welded onto the spine: budget chip above You, a coin pulsing You->seller while
-          the AI fetches context, and a receipt tick at the seller once the toll settles on-chain. */}
+      {/* x402 sub-flow welded onto the spine: a faint Venice-TEE enclave around the lens committee, a
+          coin flying You->seller as the AI pays, and a receipt tick at the seller once the toll settles. */}
       {connected && !!paymentCap && (
         <PaymentFlow
           container={containerRef}
           youRef={youRef}
           synthRef={synthRef}
           lensRefs={lensRefs}
-          lensLit={lensLit}
+          active={lensLit >= 0}
           decidedLit={nodeLit('decided')}
           killed={killed}
         />
