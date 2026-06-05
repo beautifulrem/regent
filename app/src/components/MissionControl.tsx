@@ -144,7 +144,10 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
   // so when it isn't for the active proposal, drive the reveal off the resting 'granted' mandate state
   // (the AI can still vote this proposal — it just hasn't yet) rather than the other proposal's run.
   // running/terminal stay global (they gate the vote button), so this only re-skins the display.
-  const sEff = vm.runOnActive || vm.killed ? vm.s : vm.grantRunId ? 'granted' : undefined;
+  // When SEVERED, the beams all render cut regardless of reveal level (Beam cuts on `killed`), so a
+  // non-run proposal still shows the severed root + dead resting nodes — NOT the voted proposal's full
+  // chain. The recall is a DAO-wide kill, so every proposal reads as severed, just not falsely "voted".
+  const sEff = vm.runOnActive ? vm.s : vm.grantRunId ? 'granted' : undefined;
   let targetIdx = -1;
   for (let i = 0; i < ORDER.length; i++) if (reached(sEff, ORDER[i])) targetIdx = i;
   const revealIdx = useRatchet(targetIdx, STAGE_MS, vm.killed);
