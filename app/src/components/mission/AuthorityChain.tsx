@@ -420,10 +420,10 @@ function PaymentFlow({
       const ex1 = Math.max(...lensRects.map((r) => r.right)) - cr.left + PAD;
       const ey1 = Math.max(...lensRects.map((r) => r.bottom)) - cr.top + PAD;
       const enclave = { x: ex0, y: ey0, w: ex1 - ex0, h: ey1 - ey0 };
-      // the Venice AI node hovers in the empty upper triangle between the committee box and 终裁 — above
-      // every fan-in beam and below the proposal dots, clear of the TeeConsole that fills the area below.
-      // The box is its TEE (committee runs inside); 终裁 taps up from the lower-right (above the fan-in).
-      const venice: PayPoint = { x: (enclave.x + enclave.w + synthC.x) / 2, y: enclave.y + 36 };
+      // the Venice AI node sits at 终裁's upper-right — in the open 终裁→VoteBoard span, above the spine
+      // beam and clear of the fan-in (which all arrives on 终裁's left) and the TeeConsole below. The box
+      // stays its TEE (committee runs inside); 终裁 taps up-right to it.
+      const venice: PayPoint = { x: synthC.x + 78, y: synthC.y - 72 };
       const synthSeg: PaySeg = {
         from: along(synthC, venice, rad(synthRef.current!.getBoundingClientRect()) + 4),
         to: along(venice, synthC, 19),
