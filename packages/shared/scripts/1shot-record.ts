@@ -44,8 +44,10 @@ import {
 import {
   ADDRESSES,
   analyzeProposal,
+  buildPaymentDelegation,
   buildSend7710Params,
   DEMO_PROPOSAL_ID,
+  delegationManagerAddress,
   demoProposalAction,
   estimate7710Transaction,
   fetchAttestation,
@@ -63,10 +65,12 @@ import {
   reseedProposal,
   resolveModel,
   send7710Transaction,
+  settlePaymentCalldata,
   statusTxHash,
   synthesizeVerdict,
   toVeniceTrace,
   withVotingPolicy,
+  type Delegation,
   type LensInput,
   type LensVerdict,
   type VeniceConfig,
@@ -75,6 +79,9 @@ import {
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const STATELESS_7702_IMPL = getAddress('0x63c0c19a282a1B52b07dD5a65b58948A07DAE32B');
 const CASTVOTE_ABI = parseAbi(['function castVote(uint256 proposalId, uint8 support) returns (uint256)']);
+// A realistic mainnet x402 micro-toll: 0.001 USDC per query (1,000 atoms of a 6-decimal token). Kept
+// distinct from the orchestrator's TOLL_ATOMS (1 mUSDC) — 1 real USDC/query would misrepresent x402.
+const MAINNET_TOLL_ATOMS = 1_000n;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 interface Network {
@@ -157,10 +164,59 @@ async function reseedAndWaitActive(client: PublicClient, net: Network): Promise<
   throw new Error('timed out waiting for Active');
 }
 
+/**
+ * Settle ONE real mainnet x402 toll: the BURNER (a 7702 SA, the agent's USDC budget) signs an
+ * Erc20TransferAmount delegation to the analyst (seller), who redeems it pulling MAINNET_TOLL_ATOMS
+ * (0.001 USDC). Prints the toll receipt JSON to merge into MAINNET_SNAPSHOT. The analyst pays the
+ * redeem gas (fund it with a little ETH first). One-shot; spends 0.001 USDC.
+ */
+async function settleX402(net: Network): Promise<void> {
+  const client = createPublicClient({ chain: net.chain, transport: http(net.rpc) }) as PublicClient;
+  const caps = (await getCapabilities(net.chainId, net.relayerUrl))[String(net.chainId)];
+  const usdc = pickPaymentToken({ [String(net.chainId)]: caps }, net.chainId, 'USDC');
+  const burnerEoa = privateKeyToAccount(envKey('ONESHOT_BURNER_PK'));
+  const burnerSA = await toMetaMaskSmartAccount({
+    client, implementation: Implementation.Stateless7702, address: burnerEoa.address, signer: { account: burnerEoa },
+  });
+  const analyst = privateKeyToAccount(envKey('ANALYST_PK'));
+  const dm = delegationManagerAddress(net.chainId);
+
+  console.log(`● x402: buyer(burner) ${burnerSA.address} → seller(analyst) ${analyst.address} · USDC ${usdc.address}`);
+  const before = (await client.readContract({ address: usdc.address, abi: erc20Abi, functionName: 'balanceOf', args: [analyst.address] })) as bigint;
+
+  // 1) the burner signs a scoped Erc20TransferAmount delegation (cap 0.1 USDC) to the analyst.
+  const cap = parseUnits('0.1', Number(usdc.decimals));
+  const del = buildPaymentDelegation({ buyer: burnerSA.address, seller: analyst.address, asset: usdc.address, amount: cap, environment: burnerSA.environment });
+  const paymentDel = { ...del, signature: await burnerSA.signDelegation({ delegation: del }) } as Delegation;
+
+  // 2) the analyst redeems it, pulling the 0.001 USDC micro-toll (analyst pays the gas).
+  const analystWallet = createWalletClient({ account: analyst, chain: net.chain, transport: http(net.rpc) });
+  const txHash = await analystWallet.sendTransaction({ to: dm, data: settlePaymentCalldata(paymentDel, usdc.address, analyst.address, MAINNET_TOLL_ATOMS) });
+  console.log(`● x402: settle tx ${txHash} — waiting…`);
+  const receipt = await client.waitForTransactionReceipt({ hash: txHash });
+  if (receipt.status !== 'success') throw new Error('x402 settlement reverted');
+  const after = (await client.readContract({ address: usdc.address, abi: erc20Abi, functionName: 'balanceOf', args: [analyst.address] })) as bigint;
+
+  const toll = {
+    txHash, asset: usdc.address, buyer: burnerSA.address, seller: analyst.address,
+    amount: MAINNET_TOLL_ATOMS.toString(), sellerBalance: after.toString(),
+    resource: `/context/proposal-${DEMO_PROPOSAL_ID.toString().slice(-6)}`,
+  };
+  console.log(`\n✅ x402 settled: analyst USDC ${Number(before) / 1e6} → ${Number(after) / 1e6} (+${Number(after - before) / 1e6})`);
+  const out = path.join(REPO_ROOT, 'oneshot-x402-toll.json');
+  fs.writeFileSync(out, JSON.stringify(toll, null, 2));
+  console.log(`📄 toll receipt → ${out}\n   merge it into MAINNET_SNAPSHOT.toll\n`);
+}
+
 async function main(): Promise<void> {
   loadDotenv({ path: path.join(REPO_ROOT, '.env') });
   const estimateOnly = process.argv.includes('--estimate');
   const reseed = process.argv.includes('--reseed');
+  // --x402: settle a real mainnet x402 micro-toll (burner → analyst, 0.001 USDC) and dump the receipt.
+  if (process.argv.includes('--x402')) {
+    await settleX402(network(process.argv.includes('--mainnet')));
+    return;
+  }
   // --board: cast the AI's vote on the (windowless) VoteBoard at DEMO_PROPOSAL_ID instead of the Governor,
   // so the relayed 1Shot vote becomes the 6th real voter alongside the 5 seeded personas.
   const board = process.argv.includes('--board');
