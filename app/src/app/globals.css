@@ -646,9 +646,9 @@ html, body { height: 100%; overflow: hidden; }
   82% { opacity: 1; }
   100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.7); opacity: 0; } }
 .relay-gas-label { position: absolute; z-index: 4; transform: translate(-50%, -50%); white-space: nowrap; pointer-events: none;
-  display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; color: var(--color-info);
-  background: rgba(14, 19, 30, 0.82); border: 1px solid rgba(110, 168, 254, 0.3); border-radius: 999px; padding: 2px 9px; }
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0; color: var(--color-info);
+  background: rgba(14, 19, 30, 0.82); border: 1px solid rgba(110, 168, 254, 0.3); border-radius: 999px; padding: 1.5px 6px; }
 .relay-gas-label.firing { color: #b3a6ff; border-color: rgba(123, 97, 255, 0.55); box-shadow: 0 0 14px -2px rgba(123, 97, 255, 0.6); }
 
 /* ETH "fuel" pulse: the gas 1Shot fronts, flowing 1Shot→VoteBoard. A violet-blue hexagon (clip-path),

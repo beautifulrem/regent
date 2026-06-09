@@ -844,7 +844,7 @@ function MainnetRelayFlow({
       {relayLit >= 2 && travel(g.oneShot, g.board, 'relay-fuel', `eth-${epoch}`)}
       {/* the gas-abstraction label, tucked UNDER the 1Shot→VoteBoard beam; glows as the ETH pulse fires */}
       <div className={`relay-gas-label${relayLit >= 2 ? ' firing' : ''}`} style={{ left: g.gasMid.x, top: g.gasMid.y + 24 }}>
-        <Fuel size={11} /> {t.relayGasLabel}
+        <Fuel size={9} /> {t.relayGasLabel}
       </div>
     </>
   );
