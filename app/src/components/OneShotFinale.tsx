@@ -244,23 +244,35 @@ export function OneShotFinale({
       {/* snapshot sections: proposal + Venice + x402 — hidden when the main graph already shows them */}
       {phase === 'done' && !focusRelay && <SnapshotSections t={t} lang={lang} />}
 
-      {/* relay lifecycle stepper */}
-      <div className={cn('flex flex-col gap-2.5', phase === 'done' && MAINNET_SNAPSHOT && 'mt-4')}>
-        {RELAY_PHASES.map((p, i) => {
-          const state = step > i ? 'done' : step === i ? 'current' : 'idle';
-          return (
-            <div key={p.key} className={cn('flex gap-2.5 transition-opacity', state === 'idle' ? 'opacity-45' : 'opacity-100')}>
-              <span className={cn('mt-1 size-2.5 shrink-0 rounded-full', state === 'done' ? 'bg-ok' : state === 'current' ? 'bg-brand motion-safe:animate-glow' : 'bg-line')} />
-              <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-ink-soft">
-                  {t.relayPhases[p.key]} <span className="font-mono text-[11px] font-normal text-ink-mute">· {p.code}</span>
+      {/* focusRelay (inline mainnet panel): an intuitive payment-mechanism figure instead of the stepper */}
+      {focusRelay ? (
+        <div className="mt-4 rounded-xl border border-hairline bg-surface-2/50 px-4 py-3.5">
+          <div className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-mute">{t.oneShotMechTitle}</div>
+          <div className="grid gap-2">
+            <MechRow dot="#f5b942" label={t.oneShotMechX402} amount="0.001 USDC" />
+            <MechRow dot="var(--color-cyan)" label={t.oneShotMechFee} amount="0.01 USDC" />
+            <MechRow dot="var(--color-ok)" label={t.oneShotMechGas} amount="0 ETH" amountTone="ok" />
+          </div>
+          <div className="mt-3 text-[11.5px] leading-relaxed text-ink-soft">{t.oneShotMechNote}</div>
+        </div>
+      ) : (
+        <div className={cn('flex flex-col gap-2.5', phase === 'done' && MAINNET_SNAPSHOT && 'mt-4')}>
+          {RELAY_PHASES.map((p, i) => {
+            const state = step > i ? 'done' : step === i ? 'current' : 'idle';
+            return (
+              <div key={p.key} className={cn('flex gap-2.5 transition-opacity', state === 'idle' ? 'opacity-45' : 'opacity-100')}>
+                <span className={cn('mt-1 size-2.5 shrink-0 rounded-full', state === 'done' ? 'bg-ok' : state === 'current' ? 'bg-brand motion-safe:animate-glow' : 'bg-line')} />
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-ink-soft">
+                    {t.relayPhases[p.key]} <span className="font-mono text-[11px] font-normal text-ink-mute">· {p.code}</span>
+                  </div>
+                  <div className="text-[11.5px] leading-snug text-ink-mute">{t.oneShotRelayDesc[p.key]}</div>
                 </div>
-                <div className="text-[11.5px] leading-snug text-ink-mute">{t.oneShotRelayDesc[p.key]}</div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* burner 7702 upgrade — genuinely live read-only eth_getCode on Base mainnet */}
       <div className={cn('mt-4 rounded-xl border bg-surface-2/60 px-4 py-3.5 transition-colors', parsed.upgraded ? 'border-brand/40' : 'border-hairline')}>
@@ -333,9 +345,31 @@ export function OneShotFinale({
             {receipt.live && <LiveTag label={t.oneShotLive} />}
           </div>
         )}
+        {/* the 3rd live proof: the real x402 toll tx (burner → analyst, 0.001 USDC) */}
+        {MAINNET_SNAPSHOT?.toll && (
+          <a
+            className="mt-2.5 flex items-center gap-1.5 font-mono text-[12px] text-info hover:underline"
+            href={`${proof.basescan}/tx/${MAINNET_SNAPSHOT.toll.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Coins className="size-3.5 shrink-0 text-[#f5b942]" /> {t.oneShotX402Tx} {shortHex(MAINNET_SNAPSHOT.toll.txHash, 6)} <ExternalLink className="size-3" />
+          </a>
+        )}
         <div className="mt-2.5 text-[11px] leading-relaxed text-ink-mute">{t.oneShotBundle}</div>
       </div>
     </Panel>
+  );
+}
+
+/** One row of the mainnet payment-mechanism figure: a coloured dot, a label, and the amount. */
+function MechRow({ dot, label, amount, amountTone }: { dot: string; label: string; amount: string; amountTone?: 'ok' }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="size-2.5 shrink-0 rounded-full" style={{ background: dot }} />
+      <span className="text-[12px] text-ink-soft">{label}</span>
+      <span className={cn('ml-auto font-mono text-[11.5px] font-semibold', amountTone === 'ok' ? 'text-ok' : 'text-ink')}>{amount}</span>
+    </div>
   );
 }
 
