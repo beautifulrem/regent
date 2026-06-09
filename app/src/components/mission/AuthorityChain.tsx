@@ -635,6 +635,75 @@ export interface ChainParties {
 }
 
 /**
+ * The mainnet relay payment sub-flow welded onto the cast leg: the BURNER's USDC budget pays two
+ * fees — a GOLD coin to 终裁 (x402, Venice data) and a CYAN coin to 1Shot (relay fee) — while a label
+ * on the 1Shot→VoteBoard beam marks that the relayer covers the ETH gas. Distinct from the testnet
+ * PaymentFlow (which pays You→seller); this one is keyed off the burner and only renders on mainnet.
+ */
+function MainnetRelayFlow({
+  container,
+  burnerRef,
+  synthRef,
+  oneShotRef,
+  boardRef,
+  live,
+  relay,
+}: {
+  container: DivRef;
+  burnerRef: DivRef;
+  synthRef: DivRef;
+  oneShotRef: DivRef;
+  boardRef: DivRef;
+  live: boolean;
+  relay: { basescan: string; tollTx?: string; castTx?: string; tollUsdc: string; feeUsdc: string };
+}) {
+  const [g, setG] = useState<{
+    burner: { x: number; y: number };
+    synth: { x: number; y: number };
+    oneShot: { x: number; y: number };
+    gasMid: { x: number; y: number };
+  } | null>(null);
+  useEffect(() => {
+    const compute = () => {
+      if (!container.current || !burnerRef.current || !synthRef.current || !oneShotRef.current || !boardRef.current) return;
+      const cr = container.current.getBoundingClientRect();
+      const c = (n: HTMLDivElement, dy = 30) => {
+        const r = n.getBoundingClientRect();
+        return { x: r.left - cr.left + r.width / 2, y: r.top - cr.top + dy };
+      };
+      const oneShot = c(oneShotRef.current);
+      const board = c(boardRef.current);
+      setG({ burner: c(burnerRef.current), synth: c(synthRef.current), oneShot, gasMid: { x: (oneShot.x + board.x) / 2, y: (oneShot.y + board.y) / 2 } });
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (container.current) ro.observe(container.current);
+    window.addEventListener('resize', compute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', compute);
+    };
+  }, [container, burnerRef, synthRef, oneShotRef, boardRef]);
+  if (!g) return null;
+  const coin = (to: { x: number; y: number }, cls: string, key: string) => (
+    <span key={key} className={`relay-coin ${cls}`} style={{ left: g.burner.x, top: g.burner.y, '--dx': `${to.x - g.burner.x}px`, '--dy': `${to.y - g.burner.y}px` } as CSSProperties} />
+  );
+  return (
+    <>
+      {/* the burner's USDC wallet */}
+      <span className="pay-wallet" style={{ left: g.burner.x, top: g.burner.y + 30 }}>
+        <Coins size={12} />
+      </span>
+      {/* two looping coins: gold = x402 (→终裁), cyan = relay fee (→1Shot) */}
+      {live && coin(g.synth, 'gold', 'x402')}
+      {live && coin(g.oneShot, 'cyan', 'fee')}
+      {/* the gas-abstraction label on the 1Shot→VoteBoard beam */}
+      <div className="relay-gas-label" style={{ left: g.gasMid.x, top: g.gasMid.y - 16 }}>⛽ gas: 1Shot · ETH</div>
+    </>
+  );
+}
+
+/**
  * The live authority graph: You → Orchestrator → (four governance lenses) → Arbiter (终裁) → VoteBoard.
  * The orchestrator fans the proposal out to four specialist lenses (each a private TEE analysis),
  * which report a verdict in sequence; the Arbiter (终裁) node weighs them and its decision is what
@@ -658,6 +727,7 @@ export function AuthorityChain({
   tollSettled,
   tollTxHash,
   oneShot,
+  relay,
 }: {
   t: Dict;
   parties: ChainParties;
@@ -681,6 +751,8 @@ export function AuthorityChain({
   tollTxHash?: string;
   /** insert a 1Shot relay node on the cast leg (Arbiter → 1Shot → VoteBoard) — the mainnet path. */
   oneShot?: boolean;
+  /** mainnet relay payment facts: the x402 toll + 1Shot fee, for the coin sub-flow + receipt ticks. */
+  relay?: { basescan: string; tollTx?: string; castTx?: string; tollUsdc: string; feeUsdc: string };
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const youRef = useRef<HTMLDivElement>(null);
@@ -845,9 +917,9 @@ export function AuthorityChain({
         />
       )}
 
-      {/* x402 sub-flow welded onto the spine: a faint Venice-TEE enclave around the lens committee, a
-          coin flying You->seller as the AI pays, and a receipt tick at the seller once the toll settles. */}
-      {connected && !!paymentCap && (
+      {/* TESTNET x402 sub-flow: a faint Venice-TEE enclave around the lens committee, a coin flying
+          You->seller as the AI pays, and a receipt tick at the seller once the toll settles. */}
+      {connected && !!paymentCap && !oneShot && (
         <PaymentFlow
           container={containerRef}
           youRef={youRef}
@@ -859,7 +931,17 @@ export function AuthorityChain({
           killed={killed}
         />
       )}
-      {tollSettled && !killed && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={tollTxHash} />}
+      {tollSettled && !killed && !oneShot && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={tollTxHash} />}
+
+      {/* MAINNET relay sub-flow: the burner pays two USDC fees (x402 → 终裁, relay fee → 1Shot), the
+          relayer covers ETH gas, and two real receipt ticks link the x402 toll + the 1Shot castVote. */}
+      {oneShot && relay && (
+        <>
+          <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} live={beamLive('voted')} relay={relay} />
+          {relay.tollTx && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} />}
+          {relay.castTx && <ReceiptTick container={containerRef} nodeRef={oneShotRef} txHash={relay.castTx} />}
+        </>
+      )}
     </div>
   );
 }

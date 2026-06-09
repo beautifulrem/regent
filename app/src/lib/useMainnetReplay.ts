@@ -151,5 +151,12 @@ export function useMainnetReplay(statics: {
     replaying: clock.running,
     onReplay: clock.replay,
     tallySource,
+    relayInfo: {
+      basescan: snap.chain.basescan,
+      tollTx: snap.toll?.txHash,
+      castTx: snap.vote.txHash,
+      tollUsdc: snap.toll ? (Number(snap.toll.amount) / 1e6).toString() : '0.001',
+      feeUsdc: snap.oneshot.feeUsdc,
+    },
   };
 }

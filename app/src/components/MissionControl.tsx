@@ -97,6 +97,16 @@ export interface MissionVM {
   network?: 'sepolia' | 'mainnet';
   toggleNetwork?: () => void;
   mainnetAvailable?: boolean;
+  /** mainnet relay payment facts (x402 + 1Shot fee) for the graph sub-flow + receipt ticks. */
+  relayInfo?: RelayInfo;
+}
+
+export interface RelayInfo {
+  basescan: string;
+  tollTx?: string;
+  castTx?: string;
+  tollUsdc: string;
+  feeUsdc: string;
 }
 
 const RAIL_TOP = 84;
@@ -214,6 +224,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
             tollSettled={!!vm.run?.toll && youVotedHere && !vm.killed}
             tollTxHash={vm.run?.toll?.txHash}
             oneShot={vm.replayMode}
+            relay={vm.relayInfo}
           />
         </div>
 
