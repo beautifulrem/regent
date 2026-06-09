@@ -340,7 +340,7 @@ export default function Home() {
   // Mainnet replay: a completed Base-mainnet 1Shot run rebuilt from the snapshot (null until recorded).
   const mainnetAvailable = !!MAINNET_SNAPSHOT;
   const toggleNetwork = () => setNetwork((n) => (n === 'sepolia' ? 'mainnet' : 'sepolia'));
-  const replayVm = useMainnetReplay({ lang, t, toggleLang, graphStageRef });
+  const replayVm = useMainnetReplay({ lang, t, toggleLang, graphStageRef, active: network === 'mainnet' });
 
   const netProps = { network, toggleNetwork, mainnetAvailable };
   const shown: MissionVM =

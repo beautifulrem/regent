@@ -20,9 +20,10 @@ const RESET_MS = 120;
  * console in lockstep. At rest it sits at 'voted' (the finished run), so the screen shows the completed
  * mainnet vote until the user clicks replay.
  */
-function useReplayClock(): { status: string; running: boolean; replay: () => void } {
-  const [status, setStatus] = useState<string>('voted');
-  const [running, setRunning] = useState(false);
+function useReplayClock(active: boolean): { status: string; running: boolean; replay: () => void } {
+  // start low when active so entering mainnet animates from the first stage (no finished-graph flash)
+  const [status, setStatus] = useState<string>(active ? 'granted' : 'voted');
+  const [running, setRunning] = useState(active);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const clear = () => {
     timers.current.forEach(clearTimeout);
@@ -35,6 +36,12 @@ function useReplayClock(): { status: string; running: boolean; replay: () => voi
     timers.current.push(setTimeout(() => setStatus('voted'), RESET_MS));
     timers.current.push(setTimeout(() => setRunning(false), RESET_MS + ORDER.length * STAGE_MS + 700));
   }, []);
+  // Auto-play the full run every time we ENTER the mainnet view (active false → true).
+  const prevActive = useRef(active);
+  useEffect(() => {
+    if (active && !prevActive.current) replay();
+    prevActive.current = active;
+  }, [active, replay]);
   useEffect(() => () => clear(), []);
   return { status, running, replay };
 }
@@ -50,8 +57,10 @@ export function useMainnetReplay(statics: {
   t: Dict;
   toggleLang: () => void;
   graphStageRef: RefObject<HTMLDivElement | null>;
+  /** true while the mainnet view is on screen — entering it auto-plays the full run. */
+  active: boolean;
 }): MissionVM | null {
-  const clock = useReplayClock();
+  const clock = useReplayClock(statics.active);
   const snap = MAINNET_SNAPSHOT;
   if (!snap) return null;
 
