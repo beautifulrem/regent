@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
@@ -133,7 +133,19 @@ function SnapshotSections({ t, lang }: { t: Dict; lang: 'en' | 'zh' }) {
  * proposal context, Venice TEE decision, x402 toll, and the 1Shot relay proof.
  * The 7702-upgrade check is GENUINELY LIVE (free, read-only eth_getCode on Base mainnet).
  */
-export function OneShotFinale({ t, bare = false }: { t: Dict; bare?: boolean }) {
+export function OneShotFinale({
+  t,
+  bare = false,
+  autoRun = false,
+  focusRelay = false,
+}: {
+  t: Dict;
+  bare?: boolean;
+  /** start the relay playback on mount (inline mainnet detail, no click needed). */
+  autoRun?: boolean;
+  /** hide the proposal/Venice/x402 sections (already shown by the main graph + TEE console). */
+  focusRelay?: boolean;
+}) {
   const reduce = useReducedMotion();
   const lang = (t.tally.for === '赞成' ? 'zh' : 'en') as 'en' | 'zh';
   // Prefer the recorded snapshot's run (proposal + Venice + this exact tx) so the proof wall, the 7702
@@ -188,6 +200,16 @@ export function OneShotFinale({ t, bare = false }: { t: Dict; bare?: boolean }) 
     }
   }
 
+  // autoRun: kick the relay playback once on mount (inline mainnet detail — no click needed).
+  const ranOnce = useRef(false);
+  useEffect(() => {
+    if (autoRun && !ranOnce.current) {
+      ranOnce.current = true;
+      void run();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRun]);
+
   const parsed = parse7702Code(code);
 
   if (phase === 'idle') {
@@ -219,8 +241,8 @@ export function OneShotFinale({ t, bare = false }: { t: Dict; bare?: boolean }) 
       {/* visual flow: 7710 → 1Shot → Burner(7702) → castVote */}
       <OneShotFlow step={step} upgraded={parsed.upgraded} />
 
-      {/* snapshot sections: proposal + Venice + x402 (only when snapshot is populated) */}
-      {phase === 'done' && <SnapshotSections t={t} lang={lang} />}
+      {/* snapshot sections: proposal + Venice + x402 — hidden when the main graph already shows them */}
+      {phase === 'done' && !focusRelay && <SnapshotSections t={t} lang={lang} />}
 
       {/* relay lifecycle stepper */}
       <div className={cn('flex flex-col gap-2.5', phase === 'done' && MAINNET_SNAPSHOT && 'mt-4')}>

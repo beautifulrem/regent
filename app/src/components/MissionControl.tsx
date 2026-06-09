@@ -22,6 +22,7 @@ import { AuthorityChain } from './mission/AuthorityChain';
 import { TeeConsole } from './mission/TeeConsole';
 import { ScopeBlock } from './mission/ScopeBlock';
 import { CapabilityDock } from './mission/CapabilityDock';
+import { OneShotFinale } from './OneShotFinale';
 import { PopoverBody } from './mission/popovers';
 
 /**
@@ -210,6 +211,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
             paymentCap={vm.grantRunId ? (vm.boundMode === 'days' ? DEFAULT_QUERY_BUDGET : vm.maxVotes) : 0}
             tollSettled={!!vm.run?.toll && youVotedHere && !vm.killed}
             tollTxHash={vm.run?.toll?.txHash}
+            oneShot={vm.replayMode}
           />
         </div>
 
@@ -218,6 +220,13 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
         <ScopeBlock vm={vm} />
 
         <CapabilityDock t={t} onOpen={setPanel} connected={vm.isConnected} revealIdx={revealIdx} killed={vm.killed} x402Settled={x402Settled} />
+
+        {/* mainnet replay: the full 1Shot relay detail inline (relay lifecycle + live 7702 check + proof wall) */}
+        {vm.replayMode && (
+          <div className="w-full max-w-[560px]">
+            <OneShotFinale t={t} bare autoRun focusRelay />
+          </div>
+        )}
       </main>
 
       <Popover side="right" open={!!panel} anchorTop={anchorTop} title={panel ? t.panels[panel] : ''} icon={activeItem?.icon} onClose={() => setPanel(null)}>

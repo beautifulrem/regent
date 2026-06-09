@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { animate, useReducedMotion } from 'motion/react';
-import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Receipt, Scale, Scissors, ShieldCheck, Sparkles, TrendingUp, User, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Receipt, Rocket, Scale, Scissors, ShieldCheck, Sparkles, TrendingUp, User, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { LENSES, type Decision, type LensKey, type LensVerdict } from '@mandate/shared';
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
@@ -99,8 +99,7 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, kill
           placeItems: 'center',
           borderRadius: 999,
           border: ringActive ? `1.5px solid ${ringColor}` : '1.5px solid var(--color-hairline)',
-          background: ringActive ? ringBg : 'rgba(20,25,37,.6)',
-          backdropFilter: 'blur(6px)',
+          background: ringActive ? ringBg : 'rgba(20,25,37,.88)',
           color: ringActive ? accent : 'var(--color-ink-mute)',
           boxShadow: ringActive ? `0 0 0 ${small ? 5 : 6}px ${glowRing}, 0 0 34px -10px ${accent}` : 'none',
           transition: 'all .3s',
@@ -320,7 +319,7 @@ function ScopeChip({
   // It glides between the circle x-positions (left transition) while its icon+label morph in (keyed).
   const x = xs[pos];
   return (
-    <div style={{ position: 'absolute', left: 0, top: xs.topY, transform: `translate(calc(${x}px - 50%), 0)`, zIndex: 3, pointerEvents: 'none', transition: reduce ? 'none' : 'transform .85s var(--ease-fluid)', willChange: 'transform' }}>
+    <div className="scope-chip-entry" style={{ position: 'absolute', left: 0, top: xs.topY, transform: `translate(calc(${x}px - 50%), 0)`, zIndex: 3, pointerEvents: 'none', transition: reduce ? 'none' : 'transform .85s var(--ease-fluid)', willChange: 'transform' }}>
       <span
         style={{
           display: 'inline-flex',
@@ -399,6 +398,16 @@ function PaymentFlow({
   const [geom, setGeom] = useState<PayGeom | null>(null);
   const [synthPhase, setSynthPhase] = useState<DataPhase>('idle');
   const synthFired = useRef(false);
+
+  // Entry reveal: fade elements in on first mount. Instant when revisiting (live=false) or reduce-motion.
+  const [revealed, setRevealed] = useState(!live || !!reduce);
+  const revealFired = useRef(false);
+  useEffect(() => {
+    if (revealed || revealFired.current || !geom) return;
+    revealFired.current = true;
+    const id = requestAnimationFrame(() => setRevealed(true));
+    return () => cancelAnimationFrame(id);
+  }, [revealed, geom]);
 
   useEffect(() => {
     const compute = () => {
@@ -506,7 +515,8 @@ function PaymentFlow({
   }, [geom, decidedLit, live, killed, reduce]);
 
   if (!geom) return null;
-  const dim: CSSProperties | undefined = killed ? { opacity: 0.4, filter: 'grayscale(1)' } : undefined;
+  const ro = revealed ? 1 : 0; // reveal opacity multiplier — 0 on first frame, CSS transitions fade in
+  const dim: CSSProperties | undefined = killed ? { opacity: 0.4 * ro, filter: 'grayscale(1)' } : undefined;
   const particles = (seg: PaySeg, dir: 'req' | 'resp', key: string) => {
     const from = dir === 'req' ? seg.from : seg.to;
     const to = dir === 'req' ? seg.to : seg.from;
@@ -524,10 +534,10 @@ function PaymentFlow({
           the per-lens queries need no crossing lines). Brightens while the committee is analyzing. */}
       <div
         className="pay-enclave"
-        style={{ left: geom.enclave.x, top: geom.enclave.y, width: geom.enclave.w, height: geom.enclave.h, opacity: killed ? 0.3 : active ? 1 : 0.6, filter: killed ? 'grayscale(1)' : undefined }}
+        style={{ left: geom.enclave.x, top: geom.enclave.y, width: geom.enclave.w, height: geom.enclave.h, opacity: (killed ? 0.3 : active ? 1 : 0.6) * ro, filter: killed ? 'grayscale(1)' : undefined }}
       />
       {/* the Venice AI node — the inference platform; the box around the committee is its TEE, 终裁 taps it */}
-      <div className="pay-venice" style={{ left: geom.venice.x, top: geom.venice.y, opacity: killed ? 0.35 : 1, filter: killed ? 'grayscale(1)' : undefined }}>
+      <div className="pay-venice" style={{ left: geom.venice.x, top: geom.venice.y, opacity: (killed ? 0.35 : 1) * ro, filter: killed ? 'grayscale(1)' : undefined }}>
         <span className={`pay-venice-disc${active ? ' on' : ''}`}>
           <Sparkles size={15} />
         </span>
@@ -535,13 +545,13 @@ function PaymentFlow({
       </div>
       {/* the seller's single synthesis tap: 终裁 ↔ Venice (faint persistent line + a data pulse on query) */}
       <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
-        <line x1={geom.synthSeg.from.x} y1={geom.synthSeg.from.y} x2={geom.synthSeg.to.x} y2={geom.synthSeg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={killed ? 0.12 : 0.32} />
+        <line x1={geom.synthSeg.from.x} y1={geom.synthSeg.from.y} x2={geom.synthSeg.to.x} y2={geom.synthSeg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" style={{ opacity: (killed ? 0.12 : 0.32) * ro, transition: 'opacity 0.5s var(--ease-fluid)' }} />
       </svg>
       {/* flat wallets at You + the seller */}
-      <span ref={youWalletRef} className="pay-wallet" style={{ left: geom.youWallet.x, top: geom.youWallet.y, ...dim }}>
+      <span ref={youWalletRef} className="pay-wallet" style={{ left: geom.youWallet.x, top: geom.youWallet.y, opacity: dim ? dim.opacity : ro, filter: dim?.filter }}>
         <Wallet size={12} />
       </span>
-      <span ref={synthWalletRef} className="pay-wallet" style={{ left: geom.synthWallet.x, top: geom.synthWallet.y, ...dim }}>
+      <span ref={synthWalletRef} className="pay-wallet" style={{ left: geom.synthWallet.x, top: geom.synthWallet.y, opacity: dim ? dim.opacity : ro, filter: dim?.filter }}>
         <Wallet size={12} />
       </span>
       {/* the flat coin (driven imperatively by the one-shot fly) */}
@@ -636,6 +646,7 @@ export function AuthorityChain({
   paymentCap,
   tollSettled,
   tollTxHash,
+  oneShot,
 }: {
   t: Dict;
   parties: ChainParties;
@@ -657,11 +668,14 @@ export function AuthorityChain({
   tollSettled?: boolean;
   /** the settlement tx for the tick's link. */
   tollTxHash?: string;
+  /** insert a 1Shot relay node on the cast leg (Arbiter → 1Shot → VoteBoard) — the mainnet path. */
+  oneShot?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const youRef = useRef<HTMLDivElement>(null);
   const orchRef = useRef<HTMLDivElement>(null);
   const synthRef = useRef<HTMLDivElement>(null);
+  const oneShotRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const lensRefs = useMemo<DivRef[]>(() => LENSES.map(() => ({ current: null })), []);
   const s = status;
@@ -745,6 +759,21 @@ export function AuthorityChain({
         floatBelow
         killed={killed}
       />
+      {/* the 1Shot relay hop (mainnet only): the Arbiter's cast is relayed through 1Shot (7702 burner +
+          7710 bundle, gas paid in USDC) before it lands on the board. */}
+      {oneShot && (
+        <ChainNode
+          nodeRef={oneShotRef}
+          icon={Rocket}
+          who="1Shot"
+          role={t.oneShotNodeRole}
+          active={beamLive('voted')}
+          working={beamLive('voted') && !nodeLit('voted')}
+          tone="info"
+          floatBelow
+          killed={killed}
+        />
+      )}
       <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board tone={boardTone} floatBelow pips={pips} />
 
       {/* You → Orchestrator (root), then fan-out to the lenses, fan-in to Arbiter (终裁), then to the board */}
@@ -764,7 +793,15 @@ export function AuthorityChain({
           tone={decisionToneKey(verdictFor(lens.key)?.decision)}
         />
       ))}
-      <Beam container={containerRef} from={synthRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
+      {/* the cast leg: Arbiter → VoteBoard, routed through the 1Shot relay node on the mainnet path */}
+      {oneShot ? (
+        <>
+          <Beam container={containerRef} from={synthRef} to={oneShotRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
+          <Beam container={containerRef} from={oneShotRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
+        </>
+      ) : (
+        <Beam container={containerRef} from={synthRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
+      )}
 
       {live && !killed && !cutting && (
         <ScopeChip
