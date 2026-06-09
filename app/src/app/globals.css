@@ -637,9 +637,9 @@ html, body { height: 100%; overflow: hidden; }
 /* mainnet relay sub-flow: two looping USDC coins from the burner — gold = x402 (→终裁), cyan = relay
    fee (→1Shot) — plus the gas-abstraction label on the 1Shot→VoteBoard beam. */
 .relay-coin { position: absolute; z-index: 3; width: 13px; height: 13px; border-radius: 999px; pointer-events: none;
-  transform: translate(-50%, -50%); animation: relayCoin 1.4s var(--ease-fluid) forwards; }
+  transform: translate(-50%, -50%); animation: relayCoin 1.65s var(--ease-fluid) forwards; }
 .relay-coin.gold { background: radial-gradient(circle, #fff 12%, #f5b942 55%, transparent 75%); box-shadow: 0 0 9px 2px rgba(245, 185, 66, 0.6); }
-.relay-coin.cyan { background: radial-gradient(circle, #fff 12%, var(--color-cyan) 55%, transparent 75%); box-shadow: 0 0 9px 2px rgba(56, 224, 255, 0.6); animation-delay: 0.6s; }
+.relay-coin.cyan { background: radial-gradient(circle, #fff 12%, var(--color-cyan) 55%, transparent 75%); box-shadow: 0 0 9px 2px rgba(56, 224, 255, 0.6); animation-delay: 0.85s; }
 @keyframes relayCoin {
   0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
   18% { opacity: 1; }
@@ -657,7 +657,7 @@ html, body { height: 100%; overflow: hidden; }
   clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   background: radial-gradient(circle, #fff 8%, #9c8cff 50%, #6b5bff 80%, transparent 90%);
   box-shadow: 0 0 11px 2px rgba(123, 97, 255, 0.7);
-  transform: translate(-50%, -50%); animation: relayFuel 1.6s var(--ease-fluid) forwards; }
+  transform: translate(-50%, -50%); animation: relayFuel 1.9s var(--ease-fluid) forwards; }
 @keyframes relayFuel {
   0% { transform: translate(-50%, -50%) scale(0.3) rotate(0deg); opacity: 0; }
   20% { opacity: 1; }

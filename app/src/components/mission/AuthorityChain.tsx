@@ -18,8 +18,8 @@ const PACKET_MS = 850;
 const LENS_STAGGER_MS = 480;
 // The mainnet cast hops (终裁 → Burner → 1Shot → VoteBoard) light one-by-one this far apart, so the
 // relayed vote visibly travels hop-by-hop instead of the whole leg flashing on at once. Kept slow
-// enough that each hop reads, and that the burner's 700ms 7702 upgrade ring finishes within one step.
-const RELAY_STAGGER_MS = 900;
+// enough that each hop reads calmly, and that the burner's 700ms 7702 upgrade ring finishes in one step.
+const RELAY_STAGGER_MS = 1150;
 
 const LENS_ICON: Record<LensKey, LucideIcon> = {
   fiscal: Coins,
@@ -670,15 +670,29 @@ function VeniceEnclave({
   synthRef,
   lensRefs,
   active,
+  flowing,
   killed,
 }: {
   container: DivRef;
   synthRef: DivRef;
   lensRefs: DivRef[];
   active: boolean;
+  /** 终裁 is consulting Venice (analysis → decision, before the vote is cast): animate the data tap. */
+  flowing: boolean;
   killed: boolean;
 }) {
+  const reduce = useReducedMotion();
   const [g, setG] = useState<{ enclave: { x: number; y: number; w: number; h: number }; venice: PayPoint; seg: PaySeg } | null>(null);
+  // 终裁 ↔ Venice is a back-and-forth: query out (req), answer back (resp). Alternate slowly while consulting.
+  const [phase, setPhase] = useState<'req' | 'resp'>('req');
+  useEffect(() => {
+    if (!flowing || killed || reduce) {
+      setPhase('req');
+      return;
+    }
+    const id = setInterval(() => setPhase((p) => (p === 'req' ? 'resp' : 'req')), 1000);
+    return () => clearInterval(id);
+  }, [flowing, killed, reduce]);
   useEffect(() => {
     const compute = () => {
       if (!container.current || !synthRef.current || lensRefs.some((r) => !r.current)) return;
@@ -715,12 +729,21 @@ function VeniceEnclave({
     };
   }, [container, synthRef, lensRefs]);
   if (!g) return null;
+  const dataParticles = (dir: 'req' | 'resp') => {
+    const from = dir === 'req' ? g.seg.from : g.seg.to;
+    const to = dir === 'req' ? g.seg.to : g.seg.from;
+    return [0, 1].map((i) => (
+      <span key={`${dir}-${i}`} className="data-packet" style={{ left: from.x, top: from.y, '--dx': `${to.x - from.x}px`, '--dy': `${to.y - from.y}px`, animationDelay: `${i * 0.16}s` } as CSSProperties} />
+    ));
+  };
   return (
     <>
       <div className="pay-enclave" style={{ left: g.enclave.x, top: g.enclave.y, width: g.enclave.w, height: g.enclave.h, opacity: killed ? 0.3 : active ? 1 : 0.6, filter: killed ? 'grayscale(1)' : undefined }} />
       <svg className="beam-svg" width="100%" height="100%" fill="none" aria-hidden="true" style={{ overflow: 'visible' }}>
         <line x1={g.seg.from.x} y1={g.seg.from.y} x2={g.seg.to.x} y2={g.seg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={killed ? 0.12 : 0.32} />
       </svg>
+      {/* the 终裁 ↔ Venice data tap: a slow cyan pulse alternating query-out / answer-back while consulting */}
+      {flowing && !killed && !reduce && dataParticles(phase)}
       <div className="pay-venice" style={{ left: g.venice.x, top: g.venice.y, opacity: killed ? 0.35 : 1, filter: killed ? 'grayscale(1)' : undefined }}>
         <span className={`pay-venice-disc${active ? ' on' : ''}`}>
           <Sparkles size={15} />
@@ -794,7 +817,7 @@ function MainnetRelayFlow({
       return;
     }
     setFiring(true);
-    const id = setTimeout(() => setFiring(false), 4200);
+    const id = setTimeout(() => setFiring(false), 5200);
     return () => clearTimeout(id);
   }, [live]);
   if (!g) return null;
@@ -816,10 +839,10 @@ function MainnetRelayFlow({
       {/* USDC coins the burner SPENDS, flowing INTO the recipients: gold = x402 (→终裁), cyan = fee (→1Shot) */}
       {firing && travel(g.burner, g.synth, 'relay-coin gold', 'x402')}
       {firing && travel(g.burner, g.oneShot, 'relay-coin cyan', 'fee')}
-      {/* ETH "fuel" that 1Shot FRONTS, flowing OUT of 1Shot to push the tx onto the board: a distinct
-          hexagon pulse (not a round coin). The burner spends 0 ETH; 1Shot pays the real ETH gas. */}
-      {firing && travel(g.oneShot, g.board, 'relay-fuel', 'eth1', 1.55)}
-      {firing && travel(g.oneShot, g.board, 'relay-fuel', 'eth2', 2.25)}
+      {/* ETH "fuel" that 1Shot FRONTS, flowing OUT of 1Shot to push the tx onto the board: a single
+          distinct hexagon pulse (not a round coin). The burner spends 0 ETH; 1Shot pays the real ETH
+          gas. One pulse only — fires after the USDC coins land, so the colours never pile up at once. */}
+      {firing && travel(g.oneShot, g.board, 'relay-fuel', 'eth1', 1.8)}
       {/* the gas-abstraction label, tucked UNDER the 1Shot→VoteBoard beam; glows while the fuel fires */}
       <div className={`relay-gas-label${firing ? ' firing' : ''}`} style={{ left: g.gasMid.x, top: g.gasMid.y + 24 }}>
         <Fuel size={11} /> {t.relayGasLabel}
@@ -1090,7 +1113,7 @@ export function AuthorityChain({
       {oneShot && relay && (
         <>
           {/* the Venice TEE enclave + Venice AI node (the AI's decision platform) — same as testnet */}
-          <VeniceEnclave container={containerRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} killed={killed} />
+          <VeniceEnclave container={containerRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} flowing={lensLit >= 0 && !beamLive('voted')} killed={killed} />
           <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} live={relayLit >= 0} relay={relay} t={t} />
           {relay.tollTx && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} basescan={relay.basescan} title="x402 toll ↗" />}
           {relay.castTx && <ReceiptTick container={containerRef} nodeRef={oneShotRef} txHash={relay.castTx} basescan={relay.basescan} title="1Shot castVote ↗" />}
