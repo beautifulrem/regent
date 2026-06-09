@@ -19,12 +19,15 @@ import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
 import {
   createPublicClient,
+  createWalletClient,
   encodeFunctionData,
   erc20Abi,
   getAddress,
   http,
+  keccak256,
   parseAbi,
   parseUnits,
+  stringToHex,
   type Address,
   type Hex,
   type PublicClient,
@@ -42,17 +45,21 @@ import {
   ADDRESSES,
   analyzeProposal,
   buildSend7710Params,
+  demoProposalAction,
   estimate7710Transaction,
   fetchAttestation,
+  fetchProposalWindow,
   floorFee,
   getCapabilities,
   getStatus,
+  GOVERNOR_ABI,
   is7702Upgraded,
   isTerminalStatus,
   LENSES,
   PROPOSALS,
   pickPaymentToken,
   relayStatusLabel,
+  reseedProposal,
   resolveModel,
   send7710Transaction,
   synthesizeVerdict,
@@ -77,27 +84,28 @@ interface Network {
   relayer: 'mainnet' | 'testnet';
   basescan: string;
   governor: Address;
+  token: Address;
   proposalId: string;
 }
 
 function network(mainnet: boolean): Network {
   if (mainnet) {
     const a = ADDRESSES.baseMainnet;
-    if (!a.governor || !a.proposalId) throw new Error('ADDRESSES.baseMainnet.{governor,proposalId} not set');
+    if (!a.governor || !a.token || !a.proposalId) throw new Error('ADDRESSES.baseMainnet.{governor,token,proposalId} not set');
     return {
       chainId: 8453, chain: base, name: 'base',
       rpc: process.env.BASE_MAINNET_RPC_URL || 'https://base-rpc.publicnode.com',
       relayerUrl: 'https://relayer.1shotapi.com/relayers', relayer: 'mainnet',
-      basescan: 'https://basescan.org', governor: a.governor, proposalId: a.proposalId,
+      basescan: 'https://basescan.org', governor: a.governor, token: a.token, proposalId: a.proposalId,
     };
   }
   const a = ADDRESSES.baseSepolia;
-  if (!a.governor || !a.proposalId) throw new Error('ADDRESSES.baseSepolia.{governor,proposalId} not set');
+  if (!a.governor || !a.token || !a.proposalId) throw new Error('ADDRESSES.baseSepolia.{governor,token,proposalId} not set');
   return {
     chainId: 84532, chain: baseSepolia, name: 'base-sepolia',
     rpc: process.env.BASE_SEPOLIA_RPC_URL || 'https://base-sepolia-rpc.publicnode.com',
     relayerUrl: 'https://relayer.1shotapi.dev/relayers', relayer: 'testnet',
-    basescan: 'https://sepolia.basescan.org', governor: a.governor, proposalId: a.proposalId,
+    basescan: 'https://sepolia.basescan.org', governor: a.governor, token: a.token, proposalId: a.proposalId,
   };
 }
 
@@ -107,19 +115,56 @@ function envKey(name: string): Hex {
   return v as Hex;
 }
 
+const sleepS = (s: number) => new Promise((r) => setTimeout(r, s * 1000));
+
+/**
+ * Create a FRESH demo proposal on the governor (signed by DEPLOYER_PK) and poll until it is Active.
+ * Returns the new proposalId. Needed because the Governor's Active window is only 300s — a stale
+ * proposalId from addresses.ts will be 'closed' and castVote would revert.
+ */
+async function reseedAndWaitActive(client: PublicClient, net: Network): Promise<bigint> {
+  const account = privateKeyToAccount(envKey('DEPLOYER_PK'));
+  const wallet = createWalletClient({ account, chain: net.chain, transport: http(net.rpc) });
+  const description = `Mandate 1Shot recording @ ${new Date().toISOString()}`;
+  console.log('● reseed: creating a fresh proposal…');
+  const txHash = await reseedProposal(wallet, account, net.governor, net.token, description);
+  await client.waitForTransactionReceipt({ hash: txHash });
+  const { targets, values, calldatas } = demoProposalAction(net.token);
+  const descriptionHash = keccak256(stringToHex(description));
+  const proposalId = (await client.readContract({
+    address: net.governor, abi: GOVERNOR_ABI, functionName: 'hashProposal',
+    args: [targets as Address[], values as bigint[], calldatas as Hex[], descriptionHash],
+  })) as bigint;
+  console.log(`● reseed: proposalId ${proposalId} (tx ${txHash}) — waiting for Active…`);
+  for (let i = 0; i < 40; i++) {
+    const { window } = await fetchProposalWindow(client, net.governor, proposalId);
+    if (window.phase === 'active') {
+      console.log(`● reseed: Active (${window.secondsRemaining}s left)\n`);
+      return proposalId;
+    }
+    if (window.phase === 'closed') throw new Error('proposal closed before becoming active');
+    process.stdout.write(`   pending — Active in ${window.secondsUntilActive}s\n`);
+    await sleepS(5);
+  }
+  throw new Error('timed out waiting for Active');
+}
+
 async function main(): Promise<void> {
   loadDotenv({ path: path.join(REPO_ROOT, '.env') });
   const estimateOnly = process.argv.includes('--estimate');
+  const reseed = process.argv.includes('--reseed');
   const net = network(process.argv.includes('--mainnet'));
 
-  // The on-chain governor proposal we cast on == PROPOSALS[0] (DEMO_PROPOSAL_ID) semantically; use its
-  // title/body as the text Venice analyzes and as the snapshot's displayed proposal.
+  console.log(`\n● network: ${net.name} (${net.chainId}) · relayer ${net.relayer} · governor ${net.governor}`);
+
+  // The displayed/Venice-analyzed proposal == PROPOSALS[0] ("Renew core-dev team budget"); the on-chain
+  // castVote targets the governor proposalId (a fresh Active one with --reseed, else addresses.ts's).
   const proposal = PROPOSALS[0];
   const proposalText = proposal.body.en;
-  const proposalId = BigInt(net.proposalId);
 
-  console.log(`\n● network: ${net.name} (${net.chainId}) · relayer ${net.relayer} · governor ${net.governor}`);
-  console.log(`● proposal: "${proposal.title.en}"  id ${net.proposalId.slice(0, 12)}…\n`);
+  const client = createPublicClient({ chain: net.chain, transport: http(net.rpc) }) as PublicClient;
+  const proposalId = reseed ? await reseedAndWaitActive(client, net) : BigInt(net.proposalId);
+  console.log(`● proposal: "${proposal.title.en}"  on-chain id ${proposalId.toString().slice(0, 12)}…\n`);
 
   // ── 1) VENICE TEE: 4 lenses in parallel → synthesis → final support ───────────────────────────
   const veniceCfg: VeniceConfig = {
@@ -147,7 +192,6 @@ async function main(): Promise<void> {
   console.log(`● Venice decision: ${venice.decision} (support=${support}) · "${venice.rationale}"\n`);
 
   // ── 2) 1SHOT RELAY: burner 7702 upgrade + ERC-7710 bundle [ fee → feeCollector , castVote ] ────
-  const client = createPublicClient({ chain: net.chain, transport: http(net.rpc) }) as PublicClient;
   const caps = (await getCapabilities(net.chainId, net.relayerUrl))[String(net.chainId)];
   if (!caps) throw new Error(`relayer ${net.relayer} does not support chain ${net.chainId}`);
   const usdc = pickPaymentToken({ [String(net.chainId)]: caps }, net.chainId, 'USDC');
