@@ -67,11 +67,15 @@ interface ChainNodeProps {
   pips?: Pips;
   /** a small highlighted chip under the role (e.g. the burner's "7702 ✓ · 0 ETH" gas-abstraction badge). */
   badge?: string;
+  /** play a one-shot EIP-7702 "set-code → smart account" upgrade ring on the circle (burner, leg start). */
+  upgrade?: boolean;
+  /** the throwaway burner's single-use idle state: dashed, breathing, desaturated — NOT the killed grey. */
+  idle?: boolean;
   /** the explorer base for the address link — defaults to the live (Sepolia) one; mainnet replay overrides it. */
   basescan?: string;
 }
 
-function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, killed, board, small, floatBelow, result, tone, pips, badge, basescan = BASESCAN }: ChainNodeProps) {
+function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, killed, board, small, floatBelow, result, tone, pips, badge, upgrade, idle, basescan = BASESCAN }: ChainNodeProps) {
   // One tone drives the whole circle (icon + ring + glow). Callers pass it explicitly: the lenses and
   // the Arbiter (终裁) by their verdict, the VoteBoard by the live tally (or brand once our vote lands).
   // You/Orchestrator default brand; a lens with no verdict yet stays cold info-blue.
@@ -97,7 +101,13 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, kill
         transition: 'opacity .3s, filter .3s',
       }}
     >
+      {upgrade && !killed && (
+        // EIP-7702 set-code pulse: a cyan ring blooms out of the burner circle once, as the EOA is
+        // upgraded into a smart account at the start of the relay leg (one-shot, not a loop).
+        <span aria-hidden className="node-upgrade-ring" style={{ position: 'absolute', top: size / 2, left: '50%', width: size, height: size, transform: 'translate(-50%, -50%)', borderRadius: 999, pointerEvents: 'none' }} />
+      )}
       <span
+        className={idle && !killed ? 'mc-node-idle' : undefined}
         style={{
           margin: '0 auto',
           width: size,
@@ -734,6 +744,7 @@ function MainnetRelayFlow({
   boardRef,
   live,
   relay,
+  t,
 }: {
   container: DivRef;
   burnerRef: DivRef;
@@ -742,11 +753,13 @@ function MainnetRelayFlow({
   boardRef: DivRef;
   live: boolean;
   relay: { basescan: string; tollTx?: string; castTx?: string; tollUsdc: string; feeUsdc: string };
+  t: Dict;
 }) {
   const [g, setG] = useState<{
     burner: { x: number; y: number };
     synth: { x: number; y: number };
     oneShot: { x: number; y: number };
+    board: { x: number; y: number };
     gasMid: { x: number; y: number };
   } | null>(null);
   useEffect(() => {
@@ -759,7 +772,7 @@ function MainnetRelayFlow({
       };
       const oneShot = c(oneShotRef.current);
       const board = c(boardRef.current);
-      setG({ burner: c(burnerRef.current), synth: c(synthRef.current), oneShot, gasMid: { x: (oneShot.x + board.x) / 2, y: (oneShot.y + board.y) / 2 } });
+      setG({ burner: c(burnerRef.current), synth: c(synthRef.current), oneShot, board, gasMid: { x: (oneShot.x + board.x) / 2, y: (oneShot.y + board.y) / 2 } });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -770,8 +783,9 @@ function MainnetRelayFlow({
       window.removeEventListener('resize', compute);
     };
   }, [container, burnerRef, synthRef, oneShotRef, boardRef]);
-  // The two coins fire ONCE when the cast lands (the payment is a one-shot, not a continuous stream),
-  // then stop; a fresh replay re-arms them. `firing` holds the brief window the one-shot animation plays.
+  // The coins/fuel fire ONCE when the cast lands (a one-shot, not a continuous stream), then stop; a
+  // fresh replay re-arms them. `firing` is the window the animations play — long enough for the
+  // burner→1Shot USDC coins AND the slightly-later 1Shot→board ETH fuel pulses to finish.
   const [firing, setFiring] = useState(false);
   useEffect(() => {
     if (!live) {
@@ -779,31 +793,35 @@ function MainnetRelayFlow({
       return;
     }
     setFiring(true);
-    const id = setTimeout(() => setFiring(false), 2000);
+    const id = setTimeout(() => setFiring(false), 3200);
     return () => clearTimeout(id);
   }, [live]);
   if (!g) return null;
-  // A coin travels ONLY in the gap between the two node circles (start/end offset to the node edges,
-  // not the centres), so it never pierces a node. The CSS fades it in/out at both ends.
+  // A particle travels ONLY in the gap between two node circles (offset to the rims, not the centres),
+  // so it never pierces a node. The CSS fades it in/out at both ends.
   const R = 37; // main-node radius (30) + clearance
-  const coin = (to: { x: number; y: number }, cls: string, key: string) => {
-    const dx = to.x - g.burner.x;
-    const dy = to.y - g.burner.y;
+  const travel = (from: { x: number; y: number }, to: { x: number; y: number }, cls: string, key: string, delay?: number) => {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
     const len = Math.hypot(dx, dy) || 1;
-    const sx = g.burner.x + (dx / len) * R;
-    const sy = g.burner.y + (dy / len) * R;
+    const sx = from.x + (dx / len) * R;
+    const sy = from.y + (dy / len) * R;
     const ex = to.x - (dx / len) * R;
     const ey = to.y - (dy / len) * R;
-    return <span key={key} className={`relay-coin ${cls}`} style={{ left: sx, top: sy, '--dx': `${ex - sx}px`, '--dy': `${ey - sy}px` } as CSSProperties} />;
+    return <span key={key} className={cls} style={{ left: sx, top: sy, '--dx': `${ex - sx}px`, '--dy': `${ey - sy}px`, ...(delay ? { animationDelay: `${delay}s` } : {}) } as CSSProperties} />;
   };
   return (
     <>
-      {/* two one-shot USDC coins in the beam gaps: gold = x402 (→终裁), cyan = relay fee (→1Shot) */}
-      {firing && coin(g.synth, 'gold', 'x402')}
-      {firing && coin(g.oneShot, 'cyan', 'fee')}
-      {/* the gas-abstraction label, tucked UNDER the 1Shot→VoteBoard beam (clear of the top bar) */}
-      <div className="relay-gas-label" style={{ left: g.gasMid.x, top: g.gasMid.y + 24 }}>
-        <Fuel size={11} /> gas · 1Shot · ETH
+      {/* USDC coins the burner SPENDS, flowing INTO the recipients: gold = x402 (→终裁), cyan = fee (→1Shot) */}
+      {firing && travel(g.burner, g.synth, 'relay-coin gold', 'x402')}
+      {firing && travel(g.burner, g.oneShot, 'relay-coin cyan', 'fee')}
+      {/* ETH "fuel" that 1Shot FRONTS, flowing OUT of 1Shot to push the tx onto the board: a distinct
+          hexagon pulse (not a round coin). The burner spends 0 ETH; 1Shot pays the real ETH gas. */}
+      {firing && travel(g.oneShot, g.board, 'relay-fuel', 'eth1', 1.05)}
+      {firing && travel(g.oneShot, g.board, 'relay-fuel', 'eth2', 1.5)}
+      {/* the gas-abstraction label, tucked UNDER the 1Shot→VoteBoard beam; glows while the fuel fires */}
+      <div className={`relay-gas-label${firing ? ' firing' : ''}`} style={{ left: g.gasMid.x, top: g.gasMid.y + 24 }}>
+        <Fuel size={11} /> {t.relayGasLabel}
       </div>
     </>
   );
@@ -982,9 +1000,11 @@ export function AuthorityChain({
             role={t.burnerNode.role}
             addr={parties.burner}
             basescan={bs}
-            badge="7702 ✓ · 0 ETH"
+            badge="0 ETH"
             active={relayLit >= 0}
             working={relayLit === 0}
+            upgrade={relayLit === 0}
+            idle={relayLit >= 2}
             tone="info"
             floatBelow
             killed={killed}
@@ -1070,7 +1090,7 @@ export function AuthorityChain({
         <>
           {/* the Venice TEE enclave + Venice AI node (the AI's decision platform) — same as testnet */}
           <VeniceEnclave container={containerRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} killed={killed} />
-          <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} live={relayLit >= 0} relay={relay} />
+          <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} live={relayLit >= 0} relay={relay} t={t} />
           {relay.tollTx && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} basescan={relay.basescan} title="x402 toll ↗" />}
           {relay.castTx && <ReceiptTick container={containerRef} nodeRef={oneShotRef} txHash={relay.castTx} basescan={relay.basescan} title="1Shot castVote ↗" />}
         </>

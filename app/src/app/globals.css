@@ -649,6 +649,33 @@ html, body { height: 100%; overflow: hidden; }
   display: inline-flex; align-items: center; gap: 4px;
   font-family: var(--font-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.02em; color: var(--color-info);
   background: rgba(14, 19, 30, 0.82); border: 1px solid rgba(110, 168, 254, 0.3); border-radius: 999px; padding: 2px 9px; }
+.relay-gas-label.firing { color: #b3a6ff; border-color: rgba(123, 97, 255, 0.55); box-shadow: 0 0 14px -2px rgba(123, 97, 255, 0.6); }
+
+/* ETH "fuel" pulse: the gas 1Shot fronts, flowing 1Shot→VoteBoard. A violet-blue hexagon (clip-path),
+   clearly distinct from the round USDC coins, with a slight spin so it reads as energy, not money. */
+.relay-fuel { position: absolute; z-index: 3; width: 15px; height: 15px; pointer-events: none;
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  background: radial-gradient(circle, #fff 8%, #9c8cff 50%, #6b5bff 80%, transparent 90%);
+  box-shadow: 0 0 11px 2px rgba(123, 97, 255, 0.7);
+  transform: translate(-50%, -50%); animation: relayFuel 1.3s var(--ease-fluid) forwards; }
+@keyframes relayFuel {
+  0% { transform: translate(-50%, -50%) scale(0.3) rotate(0deg); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.9) rotate(120deg); opacity: 0; } }
+
+/* EIP-7702 upgrade ring: blooms once out of the burner circle as its EOA is set-code'd to a smart account */
+.node-upgrade-ring { border: 2px solid var(--color-cyan); animation: nodeUpgrade 0.7s var(--ease-fluid) forwards; }
+@keyframes nodeUpgrade {
+  0% { transform: translate(-50%, -50%) scale(0.62); opacity: 0; border-width: 3px; }
+  35% { opacity: 0.95; }
+  100% { transform: translate(-50%, -50%) scale(1.75); opacity: 0; border-width: 1px; } }
+
+/* throwaway burner, single-use: once its job is done it goes dashed + breathing + slightly desaturated,
+   deliberately NOT the killed grey (no grayscale), so "spun-up-then-idle" never reads as "severed". */
+.mc-node-idle { border-style: dashed !important; filter: saturate(0.72); animation: nodeIdleBreath 2.6s ease-in-out infinite; }
+@keyframes nodeIdleBreath { 0%, 100% { opacity: 0.95; } 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .relay-fuel { animation: none; opacity: 0; } .node-upgrade-ring { animation: none; opacity: 0; } .mc-node-idle { animation: none; } }
 @media (prefers-reduced-motion: reduce) { .relay-coin { animation: none; opacity: 0.85; } }
 
 @keyframes ping { 75%, 100% { transform: scale(2.2); opacity: 0; } }
