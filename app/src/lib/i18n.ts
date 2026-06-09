@@ -66,6 +66,7 @@ const en = {
     venice: { who: 'Venice AI', role: 'TEE inference · paid per query' },
     board: { who: 'VoteBoard', role: 'on-chain tally' },
   },
+  burnerNode: { who: 'Burner', role: 'casts via 1Shot' },
   panels: { wallet: 'Smart Account', tally: 'DAO tally', x402: 'x402 toll gate', oneshot: '1Shot relay', run: 'Run detail' },
   capOneShot: 'mainnet relay · instant',
   trackTips: {
@@ -252,6 +253,7 @@ const zh: Dict = {
     venice: { who: 'Venice AI', role: 'TEE 推理 · 按次付费' },
     board: { who: 'VoteBoard', role: '链上计票' },
   },
+  burnerNode: { who: 'Burner', role: '经 1Shot 投票' },
   panels: { wallet: '智能账户', tally: 'DAO 计票', x402: 'x402 收费门', oneshot: '1Shot 中继', run: '运行详情' },
   capOneShot: '主网中继 · 即时',
   trackTips: {

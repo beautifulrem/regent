@@ -59,6 +59,8 @@ export interface MissionVM {
   youAddr?: string;
   orchAddr?: string;
   analystAddr?: string;
+  /** the 7702 burner that casts via 1Shot (mainnet replay only). */
+  burnerAddr?: string;
   killed: boolean;
   terminal: boolean;
   /** the latest run is for the proposal currently on screen (else the graph shows the resting mandate). */
@@ -197,7 +199,7 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
         <div ref={vm.graphStageRef} className="flex w-full justify-center">
           <AuthorityChain
             t={t}
-            parties={{ you: vm.youAddr, orch: vm.orchAddr, analyst: vm.analystAddr, board: VOTE_BOARD_ADDRESS }}
+            parties={{ you: vm.youAddr, orch: vm.orchAddr, analyst: vm.analystAddr, board: VOTE_BOARD_ADDRESS, burner: vm.burnerAddr }}
             shownIdx={revealIdx}
             instant={!liveRun}
             status={sEff}

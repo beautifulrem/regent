@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import { animate, useReducedMotion } from 'motion/react';
-import { Bot, Boxes, CheckCircle2, Coins, ExternalLink, Filter, Gavel, Lock, Receipt, Rocket, Scale, Scissors, ShieldCheck, Sparkles, TrendingUp, User, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { Bot, Boxes, CheckCircle2, Coins, Cpu, ExternalLink, Filter, Gavel, Lock, Receipt, Rocket, Scale, Scissors, ShieldCheck, Sparkles, TrendingUp, User, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { LENSES, type Decision, type LensKey, type LensVerdict } from '@mandate/shared';
 import { BASESCAN, shortHex } from '../../lib/config';
 import { ORDER } from '../../lib/runState';
@@ -62,9 +62,11 @@ interface ChainNodeProps {
   /** the circle's color tone (icon + ring + glow). Defaults: board=ok, lens=info, else brand. */
   tone?: ToneKey;
   pips?: Pips;
+  /** a small highlighted chip under the role (e.g. the burner's "7702 ✓ · 0 ETH" gas-abstraction badge). */
+  badge?: string;
 }
 
-function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, killed, board, small, floatBelow, result, tone, pips }: ChainNodeProps) {
+function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, killed, board, small, floatBelow, result, tone, pips, badge }: ChainNodeProps) {
   // One tone drives the whole circle (icon + ring + glow). Callers pass it explicitly: the lenses and
   // the Arbiter (终裁) by their verdict, the VoteBoard by the live tally (or brand once our vote lands).
   // You/Orchestrator default brand; a lens with no verdict yet stays cold info-blue.
@@ -115,6 +117,13 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, kill
         {who}
       </div>
       {role && <div style={{ marginTop: 2, fontSize: 12, color: 'var(--color-ink-mute)' }}>{role}</div>}
+      {badge && (
+        <div style={{ marginTop: 5 }}>
+          <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--color-cyan)', background: 'rgba(56,224,255,.1)', border: '1px solid rgba(56,224,255,.35)', whiteSpace: 'nowrap' }}>
+            {badge}
+          </span>
+        </div>
+      )}
 
       {/* No verdict pills and no "thinking…" box on graph nodes: a working node simply glows brand-orange
           (the `working` pulse + brand tone), then its circle switches to the verdict color once the
@@ -621,6 +630,8 @@ export interface ChainParties {
   orch?: string;
   analyst?: string;
   board?: string;
+  /** the 7702-upgraded burner that casts via 1Shot (mainnet relay leg only). */
+  burner?: string;
 }
 
 /**
@@ -675,6 +686,7 @@ export function AuthorityChain({
   const youRef = useRef<HTMLDivElement>(null);
   const orchRef = useRef<HTMLDivElement>(null);
   const synthRef = useRef<HTMLDivElement>(null);
+  const burnerRef = useRef<HTMLDivElement>(null);
   const oneShotRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const lensRefs = useMemo<DivRef[]>(() => LENSES.map(() => ({ current: null })), []);
@@ -759,20 +771,35 @@ export function AuthorityChain({
         floatBelow
         killed={killed}
       />
-      {/* the 1Shot relay hop (mainnet only): the Arbiter's cast is relayed through 1Shot (7702 burner +
-          7710 bundle, gas paid in USDC) before it lands on the board. */}
+      {/* the 1Shot relay leg (mainnet only): the Arbiter's decision is cast by a 7702-upgraded BURNER
+          whose 7710 bundle is relayed through 1Shot — gas paid by the relayer, fees paid in USDC. */}
       {oneShot && (
-        <ChainNode
-          nodeRef={oneShotRef}
-          icon={Rocket}
-          who="1Shot"
-          role={t.oneShotNodeRole}
-          active={beamLive('voted')}
-          working={beamLive('voted') && !nodeLit('voted')}
-          tone="info"
-          floatBelow
-          killed={killed}
-        />
+        <>
+          <ChainNode
+            nodeRef={burnerRef}
+            icon={Cpu}
+            who={t.burnerNode.who}
+            role={t.burnerNode.role}
+            addr={parties.burner}
+            badge="7702 ✓ · 0 ETH"
+            active={beamLive('voted')}
+            working={beamLive('voted') && !nodeLit('voted')}
+            tone="info"
+            floatBelow
+            killed={killed}
+          />
+          <ChainNode
+            nodeRef={oneShotRef}
+            icon={Rocket}
+            who="1Shot"
+            role={t.oneShotNodeRole}
+            active={beamLive('voted')}
+            working={beamLive('voted') && !nodeLit('voted')}
+            tone="info"
+            floatBelow
+            killed={killed}
+          />
+        </>
       )}
       <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} active={connected} board tone={boardTone} floatBelow pips={pips} />
 
@@ -793,10 +820,11 @@ export function AuthorityChain({
           tone={decisionToneKey(verdictFor(lens.key)?.decision)}
         />
       ))}
-      {/* the cast leg: Arbiter → VoteBoard, routed through the 1Shot relay node on the mainnet path */}
+      {/* the cast leg: Arbiter → VoteBoard, routed through the Burner + 1Shot relay on the mainnet path */}
       {oneShot ? (
         <>
-          <Beam container={containerRef} from={synthRef} to={oneShotRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
+          <Beam container={containerRef} from={synthRef} to={burnerRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
+          <Beam container={containerRef} from={burnerRef} to={oneShotRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
           <Beam container={containerRef} from={oneShotRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} />
         </>
       ) : (
