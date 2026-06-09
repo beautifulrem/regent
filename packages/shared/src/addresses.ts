@@ -6,9 +6,9 @@ export interface MandateAddresses {
   /** Demo accounts on Base Sepolia: SA address for smart-account roles, EOA otherwise. Keyed by role id. */
   accounts: Partial<Record<string, Address>>;
   /** Base Sepolia governance contracts (filled by the deploy task). */
-  baseSepolia: { token?: Address; governor?: Address; proposalId?: string; paymentToken?: Address };
+  baseSepolia: { token?: Address; governor?: Address; proposalId?: string; paymentToken?: Address; voteBoard?: Address };
   /** Base mainnet governance contracts (filled by the mainnet task). */
-  baseMainnet: { token?: Address; governor?: Address; proposalId?: string; paymentToken?: Address };
+  baseMainnet: { token?: Address; governor?: Address; proposalId?: string; paymentToken?: Address; voteBoard?: Address };
 }
 
 export const ADDRESSES: MandateAddresses = {
@@ -30,6 +30,7 @@ export const ADDRESSES: MandateAddresses = {
     "token": "0x56FC5fA996f9D0e15e40fE7D738C6cA055d1Ad55",
     "governor": "0x1BC00C1c14bE7eaC46237C4bcBD0530bb9655FD5",
     "proposalId": "57537901020768869097087464984479957445484616156577108380656894787776311584549",
-    "paymentToken": undefined
+    "paymentToken": undefined,
+    "voteBoard": "0x0B878c4A25002c14602ea8b25fD0099Ad6CEebeF"
   }
 };

@@ -39,3 +39,5 @@ adversarial-*.md
 .codegraph/
 .next/
 next-env.d.ts
+.vercel
+oneshot-snapshot-*.json

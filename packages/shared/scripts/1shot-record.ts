@@ -45,6 +45,7 @@ import {
   ADDRESSES,
   analyzeProposal,
   buildSend7710Params,
+  DEMO_PROPOSAL_ID,
   demoProposalAction,
   estimate7710Transaction,
   fetchAttestation,
@@ -87,6 +88,7 @@ interface Network {
   governor: Address;
   token: Address;
   proposalId: string;
+  voteBoard?: Address;
 }
 
 function network(mainnet: boolean): Network {
@@ -97,7 +99,7 @@ function network(mainnet: boolean): Network {
       chainId: 8453, chain: base, name: 'base',
       rpc: process.env.BASE_MAINNET_RPC_URL || 'https://base-rpc.publicnode.com',
       relayerUrl: 'https://relayer.1shotapi.com/relayers', relayer: 'mainnet',
-      basescan: 'https://basescan.org', governor: a.governor, token: a.token, proposalId: a.proposalId,
+      basescan: 'https://basescan.org', governor: a.governor, token: a.token, proposalId: a.proposalId, voteBoard: a.voteBoard,
     };
   }
   const a = ADDRESSES.baseSepolia;
@@ -106,7 +108,7 @@ function network(mainnet: boolean): Network {
     chainId: 84532, chain: baseSepolia, name: 'base-sepolia',
     rpc: process.env.BASE_SEPOLIA_RPC_URL || 'https://base-sepolia-rpc.publicnode.com',
     relayerUrl: 'https://relayer.1shotapi.dev/relayers', relayer: 'testnet',
-    basescan: 'https://sepolia.basescan.org', governor: a.governor, token: a.token, proposalId: a.proposalId,
+    basescan: 'https://sepolia.basescan.org', governor: a.governor, token: a.token, proposalId: a.proposalId, voteBoard: a.voteBoard,
   };
 }
 
@@ -159,25 +161,33 @@ async function main(): Promise<void> {
   loadDotenv({ path: path.join(REPO_ROOT, '.env') });
   const estimateOnly = process.argv.includes('--estimate');
   const reseed = process.argv.includes('--reseed');
+  // --board: cast the AI's vote on the (windowless) VoteBoard at DEMO_PROPOSAL_ID instead of the Governor,
+  // so the relayed 1Shot vote becomes the 6th real voter alongside the 5 seeded personas.
+  const board = process.argv.includes('--board');
   // --finalize <voteTx> --proposal <id>: skip reseed + relay, reuse an ALREADY-CAST 1Shot vote and just
   // re-run Venice (no broadcast) to assemble the snapshot. For recovering a run whose relay succeeded.
   const finalizeTx = argValue('--finalize') as Hex | undefined;
   const proposalOverride = argValue('--proposal');
   const net = network(process.argv.includes('--mainnet'));
 
-  console.log(`\n● network: ${net.name} (${net.chainId}) · relayer ${net.relayer} · governor ${net.governor}`);
+  if (board && !net.voteBoard) throw new Error('--board needs ADDRESSES.*.voteBoard set');
+  const voteTarget: Address = board ? (net.voteBoard as Address) : net.governor;
 
-  // The displayed/Venice-analyzed proposal == PROPOSALS[0] ("Renew core-dev team budget"); the on-chain
-  // castVote targets the governor proposalId (a fresh Active one with --reseed, else override/addresses).
+  console.log(`\n● network: ${net.name} (${net.chainId}) · relayer ${net.relayer} · target ${board ? 'VoteBoard' : 'Governor'} ${voteTarget}`);
+
+  // The displayed/Venice-analyzed proposal == PROPOSALS[0] ("Renew core-dev team budget"). The on-chain
+  // castVote targets: --board → VoteBoard at DEMO_PROPOSAL_ID; else the Governor proposalId.
   const proposal = PROPOSALS[0];
   const proposalText = proposal.body.en;
 
   const client = createPublicClient({ chain: net.chain, transport: http(net.rpc) }) as PublicClient;
-  const proposalId = finalizeTx
-    ? BigInt(proposalOverride ?? net.proposalId)
-    : reseed
-      ? await reseedAndWaitActive(client, net)
-      : BigInt(net.proposalId);
+  const proposalId = board
+    ? DEMO_PROPOSAL_ID
+    : finalizeTx
+      ? BigInt(proposalOverride ?? net.proposalId)
+      : reseed
+        ? await reseedAndWaitActive(client, net)
+        : BigInt(net.proposalId);
   console.log(`● proposal: "${proposal.title.en}"  on-chain id ${proposalId.toString().slice(0, 12)}…\n`);
 
   // ── 1) VENICE TEE: 4 lenses in parallel → synthesis → final support ───────────────────────────
@@ -231,7 +241,7 @@ async function main(): Promise<void> {
 
   const delegation = createDelegation({
     to: targetAddress, from: burnerSA.address, environment: burnerSA.environment,
-    scope: { type: ScopeType.FunctionCall, targets: [usdc.address, net.governor], selectors: ['transfer(address,uint256)', 'castVote(uint256,uint8)'] },
+    scope: { type: ScopeType.FunctionCall, targets: [usdc.address, voteTarget], selectors: ['transfer(address,uint256)', 'castVote(uint256,uint8)'] },
   } as Parameters<typeof createDelegation>[0]);
   const signedDelegation = { ...delegation, signature: await burnerSA.signDelegation({ delegation }) };
 
@@ -239,7 +249,7 @@ async function main(): Promise<void> {
   const minFeeAtoms = parseUnits('0.01', Number(usdc.decimals));
   const execs = (fee: bigint) => [
     { target: usdc.address, value: '0', data: encodeFunctionData({ abi: erc20Abi, functionName: 'transfer', args: [feeCollector, fee] }) as Hex },
-    { target: net.governor, value: '0', data: castVoteData },
+    { target: voteTarget, value: '0', data: castVoteData },
   ];
 
   let voteTx: Hex;
@@ -290,7 +300,7 @@ async function main(): Promise<void> {
     chain: { id: net.chainId, name: net.name, rpc: net.rpc, basescan: net.basescan },
     relayer: net.relayer,
     proposal: { id: proposalId.toString(), title: proposal.title, body: proposal.body },
-    participants: { user: burnerSA.address, orchestrator: burnerSA.address, analyst: targetAddress },
+    ...(board ? { voteBoard: voteTarget } : {}),
     venice, lenses,
     vote: { txHash: voteTx, support, blockNumber: receipt.blockNumber.toString(), relay: '1shot' },
     oneshot: { burner: burnerEoa.address, feeUsdc: (Number(feeAtoms) / 10 ** Number(usdc.decimals)).toString(), gasUsed: Number(receipt.gasUsed) },
