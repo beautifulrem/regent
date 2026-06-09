@@ -69,17 +69,20 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
             exit={revealOut}
             className="flex w-full flex-col items-center gap-3.5"
           >
-            {/* live mandate readout / severed notice */}
+            {/* live mandate readout / severed notice — the vote-budget/TTL/authority stats are a TESTNET
+                standing-grant concept; the mainnet replay is a one-shot recorded run, so they're hidden. */}
             <div className="flex flex-col items-center gap-2">
-              <MandateStats
-                boundMode={vm.boundMode}
-                maxVotes={vm.maxVotes}
-                ttlDays={vm.ttlDays}
-                votesUsed={vm.votesUsed}
-                grantedAt={vm.grantedAt}
-                killed={killed}
-                t={t}
-              />
+              {!vm.replayMode && (
+                <MandateStats
+                  boundMode={vm.boundMode}
+                  maxVotes={vm.maxVotes}
+                  ttlDays={vm.ttlDays}
+                  votesUsed={vm.votesUsed}
+                  grantedAt={vm.grantedAt}
+                  killed={killed}
+                  t={t}
+                />
+              )}
               {voted && !killed && (
                 <Badge tone="ok">
                   <CheckCircle2 className="size-3" /> {t.voteCast}
