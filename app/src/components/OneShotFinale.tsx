@@ -15,10 +15,12 @@ import { Badge, TrackTag } from './ui/Badge';
 
 type Phase = 'idle' | 'running' | 'done';
 
+// The burner (7702 account) signs the 7710 bundle, 1Shot relays it, the castVote lands — same order as
+// the main graph's cast leg (终裁 → Burner → 1Shot → VoteBoard), so the two never contradict.
 const FLOW_NODES: { icon: LucideIcon; label: string; at: number }[] = [
+  { icon: Cpu, label: 'Burner', at: 1 },
   { icon: Lock, label: '7710', at: 1 },
-  { icon: Rocket, label: '1Shot', at: 1 },
-  { icon: Cpu, label: 'Burner', at: 2 },
+  { icon: Rocket, label: '1Shot', at: 2 },
   { icon: CheckCircle2, label: 'castVote', at: 3 },
 ];
 
@@ -39,7 +41,7 @@ function OneShotFlow({ step, upgraded }: { step: number; upgraded: boolean }) {
             <span className={cn('mt-1.5 whitespace-nowrap text-[9.5px] font-bold tracking-wide transition-colors duration-500', step >= n.at ? 'text-cyan' : 'text-ink-mute')}>
               {n.label}
             </span>
-            {n.label === 'Burner' && step >= 2 && (
+            {n.label === 'Burner' && step >= 1 && (
               <span className="text-[8px] font-semibold text-cyan/70">
                 {upgraded ? '7702 ✓ · 0 ETH' : '7702 · 0 ETH'}
               </span>
