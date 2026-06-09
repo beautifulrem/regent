@@ -758,6 +758,18 @@ function MainnetRelayFlow({
       window.removeEventListener('resize', compute);
     };
   }, [container, burnerRef, synthRef, oneShotRef, boardRef]);
+  // The two coins fire ONCE when the cast lands (the payment is a one-shot, not a continuous stream),
+  // then stop; a fresh replay re-arms them. `firing` holds the brief window the one-shot animation plays.
+  const [firing, setFiring] = useState(false);
+  useEffect(() => {
+    if (!live) {
+      setFiring(false);
+      return;
+    }
+    setFiring(true);
+    const id = setTimeout(() => setFiring(false), 2000);
+    return () => clearTimeout(id);
+  }, [live]);
   if (!g) return null;
   // A coin travels ONLY in the gap between the two node circles (start/end offset to the node edges,
   // not the centres), so it never pierces a node. The CSS fades it in/out at both ends.
@@ -774,9 +786,9 @@ function MainnetRelayFlow({
   };
   return (
     <>
-      {/* two looping USDC coins in the beam gaps: gold = x402 (→终裁), cyan = relay fee (→1Shot) */}
-      {live && coin(g.synth, 'gold', 'x402')}
-      {live && coin(g.oneShot, 'cyan', 'fee')}
+      {/* two one-shot USDC coins in the beam gaps: gold = x402 (→终裁), cyan = relay fee (→1Shot) */}
+      {firing && coin(g.synth, 'gold', 'x402')}
+      {firing && coin(g.oneShot, 'cyan', 'fee')}
       {/* the gas-abstraction label, tucked UNDER the 1Shot→VoteBoard beam (clear of the top bar) */}
       <div className="relay-gas-label" style={{ left: g.gasMid.x, top: g.gasMid.y + 24 }}>
         <Fuel size={11} /> gas · 1Shot · ETH
