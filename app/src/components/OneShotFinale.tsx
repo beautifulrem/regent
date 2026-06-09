@@ -251,7 +251,7 @@ export function OneShotFinale({
           <div className="grid gap-2">
             <MechRow dot="#f5b942" label={t.oneShotMechX402} amount="0.001 USDC" />
             <MechRow dot="var(--color-cyan)" label={t.oneShotMechFee} amount="0.01 USDC" />
-            <MechRow dot="var(--color-ok)" label={t.oneShotMechGas} amount="0 ETH" amountTone="ok" />
+            <MechRow dot="var(--color-ok)" label={t.oneShotMechGas} amount={t.oneShotMechGasAmt} amountTone="ok" />
           </div>
           <div className="mt-3 text-[11.5px] leading-relaxed text-ink-soft">{t.oneShotMechNote}</div>
         </div>
