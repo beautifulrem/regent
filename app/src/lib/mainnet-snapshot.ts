@@ -41,7 +41,15 @@ export interface MainnetSnapshot {
   vote: { txHash: Hex; support: 0 | 1 | 2; blockNumber: string; relay: '1shot' };
 
   /** 1Shot-specific evidence: the 7702-upgraded burner, the USDC fee, gas (paid by the relayer). */
-  oneshot: { burner: Address; feeUsdc: string; gasUsed: number };
+  oneshot: {
+    burner: Address;
+    feeUsdc: string;
+    gasUsed: number;
+    /** the 1Shot feeCollector the relay fee went to. */
+    feeCollector: Address;
+    /** the relayer EOA that broadcast the bundle and paid the ETH gas. */
+    relayer: Address;
+  };
 
   /** Optional x402 toll, if a toll was settled alongside the run (the main flow always demonstrates it). */
   toll?: {
@@ -89,5 +97,22 @@ export const MAINNET_SNAPSHOT: MainnetSnapshot | null = {
     { lens: 'participation', model: 'e2ee-gpt-oss-120b-p', support: 1, decision: 'For', rationale: 'Low cost, strong accountability, minimal risk; supports core development.', teeVerified: true },
   ],
   vote: { txHash: '0xbf344ae9ec65e67e02108d4bd0983b0c0b9d9b830769b7cf67c85d5940ded4d4', support: 1, blockNumber: '47105516', relay: '1shot' },
-  oneshot: { burner: '0x83cA7AF35e85Db90938391290Cdb6A3e6FfaA991', feeUsdc: '0.01', gasUsed: 357994 },
+  oneshot: {
+    burner: '0x83cA7AF35e85Db90938391290Cdb6A3e6FfaA991',
+    feeUsdc: '0.01',
+    gasUsed: 357994,
+    feeCollector: '0xE936e8FAf4A5655469182A49a505055B71C17604',
+    relayer: '0x7338fFC0aE8FB5C601955a65D4F5896F866cc9b8',
+  },
+  // Real Base-mainnet x402 micro-toll: the burner (buyer) signed an Erc20TransferAmount delegation;
+  // the analyst (seller) redeemed exactly 0.001 USDC. tx 0x321c54…c601, verifiable on basescan.org.
+  toll: {
+    txHash: '0x321c5456aea94a6479e4fdd7e34d0d4cc160151dbdf5411927111479c836c601',
+    asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    buyer: '0x83cA7AF35e85Db90938391290Cdb6A3e6FfaA991',
+    seller: '0x31f898937F29c089b748750b00668Cf8ED5a5F28',
+    amount: '1000',
+    sellerBalance: '1000',
+    resource: '/context/proposal-843538',
+  },
 };
