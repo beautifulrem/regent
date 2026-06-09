@@ -637,6 +637,78 @@ export interface ChainParties {
 }
 
 /**
+ * The Venice-TEE enclave + Venice AI node, independent of the payment coins: a faint sealed-platform
+ * box drawn AROUND the 4-lens committee (the lenses run INSIDE Venice) and the Venice AI node docked at
+ * 终裁's upper-right, with a faint 终裁↔Venice synthesis tap. Rendered on BOTH the testnet flow and the
+ * mainnet replay (the TEE inference is the same on both); the payment sub-flows are layered separately.
+ */
+function VeniceEnclave({
+  container,
+  synthRef,
+  lensRefs,
+  active,
+  killed,
+}: {
+  container: DivRef;
+  synthRef: DivRef;
+  lensRefs: DivRef[];
+  active: boolean;
+  killed: boolean;
+}) {
+  const [g, setG] = useState<{ enclave: { x: number; y: number; w: number; h: number }; venice: PayPoint; seg: PaySeg } | null>(null);
+  useEffect(() => {
+    const compute = () => {
+      if (!container.current || !synthRef.current || lensRefs.some((r) => !r.current)) return;
+      const cr = container.current.getBoundingClientRect();
+      const rad = (r: DOMRect) => (r.width >= 56 ? 30 : 19);
+      const center = (r: DOMRect): PayPoint => ({ x: r.left - cr.left + r.width / 2, y: r.top - cr.top + rad(r) });
+      const along = (p: PayPoint, q: PayPoint, dist: number): PayPoint => {
+        const dx = q.x - p.x;
+        const dy = q.y - p.y;
+        const len = Math.hypot(dx, dy) || 1;
+        return { x: p.x + (dx / len) * dist, y: p.y + (dy / len) * dist };
+      };
+      const synthC = center(synthRef.current.getBoundingClientRect());
+      const lensRects = lensRefs.map((r) => r.current!.getBoundingClientRect());
+      const PAD = 9;
+      const ex0 = Math.min(...lensRects.map((r) => r.left)) - cr.left - PAD;
+      const ey0 = Math.min(...lensRects.map((r) => r.top)) - cr.top - PAD;
+      const ex1 = Math.max(...lensRects.map((r) => r.right)) - cr.left + PAD;
+      const ey1 = Math.max(...lensRects.map((r) => r.bottom)) - cr.top + PAD;
+      const venice: PayPoint = { x: synthC.x + 78, y: synthC.y - 72 };
+      setG({
+        enclave: { x: ex0, y: ey0, w: ex1 - ex0, h: ey1 - ey0 },
+        venice,
+        seg: { from: along(synthC, venice, rad(synthRef.current!.getBoundingClientRect()) + 4), to: along(venice, synthC, 19) },
+      });
+    };
+    compute();
+    const ro = new ResizeObserver(compute);
+    if (container.current) ro.observe(container.current);
+    window.addEventListener('resize', compute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', compute);
+    };
+  }, [container, synthRef, lensRefs]);
+  if (!g) return null;
+  return (
+    <>
+      <div className="pay-enclave" style={{ left: g.enclave.x, top: g.enclave.y, width: g.enclave.w, height: g.enclave.h, opacity: killed ? 0.3 : active ? 1 : 0.6, filter: killed ? 'grayscale(1)' : undefined }} />
+      <svg className="beam-svg" width="100%" height="100%" fill="none" aria-hidden="true" style={{ overflow: 'visible' }}>
+        <line x1={g.seg.from.x} y1={g.seg.from.y} x2={g.seg.to.x} y2={g.seg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={killed ? 0.12 : 0.32} />
+      </svg>
+      <div className="pay-venice" style={{ left: g.venice.x, top: g.venice.y, opacity: killed ? 0.35 : 1, filter: killed ? 'grayscale(1)' : undefined }}>
+        <span className={`pay-venice-disc${active ? ' on' : ''}`}>
+          <Sparkles size={15} />
+        </span>
+        <span className="pay-venice-label">Venice AI</span>
+      </div>
+    </>
+  );
+}
+
+/**
  * The mainnet relay payment sub-flow welded onto the cast leg: the BURNER's USDC budget pays two
  * fees — a GOLD coin to 终裁 (x402, Venice data) and a CYAN coin to 1Shot (relay fee) — while a label
  * on the 1Shot→VoteBoard beam marks that the relayer covers the ETH gas. Distinct from the testnet
@@ -951,6 +1023,8 @@ export function AuthorityChain({
           relayer covers ETH gas, and two real receipt ticks link the x402 toll + the 1Shot castVote. */}
       {oneShot && relay && (
         <>
+          {/* the Venice TEE enclave + Venice AI node (the AI's decision platform) — same as testnet */}
+          <VeniceEnclave container={containerRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} killed={killed} />
           <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} live={beamLive('voted')} relay={relay} />
           {relay.tollTx && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} basescan={relay.basescan} title="x402 toll ↗" />}
           {relay.castTx && <ReceiptTick container={containerRef} nodeRef={oneShotRef} txHash={relay.castTx} basescan={relay.basescan} title="1Shot castVote ↗" />}
