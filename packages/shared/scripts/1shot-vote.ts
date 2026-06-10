@@ -69,6 +69,11 @@ async function main(): Promise<void> {
   loadDotenv({ path: path.join(REPO_ROOT, '.env') });
   const estimateOnly = process.argv.includes('--estimate');
   const support = Number(process.argv.includes('--support') ? process.argv[process.argv.indexOf('--support') + 1] : '1');
+  // --webhook <url> (or ONESHOT_WEBHOOK_URL): the relayer POSTs signed Ed25519 status events there
+  // (e.g. the orchestrator's /webhooks/1shot) — the preferred status source over polling.
+  const webhookUrl = process.argv.includes('--webhook')
+    ? process.argv[process.argv.indexOf('--webhook') + 1]
+    : process.env.ONESHOT_WEBHOOK_URL;
 
   const governor = ADDRESSES.baseMainnet.governor;
   const proposalIdStr = ADDRESSES.baseMainnet.proposalId;
@@ -134,12 +139,25 @@ async function main(): Promise<void> {
     return;
   }
 
-  // (4) real send (spends the burner's USDC fee).
-  const sendParams = { ...buildSend7710Params({ chainId: CHAIN_ID, permissionContext: [signedDelegation], executions: execs(feeAtoms), authorizationList }), context: est.context };
+  // (4) real send (spends the burner's USDC fee). destinationUrl registers the relayer's signed
+  // Ed25519 webhook feed (the preferred status source); memo correlates the events.
+  const sendParams = {
+    ...buildSend7710Params({
+      chainId: CHAIN_ID,
+      permissionContext: [signedDelegation],
+      executions: execs(feeAtoms),
+      authorizationList,
+      destinationUrl: webhookUrl,
+      memo: `mandate-castVote-${proposalIdStr.slice(0, 8)}`,
+    }),
+    context: est.context,
+  };
   const taskId = await send7710Transaction(sendParams);
   console.log(`\nsubmitted — taskId ${taskId}`);
+  if (webhookUrl) console.log(`  webhook status feed registered → ${webhookUrl} (Ed25519-signed events)`);
 
-  // (5) poll status to terminal.
+  // (5) poll status to terminal (when a webhook is registered it is the primary feed; this loop
+  // stays as the CLI's own confirmation).
   for (let i = 0; i < 60; i++) {
     const st = await getStatus(taskId);
     console.log(`  ${relayStatusLabel(st.status)} (${st.status})${st.hash ? ` · ${st.hash}` : ''}`);

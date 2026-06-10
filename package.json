@@ -14,6 +14,7 @@
     "revoke:2hop": "tsx packages/shared/scripts/revoke-2hop.ts",
     "orchestrate": "tsx packages/shared/scripts/orchestrate.ts",
     "1shot:vote": "tsx packages/shared/scripts/1shot-vote.ts",
+    "tts:record": "tsx packages/shared/scripts/record-verdict-tts.ts",
     "x402:demo": "tsx packages/shared/scripts/x402-demo.ts",
     "dev": "echo \"dev orchestration lands in a later task\""
   },
