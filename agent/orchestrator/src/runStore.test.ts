@@ -80,4 +80,29 @@ describe('RunStore', () => {
   it('throws when patching an unknown run', () => {
     expect(() => new RunStore().patch('nope', { status: 'voted' })).toThrow(/unknown run/);
   });
+
+  it('notifies subscribers on every patch (the SSE feed)', () => {
+    const store = new RunStore();
+    store.create(input, 'run_1');
+    const seen: string[] = [];
+    const unsubscribe = store.subscribe('run_1', (run) => seen.push(run.status));
+    store.patch('run_1', { status: 'redelegated', redelegationHash: REDEL_HASH });
+    store.patch('run_1', { status: 'analyzing' });
+    expect(seen).toEqual(['redelegated', 'analyzing']);
+    unsubscribe();
+    store.patch('run_1', { status: 'decided', venice: veniceTrace });
+    expect(seen).toEqual(['redelegated', 'analyzing']); // unsubscribed — no more pushes
+  });
+
+  it('scopes subscriptions to their run', () => {
+    const store = new RunStore();
+    store.create(input, 'run_1');
+    store.create(input, 'run_2');
+    const seen: string[] = [];
+    store.subscribe('run_2', (run) => seen.push(run.runId));
+    store.patch('run_1', { status: 'analyzing' });
+    expect(seen).toEqual([]);
+    store.patch('run_2', { status: 'analyzing' });
+    expect(seen).toEqual(['run_2']);
+  });
 });

@@ -38,6 +38,22 @@ const nowIso = (): string => new Date().toISOString();
 
 export class RunStore {
   private readonly runs = new Map<string, RunStatus>();
+  private readonly listeners = new Map<string, Set<(run: RunStatus) => void>>();
+
+  /** Subscribe to every state change of one run (SSE feeds off this). Returns the unsubscribe. */
+  subscribe(runId: string, listener: (run: RunStatus) => void): () => void {
+    const set = this.listeners.get(runId) ?? new Set();
+    set.add(listener);
+    this.listeners.set(runId, set);
+    return () => {
+      set.delete(listener);
+      if (set.size === 0) this.listeners.delete(runId);
+    };
+  }
+
+  private notify(run: RunStatus): void {
+    this.listeners.get(run.runId)?.forEach((listener) => listener(run));
+  }
 
   create(input: CreateRunInput, runId = `run_${crypto.randomUUID()}`, updatedAt = nowIso()): RunStatus {
     const status: RunStatus = {
@@ -51,6 +67,7 @@ export class RunStore {
     };
     const validated = RunStatusSchema.parse(status);
     this.runs.set(runId, validated);
+    this.notify(validated);
     return validated;
   }
 
@@ -81,6 +98,7 @@ export class RunStore {
     };
     const validated = RunStatusSchema.parse(next);
     this.runs.set(runId, validated);
+    this.notify(validated);
     return validated;
   }
 }

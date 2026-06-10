@@ -1,8 +1,12 @@
 /**
  * @mandate/orchestrator HTTP service. Serves the shared run contract:
- *   POST /grant   → validate a GrantRequest, start the autonomous loop, return { runId }
- *   GET  /run/:id → the current RunStatus
- *   GET  /runs    → all runs (debug/UI)
+ *   POST /grant            → validate a GrantRequest, start the autonomous loop, return { runId }
+ *   GET  /run/:id          → the current RunStatus
+ *   GET  /run/:id/events   → Server-Sent Events stream of the run's state changes (no polling)
+ *   GET  /run/:id/verdict-audio → the TEE verdict spoken via Venice /audio/speech (mp3)
+ *   POST /webhooks/1shot   → 1Shot relayer status webhooks (Ed25519-verified against the JWKS)
+ *   GET  /relay/events     → the received relayer webhook events (newest first)
+ *   GET  /runs             → all runs (debug/UI)
  *
  * Signs the redelegation with ORCHESTRATOR_PK and casts with ANALYST_PK (from .env).
  */
@@ -18,7 +22,13 @@ import {
   delegationHash,
   delegationManagerAddress,
   GrantRequestSchema,
+  ONESHOT_JWKS_URL,
+  synthesizeSpeech,
+  verifyRelayerWebhook,
+  WEBHOOK_TYPE_LABEL,
   type Delegation,
+  type Ed25519Jwk,
+  type RelayerWebhookEvent,
 } from '@mandate/shared';
 
 import { RunStore } from './runStore.js';
@@ -142,15 +152,102 @@ async function handleVoteAgain(req: http.IncomingMessage, res: http.ServerRespon
   send(res, 201, { runId: newRun.runId });
 }
 
+/**
+ * SSE stream of one run's state changes: the current state immediately, then a push on every
+ * RunStore patch (sub-second, no client polling). A comment heartbeat keeps proxies from
+ * idling the connection out.
+ */
+function handleRunEvents(req: http.IncomingMessage, res: http.ServerResponse, runId: string): void {
+  const run = store.get(runId);
+  if (!run) return send(res, 404, { error: 'run not found' });
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+    ...CORS,
+  });
+  const write = (r: unknown) => res.write(`data: ${JSON.stringify(r)}\n\n`);
+  write(run);
+  const unsubscribe = store.subscribe(runId, write);
+  const heartbeat = setInterval(() => res.write(': hb\n\n'), 15_000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  });
+}
+
+// --- 1Shot relayer webhooks: signed status events instead of polling ---------------------------
+
+interface ReceivedRelayEvent extends RelayerWebhookEvent {
+  receivedAt: string;
+  /** Ed25519 signature checked against the relayer JWKS — act only on verified events. */
+  verified: boolean;
+  label?: string;
+}
+
+const relayEvents: ReceivedRelayEvent[] = [];
+let jwksCache: { keys: Ed25519Jwk[] } | null = null;
+
+async function relayerJwks(): Promise<{ keys: Ed25519Jwk[] }> {
+  if (!jwksCache) {
+    const res = await fetch(process.env.ONESHOT_JWKS_URL || ONESHOT_JWKS_URL);
+    if (!res.ok) throw new Error(`JWKS fetch failed: ${res.status}`);
+    jwksCache = (await res.json()) as { keys: Ed25519Jwk[] };
+  }
+  return jwksCache;
+}
+
+async function handleRelayerWebhook(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+  const body = (await readJson(req).catch(() => null)) as RelayerWebhookEvent | null;
+  if (!body || typeof body.type !== 'number') return send(res, 400, { error: 'invalid webhook body' });
+  let verified = false;
+  try {
+    verified = await verifyRelayerWebhook(body, await relayerJwks());
+  } catch {
+    verified = false; // JWKS unreachable — record the event, but never as verified
+  }
+  relayEvents.unshift({ ...body, receivedAt: new Date().toISOString(), verified, label: WEBHOOK_TYPE_LABEL[body.type] });
+  if (relayEvents.length > 200) relayEvents.pop();
+  console.log(`1shot webhook: type=${body.type} (${WEBHOOK_TYPE_LABEL[body.type] ?? '?'}) verified=${verified}`);
+  send(res, 202, { ok: true, verified });
+}
+
+// --- Venice TTS: the TEE verdict, spoken (a second Venice modality in the main flow) ------------
+
+const audioCache = new Map<string, Uint8Array>();
+
+async function handleVerdictAudio(res: http.ServerResponse, runId: string): Promise<void> {
+  const run = store.get(runId);
+  if (!run?.venice) return send(res, 404, { error: 'no verdict for that run yet' });
+  if (!cfg.veniceCfg.apiKey) return send(res, 500, { error: 'orchestrator not configured (VENICE_API_KEY)' });
+  try {
+    let bytes = audioCache.get(runId);
+    if (!bytes) {
+      const text = `The committee verdict is: ${run.venice.decision}. ${run.venice.rationale}`;
+      bytes = await synthesizeSpeech(cfg.veniceCfg, { text });
+      audioCache.set(runId, bytes);
+    }
+    res.writeHead(200, { 'Content-Type': 'audio/mpeg', 'Content-Length': String(bytes.byteLength), ...CORS });
+    res.end(Buffer.from(bytes));
+  } catch (err) {
+    send(res, 502, { error: err instanceof Error ? err.message : String(err) });
+  }
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
   if (req.method === 'OPTIONS') return send(res, 204, {});
   if (req.method === 'POST' && url.pathname === '/grant') return void handleGrant(req, res);
   if (req.method === 'POST' && url.pathname === '/vote-again') return void handleVoteAgain(req, res);
   if (req.method === 'POST' && url.pathname === '/provision') return void handleProvision(req, res);
+  if (req.method === 'POST' && url.pathname === '/webhooks/1shot') return void handleRelayerWebhook(req, res);
+  if (req.method === 'GET' && url.pathname === '/relay/events') return send(res, 200, relayEvents);
   if (req.method === 'GET' && url.pathname === '/runs') return send(res, 200, store.list());
   if (req.method === 'GET' && url.pathname.startsWith('/run/')) {
-    const run = store.get(url.pathname.slice('/run/'.length));
+    const rest = url.pathname.slice('/run/'.length);
+    if (rest.endsWith('/events')) return handleRunEvents(req, res, rest.slice(0, -'/events'.length));
+    if (rest.endsWith('/verdict-audio')) return void handleVerdictAudio(res, rest.slice(0, -'/verdict-audio'.length));
+    const run = store.get(rest);
     return run ? send(res, 200, run) : send(res, 404, { error: 'run not found' });
   }
   if (req.method === 'GET' && url.pathname === '/config') {
