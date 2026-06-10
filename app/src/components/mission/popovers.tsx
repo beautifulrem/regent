@@ -38,7 +38,18 @@ export function PopoverBody({
     case 'wallet':
       return <WalletBody vm={vm} />;
     case 'tally':
-      return <VoteTally tally={tally} voters={voters} live={live} you={vm.userSA?.address} t={vm.t} bare />;
+      return (
+        <VoteTally
+          tally={tally}
+          voters={voters}
+          live={live}
+          you={vm.userSA?.address}
+          t={vm.t}
+          bare
+          board={vm.boardAddr as `0x${string}` | undefined}
+          explorer={vm.relayInfo?.basescan}
+        />
+      );
     case 'x402': {
       if (!vm.cfg) return null;
       // In the mainnet replay the toll is a REAL 0.001 USDC micro-settlement: the burner pre-signed a

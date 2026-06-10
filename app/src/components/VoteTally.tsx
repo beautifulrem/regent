@@ -28,6 +28,8 @@ export function VoteTally({
   you,
   t,
   bare = false,
+  board = VOTE_BOARD_ADDRESS,
+  explorer = BASESCAN,
 }: {
   tally: TallyBreakdown;
   voters: VoterRow[];
@@ -35,6 +37,9 @@ export function VoteTally({
   you?: Address;
   t: Dict;
   bare?: boolean;
+  /** The board the tally reads from — the mainnet replay passes its own board + explorer. */
+  board?: Address;
+  explorer?: string;
 }) {
   const reduce = useReducedMotion();
 
@@ -88,11 +93,11 @@ export function VoteTally({
       {live ? (
         <a
           className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] text-ink-mute transition-colors hover:text-info"
-          href={`${BASESCAN}/address/${VOTE_BOARD_ADDRESS}`}
+          href={`${explorer}/address/${board}`}
           target="_blank"
           rel="noreferrer"
         >
-          VoteBoard {shortHex(VOTE_BOARD_ADDRESS, 4)} ↗
+          VoteBoard {shortHex(board, 4)} ↗
         </a>
       ) : (
         <div className="mt-3 text-[11px] text-ink-mute">{t.tally.pending}</div>
