@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { Address } from 'viem';
 import { Activity, Coins, Vote, Wallet } from 'lucide-react';
 import { VOTE_BOARD_ADDRESS, type DaoProposal, type Delegation, type RunStatus } from '@mandate/shared';
@@ -9,6 +9,7 @@ import type { SmartAccount } from '../lib/wallet';
 import type { Dict, Lang } from '../lib/i18n';
 import { ORDER, reached } from '../lib/runState';
 import { useRatchet } from '../lib/useRatchet';
+import { sfxCoin, sfxTick, sfxVote } from '../lib/sfx';
 import { DEFAULT_QUERY_BUDGET } from '../lib/x402-toll';
 import { decisionToSupport, useLiveTally, withOptimisticVote, type TallySource } from '../lib/useLiveTally';
 import { ErrorToast } from './panels/ErrorToast';
@@ -191,6 +192,27 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
   const liveRun = vm.running && vm.runOnActive && !vm.killed;
   const climbed = useRatchet(targetIdx, STAGE_MS, !liveRun);
   const revealIdx = liveRun ? climbed : targetIdx;
+
+  // Audible beat for the staged reveal: one tick as each chain stage lights, a chime when the vote
+  // lands. Only single-step climbs during a live cast (or the replay) sound — instant jumps (flipping
+  // back to an already-voted proposal) stay silent.
+  const prevReveal = useRef(revealIdx);
+  useEffect(() => {
+    const prev = prevReveal.current;
+    prevReveal.current = revealIdx;
+    if (!liveRun || revealIdx !== prev + 1) return;
+    if (ORDER[revealIdx] === 'voted') sfxVote();
+    else sfxTick();
+  }, [revealIdx, liveRun]);
+
+  // The x402 toll settling mid-run gets its coin ping (live testnet only — the replay's recorded
+  // toll is present from the first frame, where a coin would just smear into the launch whoosh).
+  const prevToll = useRef<string | undefined>(undefined);
+  const tollTx = vm.run?.toll?.txHash;
+  useEffect(() => {
+    if (tollTx && tollTx !== prevToll.current && liveRun && !vm.replayMode) sfxCoin();
+    prevToll.current = tollTx;
+  }, [tollTx, liveRun, vm.replayMode]);
 
   const toggle = (key: PanelKey) => setPanel((c) => (c === key ? null : key));
 

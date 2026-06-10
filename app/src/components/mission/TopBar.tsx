@@ -2,8 +2,9 @@
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import Jazzicon, { jsNumberForAddress } from 'react-jazzicon';
-import { ChevronDown, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ShieldCheck, Volume2, VolumeX } from 'lucide-react';
 import type { Dict, Lang } from '../../lib/i18n';
+import { sfxTick, toggleSfxMuted, useSfxMuted } from '../../lib/sfx';
 import { LangToggle } from '../LangToggle';
 import { StatusDot } from '../ui/Badge';
 
@@ -38,6 +39,7 @@ export function TopBar({
   mainnetAvailable?: boolean;
 }) {
   const isMainnet = network === 'mainnet';
+  const sfxOff = useSfxMuted();
   return (
     <header className="mc-topbar">
       <div className="flex items-center gap-2.5">
@@ -57,6 +59,17 @@ export function TopBar({
         >
           <GitHubMark className="size-4" />
         </a>
+        <button
+          type="button"
+          onClick={() => {
+            const nowMuted = toggleSfxMuted();
+            if (!nowMuted) sfxTick(); // audible confirmation only when turning sound ON
+          }}
+          title={sfxOff ? t.soundOff : t.soundOn}
+          className="grid size-8 place-items-center rounded-chip border border-hairline bg-none bg-surface/60 p-0 text-ink-soft shadow-none backdrop-blur transition-colors hover:border-brand/40 hover:text-ink"
+        >
+          {sfxOff ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+        </button>
         <LangToggle lang={lang} onToggle={toggleLang} />
         {mainnetAvailable && toggleNetwork ? (
           <button

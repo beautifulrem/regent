@@ -8,6 +8,7 @@ import { getDict, isLang, LANG_KEY, resolveLang, type Lang } from '../lib/i18n';
 import { getConfig, getRun, postGrant, provision, voteAgain, type DemoConfig } from '../lib/orchestrator';
 import { recall } from '../lib/recall';
 import { fireSever } from '../lib/sever';
+import { sfxGrant, sfxSever } from '../lib/sfx';
 import { useAccount, useWalletClient } from 'wagmi';
 import { deriveSmartAccount, signGrant, type SmartAccount } from '../lib/wallet';
 import { MissionControl, type MissionVM } from '../components/MissionControl';
@@ -165,9 +166,12 @@ export default function Home() {
     };
   }, [runId]);
 
-  // The wow-moment: fire the fracture burst the instant the chain is severed.
+  // The wow-moment: fire the fracture burst + the power-down sweep the instant the chain is severed.
+  // (fireSever skips the visual under prefers-reduced-motion; the audio is not motion, so it stays.)
   useEffect(() => {
-    if (recallTx) void fireSever(graphStageRef.current);
+    if (!recallTx) return;
+    void fireSever(graphStageRef.current);
+    sfxSever();
   }, [recallTx]);
 
   // Rotate the active proposal so new ones "open"; pause while a grant/run is in flight AND keep it
@@ -234,6 +238,7 @@ export default function Home() {
       setGrantRunId(id);
       setVotesUsed(0); // the grant only establishes the standing mandate — no vote cast yet
       setGrantedAt(Date.now());
+      sfxGrant();
     } catch (e) {
       if (session.current === mine) setError(e instanceof Error ? e.message : String(e));
     } finally {

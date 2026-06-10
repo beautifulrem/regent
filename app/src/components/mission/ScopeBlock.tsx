@@ -5,6 +5,7 @@ import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CheckCircle2, Cpu, ExternalLink, Minus, Play, Plus, Scissors, ShieldCheck, Sparkles, Vote, Zap } from 'lucide-react';
 import { grantDisabled, voteActiveDisabled } from '../../lib/flow';
+import { sfxPress, sfxRelay } from '../../lib/sfx';
 import { MandateStats } from '../panels/MandateStats';
 import { MAINNET_SNAPSHOT } from '../../lib/mainnet-snapshot';
 import { shortHex } from '../../lib/config';
@@ -101,11 +102,11 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
               <ReplayControls vm={vm} />
             ) : (
               <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
-                <button type="button" className="mc-btn" onClick={vm.onVoteActive} disabled={voteOff}>
+                <button type="button" className="mc-btn" onClick={() => { sfxPress(); vm.onVoteActive(); }} disabled={voteOff}>
                   <Vote className="size-[17px]" strokeWidth={2.5} /> {vm.busy && vm.running ? t.signing : t.voteActive}
                 </button>
                 {!killed && (
-                  <button type="button" className="mc-btn danger" onClick={vm.onRecall} disabled={vm.recalling} title={t.recallTitle}>
+                  <button type="button" className="mc-btn danger" onClick={() => { sfxPress(); vm.onRecall(); }} disabled={vm.recalling} title={t.recallTitle}>
                     <Scissors className="size-[17px]" strokeWidth={2.5} /> {vm.recalling ? t.severing : t.recall}
                   </button>
                 )}
@@ -174,11 +175,11 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
                   <Zap className="size-[18px]" strokeWidth={2.5} /> {t.preparingAccount}
                 </button>
               ) : !vm.isConnected ? (
-                <button type="button" className="mc-btn big" onClick={() => openConnectModal?.()}>
+                <button type="button" className="mc-btn big" onClick={() => { sfxPress(); openConnectModal?.(); }}>
                   <Zap className="size-[18px]" strokeWidth={2.5} /> {t.connect}
                 </button>
               ) : (
-                <button type="button" className="mc-btn big" onClick={vm.onGrant} disabled={grantOff}>
+                <button type="button" className="mc-btn big" onClick={() => { sfxPress(); vm.onGrant(); }} disabled={grantOff}>
                   <Zap className="size-[18px]" strokeWidth={2.5} /> {vm.busy ? t.signing : t.grant}
                 </button>
               )}
@@ -197,7 +198,7 @@ function ReplayControls({ vm }: { vm: MissionVM }) {
   const bs = snap?.chain.basescan ?? 'https://basescan.org';
   return (
     <div className="mt-1 flex flex-col items-center gap-3">
-      <button type="button" className="mc-btn big" onClick={vm.onReplay} disabled={vm.replaying}>
+      <button type="button" className="mc-btn big" onClick={() => { sfxRelay(); vm.onReplay?.(); }} disabled={vm.replaying}>
         <Play className="size-[18px]" strokeWidth={2.5} /> {vm.replaying ? t.replaying : t.replayRun}
       </button>
       {snap && (

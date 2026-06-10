@@ -15,6 +15,7 @@ import { baseSepolia } from 'viem/chains';
 import { Ban, CheckCircle2, Radar } from 'lucide-react';
 import { RPC_URL } from '../lib/config';
 import { cn } from '../lib/cn';
+import { sfxDenied, sfxPress, sfxTick } from '../lib/sfx';
 import { getDict, resolveLang } from '../lib/i18n';
 import { Panel, PanelHeader } from './ui/Panel';
 import { Badge } from './ui/Badge';
@@ -89,6 +90,7 @@ export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = fal
   };
 
   async function runProbe() {
+    sfxPress();
     setHonest('checking');
     setTampered('checking');
     try {
@@ -115,6 +117,9 @@ export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = fal
       ]);
       setHonest(honestCanRedeem ? 'pass' : 'revert');
       setTampered(tamperedCanRedeem ? 'pass' : 'revert');
+      // the on-chain refusal is the proof moment — buzz on any revert, soft tick when all passes
+      if (!honestCanRedeem || !tamperedCanRedeem) sfxDenied();
+      else sfxTick();
     } catch (error) {
       if (error instanceof ProbeTimeoutError) {
         setHonest('timeout');
@@ -123,6 +128,7 @@ export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = fal
       }
       setHonest('revert');
       setTampered('revert');
+      sfxDenied();
     }
   }
 
