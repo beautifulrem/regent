@@ -66,8 +66,9 @@ const rowBorder = (s: ProbeStatus): string =>
 
 /**
  * Tamper Probe — fires two REAL eth_calls (canRedeem) against the live
- * DelegationManager: the honest proposalId passes, a tampered proposalId=999
- * reverts at AllowedCalldataEnforcer. Proves the scope is enforced on-chain.
+ * DelegationManager: the honest castVote passes, a tampered execution that
+ * tries to MOVE FUNDS (an ERC-20 transfer) reverts at AllowedMethodsEnforcer
+ * (the scope allows castVote only). Proves the scope is enforced on-chain.
  */
 export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = false }: TamperProbeProps) {
   const t = currentDict();
@@ -139,7 +140,12 @@ export function TamperProbe({ rootDel, governor, proposalId, chainId, bare = fal
           <span className="flex items-center gap-2 text-[13px] text-ink-soft">
             <Ban className={cn('size-4', tampered === 'idle' ? 'text-ink-mute' : 'text-bad')} /> {t.tamperProbeTampered}
           </span>
-          <Badge tone={badgeTone(tampered)}>{resultLabel(tampered, 'tampered')}</Badge>
+          <span className="flex flex-col items-end gap-1">
+            <Badge tone={badgeTone(tampered)}>{resultLabel(tampered, 'tampered')}</Badge>
+            {tampered === 'revert' && (
+              <code className="font-mono text-[10px] text-ink-mute">↳ AllowedMethodsEnforcer</code>
+            )}
+          </span>
         </div>
       </div>
       {timedOut && <div className="mt-3 text-[12px] text-warn">{t.tamperProbeTimeout}</div>}
