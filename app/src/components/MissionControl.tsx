@@ -44,6 +44,8 @@ export interface MissionVM {
   // wallet
   address?: Address;
   isConnected: boolean;
+  /** wagmi is restoring a previous session — the CTA shows a neutral warming state, not "Connect". */
+  reconnecting?: boolean;
   userSA: SmartAccount | null;
   // run
   run: RunStatus | null;

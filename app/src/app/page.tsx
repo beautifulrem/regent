@@ -25,7 +25,7 @@ export default function Home() {
   const [network, setNetwork] = useState<'sepolia' | 'mainnet'>('sepolia');
   const [cfg, setCfg] = useState<DemoConfig | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, isReconnecting } = useAccount();
   const { data: walletClient } = useWalletClient();
   const [userSA, setUserSA] = useState<SmartAccount | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
@@ -296,6 +296,7 @@ export default function Home() {
     proposalCount: PROPOSALS.length,
     address,
     isConnected,
+    reconnecting: isReconnecting,
     userSA,
     run,
     s,

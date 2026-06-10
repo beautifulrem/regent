@@ -166,9 +166,14 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
               )}
             </div>
 
-            {/* buttons */}
+            {/* buttons — while wagmi restores the session or the smart account derives, hold a
+                neutral warming CTA: "Connect" would mislead, and Grant would be a silent no-op. */}
             <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
-              {!vm.isConnected ? (
+              {vm.reconnecting || (vm.isConnected && !vm.userSA) ? (
+                <button type="button" className="mc-btn big" disabled>
+                  <Zap className="size-[18px]" strokeWidth={2.5} /> {t.preparingAccount}
+                </button>
+              ) : !vm.isConnected ? (
                 <button type="button" className="mc-btn big" onClick={() => openConnectModal?.()}>
                   <Zap className="size-[18px]" strokeWidth={2.5} /> {t.connect}
                 </button>
