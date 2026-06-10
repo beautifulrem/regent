@@ -77,8 +77,17 @@ export default function Home() {
     });
   };
 
+  // The deployed app may run without a public orchestrator (the live grant flow needs it; the
+  // mainnet replay doesn't). When /config is unreachable, land on the replay — the strongest,
+  // fully self-contained story — instead of greeting judges with an error toast. Toggling back
+  // to Sepolia still shows the live-flow UI (granting stays disabled without config).
   useEffect(() => {
-    getConfig().then(setCfg).catch((e) => setError(String(e.message ?? e)));
+    getConfig()
+      .then(setCfg)
+      .catch((e) => {
+        if (MAINNET_SNAPSHOT) setNetwork('mainnet');
+        else setError(String(e.message ?? e));
+      });
   }, []);
 
   // Derive the MetaMask smart account whenever the connected EOA wallet changes.

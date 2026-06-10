@@ -45,9 +45,10 @@ click** the instant you stop trusting it.
 5. **Vote** — the Analyst redeems the chain leaf→root; the DelegationManager executes
    `castVote` **as your smart account**. On Base **mainnet**, the cast is relayed by the 1Shot
    permissionless relayer: a burner EOA is 7702-upgraded *through 1Shot*, holds 0 ETH, and pays
-   the 0.01 USDC fee in USDC. Transaction status arrives as **signed Ed25519 webhooks**
-   (`destinationUrl` → `POST /webhooks/1shot`, verified against the relayer JWKS) — the
-   webhook-over-polling pattern the 1Shot track calls out.
+   the 0.01 USDC fee in USDC. The relay ships a **signed-webhook status feed**
+   (`destinationUrl` → `POST /webhooks/1shot`, Ed25519-verified against the relayer JWKS;
+   register with `pnpm 1shot:vote --webhook <url>`) — the webhook-over-polling pattern the
+   1Shot track calls out.
 6. **Recall (the wow)** — one `disableDelegation(root)` cascade-revokes everything downstream.
    The next redemption reverts on-chain. Self-custody you can watch.
 
@@ -99,7 +100,7 @@ Documented choices, not hidden stubs (full list in the README):
 - Repo: https://github.com/beautifulrem/mandate (MIT)
 - Per-track on-chain receipts: `EVIDENCE.md`
 - Demo video: *(T20 — link pending)*
-- Live app: *(deployment link pending)*
+- Live app: https://mandate-app-murex.vercel.app (no public orchestrator → lands on the mainnet replay; the live Sepolia flow runs locally per the README)
 - Reproduce everything: `pnpm vote:2hop` · `pnpm revoke:2hop` · `pnpm orchestrate` ·
   `pnpm x402:demo` · `pnpm 1shot:vote --estimate`
 
