@@ -44,6 +44,21 @@ const TONES: Record<ToneKey, { accent: string; ring: string; bg: string; glow: s
   pay: { accent: '#f5b942', ring: 'rgba(245,185,66,.5)', bg: 'rgba(245,185,66,.13)', glow: 'rgba(245,185,66,.18)', beamDeep: '#a8791f', beamLight: '#ffd470', packet: '#ffd470' },
 };
 
+/** True only `ms` after `v` turns true (false the instant `v` drops) — used to pop a receipt
+ *  when the coin that pays it LANDS, not when it launches (the relay coins fly ~1.1s). */
+function useLanded(v: boolean, ms: number): boolean {
+  const [landed, setLanded] = useState(false);
+  useEffect(() => {
+    if (!v) {
+      setLanded(false);
+      return;
+    }
+    const id = setTimeout(() => setLanded(true), ms);
+    return () => clearTimeout(id);
+  }, [v, ms]);
+  return landed;
+}
+
 /** A vote decision → its tone key (For=green, Against=red, Abstain=amber); anything else → brand. */
 const decisionToneKey = (d?: string): ToneKey => (d === 'For' ? 'ok' : d === 'Against' ? 'bad' : d === 'Abstain' ? 'warn' : 'brand');
 
@@ -680,114 +695,14 @@ export interface ChainParties {
 }
 
 /**
- * The Venice-TEE enclave + Venice AI node, independent of the payment coins: a faint sealed-platform
- * box drawn AROUND the 4-lens committee (the lenses run INSIDE Venice) and the Venice AI node docked at
- * 终裁's upper-right, with a faint 终裁↔Venice synthesis tap. Rendered on BOTH the testnet flow and the
- * mainnet replay (the TEE inference is the same on both); the payment sub-flows are layered separately.
- */
-function VeniceEnclave({
-  container,
-  synthRef,
-  lensRefs,
-  active,
-  flowing,
-  killed,
-  veniceTip,
-}: {
-  container: DivRef;
-  synthRef: DivRef;
-  lensRefs: DivRef[];
-  active: boolean;
-  /** 终裁 is consulting Venice (analysis → decision, before the vote is cast): animate the data tap. */
-  flowing: boolean;
-  killed: boolean;
-  /** hover bubble for the Venice AI satellite node. */
-  veniceTip?: string;
-}) {
-  const reduce = useReducedMotion();
-  const [g, setG] = useState<{ enclave: { x: number; y: number; w: number; h: number }; venice: PayPoint; seg: PaySeg } | null>(null);
-  // 终裁 ↔ Venice is a back-and-forth: query out (req), answer back (resp). Alternate slowly while consulting.
-  const [phase, setPhase] = useState<'req' | 'resp'>('req');
-  useEffect(() => {
-    if (!flowing || killed || reduce) {
-      setPhase('req');
-      return;
-    }
-    const id = setInterval(() => setPhase((p) => (p === 'req' ? 'resp' : 'req')), 1000);
-    return () => clearInterval(id);
-  }, [flowing, killed, reduce]);
-  useEffect(() => {
-    const compute = () => {
-      if (!container.current || !synthRef.current || lensRefs.some((r) => !r.current)) return;
-      const cr = container.current.getBoundingClientRect();
-      const rad = (r: DOMRect) => (r.width >= 56 ? 30 : 19);
-      const center = (r: DOMRect): PayPoint => ({ x: r.left - cr.left + r.width / 2, y: r.top - cr.top + rad(r) });
-      const along = (p: PayPoint, q: PayPoint, dist: number): PayPoint => {
-        const dx = q.x - p.x;
-        const dy = q.y - p.y;
-        const len = Math.hypot(dx, dy) || 1;
-        return { x: p.x + (dx / len) * dist, y: p.y + (dy / len) * dist };
-      };
-      const synthC = center(synthRef.current.getBoundingClientRect());
-      const lensRects = lensRefs.map((r) => r.current!.getBoundingClientRect());
-      const PAD = 9;
-      const ex0 = Math.min(...lensRects.map((r) => r.left)) - cr.left - PAD;
-      const ey0 = Math.min(...lensRects.map((r) => r.top)) - cr.top - PAD;
-      const ex1 = Math.max(...lensRects.map((r) => r.right)) - cr.left + PAD;
-      const ey1 = Math.max(...lensRects.map((r) => r.bottom)) - cr.top + PAD;
-      const venice: PayPoint = { x: synthC.x + 78, y: synthC.y - 72 };
-      setG({
-        enclave: { x: ex0, y: ey0, w: ex1 - ex0, h: ey1 - ey0 },
-        venice,
-        seg: { from: along(synthC, venice, rad(synthRef.current!.getBoundingClientRect()) + 4), to: along(venice, synthC, 19) },
-      });
-    };
-    compute();
-    const ro = new ResizeObserver(compute);
-    if (container.current) ro.observe(container.current);
-    window.addEventListener('resize', compute);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', compute);
-    };
-  }, [container, synthRef, lensRefs]);
-  if (!g) return null;
-  const dataParticles = (dir: 'req' | 'resp') => {
-    const from = dir === 'req' ? g.seg.from : g.seg.to;
-    const to = dir === 'req' ? g.seg.to : g.seg.from;
-    return [0, 1].map((i) => (
-      <span key={`${dir}-${i}`} className="data-packet" style={{ left: from.x, top: from.y, '--dx': `${to.x - from.x}px`, '--dy': `${to.y - from.y}px`, animationDelay: `${i * 0.16}s` } as CSSProperties} />
-    ));
-  };
-  return (
-    <>
-      <div className="pay-enclave" style={{ left: g.enclave.x, top: g.enclave.y, width: g.enclave.w, height: g.enclave.h, opacity: killed ? 0.3 : active ? 1 : 0.6, filter: killed ? 'grayscale(1)' : undefined }} />
-      <svg className="beam-svg" width="100%" height="100%" fill="none" aria-hidden="true" style={{ overflow: 'visible' }}>
-        <line x1={g.seg.from.x} y1={g.seg.from.y} x2={g.seg.to.x} y2={g.seg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={killed ? 0.12 : 0.32} />
-      </svg>
-      {/* the 终裁 ↔ Venice data tap: a slow cyan pulse alternating query-out / answer-back while consulting */}
-      {flowing && !killed && !reduce && dataParticles(phase)}
-      <div className="pay-venice" style={{ left: g.venice.x, top: g.venice.y, opacity: killed ? 0.35 : 1, filter: killed ? 'grayscale(1)' : undefined }}>
-        <span className={`pay-venice-disc${active ? ' on' : ''}`}>
-          <Sparkles size={15} />
-        </span>
-        <span className="pay-venice-label">Venice AI</span>
-        {veniceTip && (
-          <span className="mc-node-tip" role="tooltip">
-            <span className="mc-node-tip-k">Venice AI</span>
-            {veniceTip}
-          </span>
-        )}
-      </div>
-    </>
-  );
-}
-
-/**
- * The mainnet relay payment sub-flow welded onto the cast leg: the BURNER's USDC budget pays two
- * fees — a GOLD coin to 终裁 (x402, Venice data) and a CYAN coin to 1Shot (relay fee) — while a label
- * on the 1Shot→VoteBoard beam marks that the relayer covers the ETH gas. Distinct from the testnet
- * PaymentFlow (which pays You→seller); this one is keyed off the burner and only renders on mainnet.
+ * The mainnet payment sub-flow. The BURNER's USDC budget pays two real fees, each animated as a
+ * coin in its true direction at its true story beat:
+ *   - x402 toll, Burner→终裁 (the seller), fired when the Arbiter's decision lights — the same
+ *     beat the testnet PaymentFlow uses for its You→seller coin
+ *   - 1Shot relay fee, Burner→1Shot, fired when the relay hop lights on the cast leg
+ * The 7710 bundle handoff (终裁→Burner) is carried by the morphing scope chip, NOT by a coin:
+ * gold means money in this app, and the bundle is not money. A label under the 1Shot→VoteBoard
+ * beam marks that the relayer fronts the ETH gas (violet pulse). Mainnet-only.
  */
 function MainnetRelayFlow({
   container,
@@ -868,12 +783,11 @@ function MainnetRelayFlow({
   };
   return (
     <>
-      {/* The relayed vote travels strictly LEFT→RIGHT, one segment per lit hop, in true tx order. Each
-          particle fires only once ITS hop lights (relayLit 0→1→2), in lockstep with the beam:
-            终裁→Burner  = the 7710 decision bundle handed to the burner (gold)
-            Burner→1Shot = the USDC relay fee the burner pays the relayer (cyan)
-            1Shot→Board  = the ETH gas 1Shot fronts to push castVote on-chain (violet hexagon) */}
-      {paced && relayLit >= 0 && travel(g.synth, g.burner, 'relay-coin gold', `bundle-${epoch}`)}
+      {/* MONEY on the cast leg moves strictly LEFT→RIGHT at its true beat (the x402 toll is the
+          testnet PaymentFlow's 你→终裁 coin, rendered separately):
+            Burner→1Shot = the USDC relay fee (cyan), when the relay hop lights
+            1Shot→Board  = the ETH gas 1Shot fronts (violet hexagon), when the cast lands.
+          The 终裁→Burner bundle handoff is carried by the scope chip — it is not money. */}
       {paced && relayLit >= 1 && travel(g.burner, g.oneShot, 'relay-coin cyan', `fee-${epoch}`)}
       {paced && relayLit >= 2 && travel(g.oneShot, g.board, 'relay-fuel', `eth-${epoch}`)}
       {/* the gas-abstraction label, tucked UNDER the 1Shot→VoteBoard beam; glows as the ETH pulse fires */}
@@ -946,19 +860,28 @@ export function AuthorityChain({
   const s = status;
   const live = !!s && !['', 'idle'].includes(s);
 
-  const litIdx = useRatchet(shownIdx, PACKET_MS, killed || !!instant);
   const idxOf = (target: string) => (ORDER as readonly string[]).indexOf(target);
-  const beamLive = (target: string) => shownIdx >= idxOf(target);
-  const nodeLit = (target: string) => litIdx >= idxOf(target);
 
   // The four lenses light one-by-one once 'analyzing' is revealed (the committee reports in).
-  const lensTarget = beamLive('analyzing') ? LENSES.length - 1 : -1;
+  const lensTarget = shownIdx >= idxOf('analyzing') ? LENSES.length - 1 : -1;
   const lensLit = useRatchet(lensTarget, LENS_STAGGER_MS, killed || !!instant);
+  // The arbiter rules on FOUR verdicts, so the reveal holds at 'analyzing' until the whole
+  // committee has reported. A live run can't outrun this (Venice takes seconds), but the replay's
+  // fixed stage pacing can — without the clamp 终裁 lights while lenses are still reporting.
+  // Instant (rest / snap) is unaffected: lensLit snaps complete first.
+  const committeeDone = lensLit >= LENSES.length - 1;
+  const effIdx = committeeDone ? shownIdx : Math.min(shownIdx, idxOf('decided') - 1);
+  const litIdx = useRatchet(effIdx, PACKET_MS, killed || !!instant);
+  const beamLive = (target: string) => effIdx >= idxOf(target);
+  const nodeLit = (target: string) => litIdx >= idxOf(target);
 
   // Mainnet cast leg: once the vote is cast, the relayed hops light one-by-one (终裁 → Burner → 1Shot →
   // VoteBoard) instead of all at once. relayLit 0=Burner, 1=1Shot, 2=VoteBoard reached.
   const relayTarget = oneShot && beamLive('voted') ? 2 : -1;
   const relayLit = useRatchet(relayTarget, RELAY_STAGGER_MS, killed || !!instant);
+  // receipts pop when their paying coin LANDS (~1.1s flight), not when it launches
+  const tollLanded = useLanded(nodeLit('decided'), 1100);
+  const castLanded = useLanded(relayLit >= 2, 1100);
   // On the testnet leg (no relay nodes), the single cast beam still lights at 'voted' as before.
   const castBeamLive = (hop: number) => (oneShot ? relayLit >= hop : beamLive('voted'));
 
@@ -1152,11 +1075,15 @@ export function AuthorityChain({
           relayer covers ETH gas, and two real receipt ticks link the x402 toll + the 1Shot castVote. */}
       {oneShot && relay && (
         <>
-          {/* the Venice TEE enclave + Venice AI node (the AI's decision platform) — same as testnet */}
-          <VeniceEnclave container={containerRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} flowing={lensLit >= 0 && !beamLive('voted')} killed={killed} veniceTip={t.nodeTips.venice} />
+          {/* the SAME payment vocabulary as the testnet — wallets on 你 + 终裁, the 3D toll coin
+              arcing 你→终裁 (strictly left→right; on this leg 你 IS the burner: the recorded
+              toll.buyer equals the 你 node's address), the Venice enclave + the synthesis query. */}
+          <PaymentFlow container={containerRef} youRef={youRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} decidedLit={nodeLit('decided')} live={!instant} killed={killed} veniceTip={t.nodeTips.venice} />
           <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} relayLit={relayLit} paced={!instant && !killed} relay={relay} t={t} />
-          {relay.tollTx && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} basescan={relay.basescan} title="x402 toll ↗" />}
-          {relay.castTx && <ReceiptTick container={containerRef} nodeRef={oneShotRef} txHash={relay.castTx} basescan={relay.basescan} title="1Shot castVote ↗" />}
+          {/* receipts pop at their causal beats during a paced replay (toll paid → 终裁 tick;
+              cast confirmed → 1Shot tick); at rest / on snap they show immediately */}
+          {relay.tollTx && (instant || tollLanded) && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} basescan={relay.basescan} title="x402 toll ↗" />}
+          {relay.castTx && (instant || castLanded) && <ReceiptTick container={containerRef} nodeRef={oneShotRef} txHash={relay.castTx} basescan={relay.basescan} title="1Shot castVote ↗" />}
         </>
       )}
     </div>
