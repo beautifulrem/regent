@@ -37,7 +37,7 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
   const n1 = useRef<HTMLDivElement>(null); // 编排器
   const n2 = useRef<HTMLDivElement>(null); // 终裁 (seller)
   const n3 = useRef<HTMLDivElement>(null); // Venice
-  const [g, setG] = useState<{ pay: string; dataFrom: Pt; dataTo: Pt; w: number; h: number } | null>(null);
+  const [g, setG] = useState<{ payA: string; payB: string; dataFrom: Pt; dataTo: Pt; w: number; h: number } | null>(null);
   const [data, setData] = useState<'req' | 'resp' | 'done'>('req');
 
   useEffect(() => {
@@ -54,15 +54,21 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
         const len = Math.hypot(dx, dy) || 1;
         return { x: a.x + (dx / len) * d, y: a.y + (dy / len) * d };
       };
-      const R = 17; // node radius (size-8 = 32) + a hair, so beams/particles stop at the rim
+      const R = 21; // circle radius 16 + the 4px halo ring + a hair, so dashes never touch a node
       const p0 = c(n0.current);
       const p1 = c(n1.current);
       const p2 = c(n2.current);
       const p3 = c(n3.current);
-      const payStart = along(p0, p1, R);
-      const payEnd = along(p2, p1, R);
+      // two independent segments, each trimmed at BOTH rims. The old single polyline ran straight
+      // through the middle node's centre, dragging the flowing light across the circle.
+      const seg = (a: Pt, b: Pt) => {
+        const s0 = along(a, b, R);
+        const s1 = along(b, a, R);
+        return `M ${s0.x} ${s0.y} L ${s1.x} ${s1.y}`;
+      };
       setG({
-        pay: `M ${payStart.x} ${payStart.y} L ${p1.x} ${p1.y} L ${payEnd.x} ${payEnd.y}`,
+        payA: seg(p0, p1),
+        payB: seg(p1, p2),
         dataFrom: along(p2, p3, R),
         dataTo: along(p3, p2, R),
         w: cr.width,
@@ -108,9 +114,12 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
     <div ref={wrap} className="relative mt-4 rounded-xl border border-ok/20 bg-surface-2/40 px-2 pb-5 pt-3" style={{ height: 112 }}>
       {g && (
         <svg className="pointer-events-none absolute inset-0" width={g.w} height={g.h} style={{ overflow: 'visible' }} aria-hidden>
-          {/* payment leg — flowing gold dash (the same dashed-beam vocabulary as the main graph) */}
-          <path className="beam-base" d={g.pay} />
-          <path className="beam-pulse" d={g.pay} stroke="#ffd470" style={{ color: '#ffd470' }} />
+          {/* payment leg — flowing gold dash (the same dashed-beam vocabulary as the main graph),
+              one segment per hop so the flow stops at every node rim instead of crossing it */}
+          <path className="beam-base" d={g.payA} />
+          <path className="beam-pulse" d={g.payA} stroke="#ffd470" style={{ color: '#ffd470' }} />
+          <path className="beam-base" d={g.payB} />
+          <path className="beam-pulse" d={g.payB} stroke="#ffd470" style={{ color: '#ffd470' }} />
           {/* data channel — faint static guide; cyan particles animate over it */}
           <line x1={g.dataFrom.x} y1={g.dataFrom.y} x2={g.dataTo.x} y2={g.dataTo.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={0.4} />
         </svg>
@@ -130,7 +139,11 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
         ))}
       </div>
       <div className="absolute inset-x-0 bottom-1.5 text-center font-mono text-[9.5px] text-ink-mute">
-        Erc20TransferAmount · {spent}/{cap ?? '∞'} {t.x402.spent} (≤ {budgetStr} {symbol})
+        {t.x402.budgetLine
+          .replace('{spent}', String(spent))
+          .replace('{cap}', String(cap ?? '∞'))
+          .replace('{budget}', budgetStr)
+          .replace('{symbol}', symbol)}
       </div>
       {g && !reduce && data === 'req' && dataParticles(g.dataFrom, g.dataTo, 'req')}
       {g && !reduce && data === 'resp' && dataParticles(g.dataTo, g.dataFrom, 'resp')}
