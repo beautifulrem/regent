@@ -74,9 +74,11 @@ interface ChainNodeProps {
   idle?: boolean;
   /** the explorer base for the address link — defaults to the live (Sepolia) one; mainnet replay overrides it. */
   basescan?: string;
+  /** hover bubble: one-line "who am I / what do I do" (same springy pop as the 4337/7710/A2A/TEE chips). */
+  tip?: string;
 }
 
-function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, killed, board, small, floatBelow, result, tone, pips, badge, upgrade, idle, basescan = BASESCAN }: ChainNodeProps) {
+function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, killed, board, small, floatBelow, result, tone, pips, badge, upgrade, idle, basescan = BASESCAN, tip }: ChainNodeProps) {
   // One tone drives the whole circle (icon + ring + glow). Callers pass it explicitly: the lenses and
   // the Arbiter (终裁) by their verdict, the VoteBoard by the live tally (or brand once our vote lands).
   // You/Orchestrator default brand; a lens with no verdict yet stays cold info-blue.
@@ -123,11 +125,17 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, kill
           transition: 'all .3s',
           animation: working && !killed ? 'glow 2.8s ease-in-out infinite' : 'none',
         }}
-        title={result ? `${who}: ${result}` : who}
+        title={tip ? undefined : result ? `${who}: ${result}` : who}
         aria-label={result ? `${who} ${result}` : who}
       >
         <Icon size={small ? 16 : 24} strokeWidth={1.5} />
       </span>
+      {tip && (
+        <span className="mc-node-tip" role="tooltip">
+          <span className="mc-node-tip-k">{who}</span>
+          {tip}
+        </span>
+      )}
       <div style={floatBelow ? { position: 'absolute', top: '100%', left: 0, right: 0 } : undefined}>
       <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: small ? 10.5 : 15.5, color: ringActive ? accent : 'var(--color-ink)', marginTop: small ? 3 : 9 }}>
         {who}
@@ -415,6 +423,7 @@ function PaymentFlow({
   decidedLit,
   live,
   killed,
+  veniceTip,
 }: {
   container: DivRef;
   youRef: DivRef;
@@ -428,6 +437,8 @@ function PaymentFlow({
    *  already-paid proposal shows the finished state (coin gone) instead of replaying the payment. */
   live: boolean;
   killed: boolean;
+  /** hover bubble for the Venice AI satellite node. */
+  veniceTip?: string;
 }) {
   const reduce = useReducedMotion();
   const coinRef = useRef<HTMLDivElement>(null);
@@ -580,6 +591,12 @@ function PaymentFlow({
           <Sparkles size={15} />
         </span>
         <span className="pay-venice-label">Venice AI</span>
+        {veniceTip && (
+          <span className="mc-node-tip" role="tooltip">
+            <span className="mc-node-tip-k">Venice AI</span>
+            {veniceTip}
+          </span>
+        )}
       </div>
       {/* the seller's single synthesis tap: 终裁 ↔ Venice (faint persistent line + a data pulse on query) */}
       <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
@@ -676,6 +693,7 @@ function VeniceEnclave({
   active,
   flowing,
   killed,
+  veniceTip,
 }: {
   container: DivRef;
   synthRef: DivRef;
@@ -684,6 +702,8 @@ function VeniceEnclave({
   /** 终裁 is consulting Venice (analysis → decision, before the vote is cast): animate the data tap. */
   flowing: boolean;
   killed: boolean;
+  /** hover bubble for the Venice AI satellite node. */
+  veniceTip?: string;
 }) {
   const reduce = useReducedMotion();
   const [g, setG] = useState<{ enclave: { x: number; y: number; w: number; h: number }; venice: PayPoint; seg: PaySeg } | null>(null);
@@ -753,6 +773,12 @@ function VeniceEnclave({
           <Sparkles size={15} />
         </span>
         <span className="pay-venice-label">Venice AI</span>
+        {veniceTip && (
+          <span className="mc-node-tip" role="tooltip">
+            <span className="mc-node-tip-k">Venice AI</span>
+            {veniceTip}
+          </span>
+        )}
       </div>
     </>
   );
@@ -982,8 +1008,8 @@ export function AuthorityChain({
 
   return (
     <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center' }}>
-      <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} basescan={bs} active={connected} floatBelow killed={killed} />
-      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} basescan={bs} active={nodeLit('redelegated')} working={orchWorking} floatBelow killed={killed} />
+      <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} basescan={bs} active={connected} floatBelow killed={killed} tip={t.nodeTips.you} />
+      <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} basescan={bs} active={nodeLit('redelegated')} working={orchWorking} floatBelow killed={killed} tip={t.nodeTips.orch} />
 
       {/* the four governance lenses (decision agents), stacked between the orchestrator and arbiter/终裁 */}
       <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center', alignSelf: 'center' }}>
@@ -1002,6 +1028,7 @@ export function AuthorityChain({
               tone={v ? decisionToneKey(v.decision) : 'brand'}
               killed={killed}
               small
+              tip={t.nodeTips[lens.key]}
             />
           );
         })}
@@ -1020,6 +1047,7 @@ export function AuthorityChain({
         tone={nodeLit('decided') && synthDecision ? decisionToneKey(synthDecision) : 'brand'}
         floatBelow
         killed={killed}
+        tip={t.nodeTips.synthesis}
       />
       {/* the 1Shot relay leg (mainnet only): the Arbiter's decision is cast by a 7702-upgraded BURNER
           whose 7710 bundle is relayed through 1Shot — gas paid by the relayer, fees paid in USDC. */}
@@ -1040,6 +1068,7 @@ export function AuthorityChain({
             tone="info"
             floatBelow
             killed={killed}
+            tip={t.nodeTips.burner}
           />
           <ChainNode
             nodeRef={oneShotRef}
@@ -1051,10 +1080,11 @@ export function AuthorityChain({
             tone="info"
             floatBelow
             killed={killed}
+            tip={t.nodeTips.oneShot}
           />
         </>
       )}
-      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} basescan={bs} active={connected} board tone={boardTone} floatBelow pips={pips} />
+      <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} basescan={bs} active={connected} board tone={boardTone} floatBelow pips={pips} tip={t.nodeTips.board} />
 
       {/* You → Orchestrator (root), then fan-out to the lenses, fan-in to Arbiter (终裁), then to the board */}
       <Beam container={containerRef} from={youRef} to={orchRef} live={beamLive('redelegated')} killed={killed} cutting={cutting} root />
@@ -1114,6 +1144,7 @@ export function AuthorityChain({
           decidedLit={nodeLit('decided')}
           live={!instant}
           killed={killed}
+          veniceTip={t.nodeTips.venice}
         />
       )}
       {tollSettled && !killed && !oneShot && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={tollTxHash} />}
@@ -1123,7 +1154,7 @@ export function AuthorityChain({
       {oneShot && relay && (
         <>
           {/* the Venice TEE enclave + Venice AI node (the AI's decision platform) — same as testnet */}
-          <VeniceEnclave container={containerRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} flowing={lensLit >= 0 && !beamLive('voted')} killed={killed} />
+          <VeniceEnclave container={containerRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} flowing={lensLit >= 0 && !beamLive('voted')} killed={killed} veniceTip={t.nodeTips.venice} />
           <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} relayLit={relayLit} paced={!instant && !killed} relay={relay} t={t} />
           {relay.tollTx && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} basescan={relay.basescan} title="x402 toll ↗" />}
           {relay.castTx && <ReceiptTick container={containerRef} nodeRef={oneShotRef} txHash={relay.castTx} basescan={relay.basescan} title="1Shot castVote ↗" />}

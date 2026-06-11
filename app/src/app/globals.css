@@ -488,6 +488,27 @@ html, body { height: 100%; overflow: hidden; }
 .mc-node-hit { transition: transform 0.2s var(--ease-fluid); }
 .mc-node-hit:hover { transform: translateY(-3px); }
 
+/* node hover bubble — the same springy pop as the 4337/7710/A2A/TEE chips (.mc-stance-tip),
+   anchored above the node circle; it rides the node's hover lift since it lives inside the wrapper. */
+.mc-node-tip { position: absolute; bottom: calc(100% + 10px); left: 50%; z-index: 40;
+  width: max-content; max-width: 252px; padding: 9px 12px; border-radius: 12px; text-align: left;
+  font-size: 11.5px; line-height: 1.55; color: var(--color-ink-soft); white-space: normal; pointer-events: none;
+  background: rgba(12, 15, 22, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-hairline); box-shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.85);
+  transform-origin: 50% 110%;
+  opacity: 0; visibility: hidden; transform: translateX(-50%) translateY(3px) scale(0.82);
+  transition: opacity 0.14s ease, transform 0.16s ease, visibility 0s linear 0.16s; }
+.mc-node-tip::after { content: ''; position: absolute; top: 100%; left: 50%; width: 10px; height: 10px;
+  background: rgba(12, 15, 22, 0.92); border-right: 1px solid var(--color-hairline); border-bottom: 1px solid var(--color-hairline);
+  transform: translate(-50%, -50%) rotate(45deg); }
+.mc-node-tip-k { display: block; margin-bottom: 2px; font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em; color: var(--color-ink); }
+.mc-node-hit:hover .mc-node-tip, .mc-node-hit:focus-within .mc-node-tip,
+.pay-venice:hover .mc-node-tip, .pay-venice:focus-within .mc-node-tip {
+  opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0) scale(1);
+  transition: opacity 0.16s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s; }
+@media (prefers-reduced-motion: reduce) { .mc-node-tip { transition: none; } }
+
 /* ---- anchored popover "bubble" — height adapts to content, floats over the canvas ---- */
 .mc-pop { position: fixed; z-index: 31; width: 360px; max-width: min(360px, calc(100vw - 84px));
   background: rgba(12, 15, 22, 0.82); backdrop-filter: blur(26px) saturate(1.2); -webkit-backdrop-filter: blur(26px) saturate(1.2);
@@ -614,7 +635,8 @@ html, body { height: 100%; overflow: hidden; }
 /* the Venice AI node — a real platform node docked at the enclave's bottom-right corner; the box is its
    TEE (the committee runs inside), and 终裁 taps this node for the synthesis query. info-toned (data),
    distinct from the gold pay coin; brightens (.on) while the committee analyzes. */
-.pay-venice { position: absolute; z-index: 1; transform: translate(-50%, -50%); pointer-events: none;
+.pay-venice { position: absolute; z-index: 1; transform: translate(-50%, -50%);
+  /* pointer-events ON (was none): the node now carries a hover bubble like every other graph node */
   display: grid; place-items: center; transition: opacity 0.4s var(--ease-fluid); }
 .pay-venice-disc { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 999px;
   border: 1.5px solid rgba(110, 168, 254, 0.55); background: rgba(14, 19, 30, 0.92); color: var(--color-info);
