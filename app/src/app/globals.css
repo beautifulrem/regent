@@ -492,6 +492,13 @@ html, body { height: 100%; overflow: hidden; }
 .mc-node-hit:hover, .mc-node-hit:focus-within { transform: translateY(-3px); z-index: 36; }
 .pay-venice:hover, .pay-venice:focus-within { z-index: 36; }
 
+/* x402 mini-diagram payment dash: fine, rim-to-rim, with a seamless crawl (period == dasharray sum)
+   so the motion reads as flow without any discrete light dot on these very short segments. */
+.mini-pay-dash { stroke: #ffd470; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 4 5; fill: none;
+  opacity: 0.9; filter: drop-shadow(0 0 3px rgba(255, 212, 112, 0.45)); animation: miniDashFlow 1.4s linear infinite; }
+@keyframes miniDashFlow { to { stroke-dashoffset: -9; } }
+@media (prefers-reduced-motion: reduce) { .mini-pay-dash { animation: none; } }
+
 /* node hover bubble — the same springy pop as the 4337/7710/A2A/TEE chips (.mc-stance-tip),
    anchored above the node circle; it rides the node's hover lift since it lives inside the wrapper. */
 .mc-node-tip { position: absolute; bottom: calc(100% + 10px); left: 50%; z-index: 40;

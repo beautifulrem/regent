@@ -54,7 +54,7 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
         const len = Math.hypot(dx, dy) || 1;
         return { x: a.x + (dx / len) * d, y: a.y + (dy / len) * d };
       };
-      const R = 21; // circle radius 16 + the 4px halo ring + a hair, so dashes never touch a node
+      const R = 17; // circle radius 16 + a hair: dashes reach the visible rim (the 4px halo is translucent)
       const p0 = c(n0.current);
       const p1 = c(n1.current);
       const p2 = c(n2.current);
@@ -114,12 +114,11 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
     <div ref={wrap} className="relative mt-4 rounded-xl border border-ok/20 bg-surface-2/40 px-2 pb-5 pt-3" style={{ height: 112 }}>
       {g && (
         <svg className="pointer-events-none absolute inset-0" width={g.w} height={g.h} style={{ overflow: 'visible' }} aria-hidden>
-          {/* payment leg — flowing gold dash (the same dashed-beam vocabulary as the main graph),
-              one segment per hop so the flow stops at every node rim instead of crossing it */}
-          <path className="beam-base" d={g.payA} />
-          <path className="beam-pulse" d={g.payA} stroke="#ffd470" style={{ color: '#ffd470' }} />
-          <path className="beam-base" d={g.payB} />
-          <path className="beam-pulse" d={g.payB} stroke="#ffd470" style={{ color: '#ffd470' }} />
+          {/* payment leg — a fine gold dash crawling toward the seller. The segments here are only
+              ~35px, far too short for the main graph's beam-pulse (its long dash cycle reads as a
+              stray light dot), so the mini diagram uses a seamless small-period dash flow instead. */}
+          <path className="mini-pay-dash" d={g.payA} />
+          <path className="mini-pay-dash" d={g.payB} />
           {/* data channel — faint static guide; cyan particles animate over it */}
           <line x1={g.dataFrom.x} y1={g.dataFrom.y} x2={g.dataTo.x} y2={g.dataTo.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={0.4} />
         </svg>
