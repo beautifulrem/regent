@@ -76,9 +76,21 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
       });
     };
     compute();
+    // The popover mounts DURING its 220ms pop-in (a scale transform): rects measured mid-animation
+    // are squeezed toward the transform origin, so every endpoint lands left of its real node and
+    // nothing self-heals (ResizeObserver only fires on size changes, not on a transform settling).
+    // Re-measure after the enter animation, once early and once safely past it.
+    const t1 = setTimeout(compute, 120);
+    const t2 = setTimeout(compute, 320);
     const ro = new ResizeObserver(compute);
     if (wrap.current) ro.observe(wrap.current);
-    return () => ro.disconnect();
+    window.addEventListener('resize', compute);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      ro.disconnect();
+      window.removeEventListener('resize', compute);
+    };
   }, []);
 
   // transient seller↔Venice exchange: request → response → gone (no infinite loop)
@@ -114,13 +126,17 @@ function MiniPaymentDiagram({ cap, spent, t, symbol, buyerLabel, budgetStr }: { 
     <div ref={wrap} className="relative mt-4 rounded-xl border border-ok/20 bg-surface-2/40 px-2 pb-5 pt-3" style={{ height: 112 }}>
       {g && (
         <svg className="pointer-events-none absolute inset-0" width={g.w} height={g.h} style={{ overflow: 'visible' }} aria-hidden>
-          {/* payment leg — a fine gold dash crawling toward the seller. The segments here are only
-              ~35px, far too short for the main graph's beam-pulse (its long dash cycle reads as a
-              stray light dot), so the mini diagram uses a seamless small-period dash flow instead. */}
+          {/* Every leg gets a SOLID faint base line first: an animated (or phase-shifted) dash can
+              never touch both rims at every instant — its dashes emerge from one end and vanish into
+              the other — so the base line is what makes the connector read as attached to the nodes. */}
+          <path d={g.payA} stroke="rgba(255,212,112,0.32)" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+          <path d={g.payB} stroke="rgba(255,212,112,0.32)" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+          <line x1={g.dataFrom.x} y1={g.dataFrom.y} x2={g.dataTo.x} y2={g.dataTo.y} stroke="rgba(110,168,254,0.3)" strokeWidth={1.5} strokeLinecap="round" />
+          {/* payment motion — a fine gold dash crawling toward the seller, layered over the base */}
           <path className="mini-pay-dash" d={g.payA} />
           <path className="mini-pay-dash" d={g.payB} />
-          {/* data channel — faint static guide; cyan particles animate over it */}
-          <line x1={g.dataFrom.x} y1={g.dataFrom.y} x2={g.dataTo.x} y2={g.dataTo.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={0.4} />
+          {/* data channel texture — static dashes over the base; cyan particles animate above */}
+          <line x1={g.dataFrom.x} y1={g.dataFrom.y} x2={g.dataTo.x} y2={g.dataTo.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" opacity={0.45} />
         </svg>
       )}
       <div className="relative flex items-start justify-between px-1">
