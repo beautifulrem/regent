@@ -485,8 +485,12 @@ html, body { height: 100%; overflow: hidden; }
 .mc-cap .live-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--color-ok); box-shadow: 0 0 8px var(--color-ok); }
 
 /* node hover lift */
-.mc-node-hit { transition: transform 0.2s var(--ease-fluid); }
-.mc-node-hit:hover { transform: translateY(-3px); }
+.mc-node-hit { z-index: 1; transition: transform 0.2s var(--ease-fluid); }
+/* hovering lifts the node AND raises it above sibling overlays (voted badge, Venice node, receipt
+   ticks): the wrapper's z-index 1 forms a stacking context, so the bubble's own z-index only wins
+   inside it. Bumping the whole wrapper is what actually puts the bubble on top. */
+.mc-node-hit:hover, .mc-node-hit:focus-within { transform: translateY(-3px); z-index: 36; }
+.pay-venice:hover, .pay-venice:focus-within { z-index: 36; }
 
 /* node hover bubble — the same springy pop as the 4337/7710/A2A/TEE chips (.mc-stance-tip),
    anchored above the node circle; it rides the node's hover lift since it lives inside the wrapper. */

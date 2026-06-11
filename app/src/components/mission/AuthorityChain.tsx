@@ -95,7 +95,6 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, kill
       className="mc-node-hit"
       style={{
         position: 'relative',
-        zIndex: 1,
         flex: small ? '0 0 auto' : 1,
         minWidth: 0,
         textAlign: 'center',
