@@ -691,10 +691,6 @@ html, body { height: 100%; overflow: hidden; }
 .burner-wallet-meta { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 2px; white-space: nowrap; }
 .burner-wallet-name { font-family: var(--font-display); font-size: 9.5px; font-weight: 700; letter-spacing: 0.03em; color: var(--color-info); }
-.burner-wallet-chips { display: inline-flex; align-items: center; gap: 4px; }
-/* the EIP-7702 marker — info-toned like the upgrade ring; the set code stays even after key retirement */
-.burner-wallet-7702 { font-family: var(--font-mono); font-size: 8.5px; font-weight: 700; color: var(--color-info);
-  border: 1px solid rgba(110, 168, 254, 0.45); border-radius: 999px; padding: 0.5px 5px; background: rgba(110, 168, 254, 0.08); }
 .burner-wallet-addr { font-family: var(--font-mono); font-size: 9px; color: var(--color-info); text-decoration: none; opacity: 0.85; }
 .burner-wallet-addr:hover { text-decoration: underline; }
 .burner-wallet-chip { font-family: var(--font-mono); font-size: 8.5px; font-weight: 700; color: var(--color-ok);
@@ -704,7 +700,6 @@ html, body { height: 100%; overflow: hidden; }
 .burner-wallet.retired { filter: saturate(0.5); }
 .burner-wallet-disc.retired { border-style: dashed !important; border-color: var(--color-hairline) !important;
   color: var(--color-ink-mute) !important; box-shadow: none !important; animation: nodeIdleBreath 2.6s ease-in-out infinite; }
-.burner-wallet.retired .burner-wallet-name { color: var(--color-ink-mute); }
 .burner-wallet-retired { font-family: var(--font-mono); font-size: 8.5px; font-weight: 700; color: var(--color-ink-mute);
   border: 1px dashed var(--color-hairline); border-radius: 999px; padding: 0.5px 5px; }
 @media (prefers-reduced-motion: reduce) { .burner-wallet-ring { animation: none; opacity: 0; } }

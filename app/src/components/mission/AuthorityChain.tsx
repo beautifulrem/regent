@@ -788,10 +788,10 @@ function MainnetRelayFlow({
       const synth = c(synthRef.current);
       const oneShot = c(oneShotRef.current);
       const board = c(boardRef.current);
-      // wallet BELOW the axis, between 终裁 and 1Shot, mirroring the Venice satellite above (−72) —
-      // both fees rise to their payee (x402 up-left to 终裁, relay fee up-right to 1Shot): supply,
-      // never an axis backflow.
-      const burner = { x: (synth.x + oneShot.x) / 2, y: synth.y + 78 };
+      // wallet BELOW the axis, the EXACT mirror of the Venice satellite above: same column
+      // (synth.x + 78) and the same vertical offset (Venice −72 / burner +72). Both fees rise to
+      // their payee (x402 up-left to 终裁, relay fee up-right to 1Shot): supply, never a backflow.
+      const burner = { x: synth.x + 78, y: synth.y + 72 };
       setG({
         w: cr.width,
         h: cr.height,
@@ -803,7 +803,7 @@ function MainnetRelayFlow({
         // the coin lands) — 终裁's bottom-right and 1Shot's bottom-left both face the burner below.
         synthWallet: { x: synth.x + 21, y: synth.y + 21 },
         oneShotWallet: { x: oneShot.x - 21, y: oneShot.y + 21 },
-        burnerBadge: { x: (synth.x + oneShot.x) / 2 + 12, y: synth.y + 78 + 12 },
+        burnerBadge: { x: burner.x + 12, y: burner.y + 12 },
         gasMid: { x: (oneShot.x + board.x) / 2, y: (oneShot.y + board.y) / 2 },
       });
     };
@@ -946,10 +946,7 @@ function MainnetRelayFlow({
               {shortHex(burnerAddr, 4)} ↗
             </a>
           ) : null}
-          <span className="burner-wallet-chips">
-            <span className="burner-wallet-7702">7702</span>
-            {retired ? <span className="burner-wallet-retired">{t.burnerRetired}</span> : <span className="burner-wallet-chip">0 ETH</span>}
-          </span>
+          {retired ? <span className="burner-wallet-retired">{t.burnerRetired}</span> : <span className="burner-wallet-chip">0 ETH</span>}
         </span>
         <span className="mc-node-tip" role="tooltip">
           <span className="mc-node-tip-k">{t.burnerNode.who}</span>

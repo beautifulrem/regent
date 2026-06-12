@@ -11,12 +11,14 @@ import type { PanelKey } from './IconRail';
  */
 export function CapabilityDock({ t, onOpen, connected, revealIdx, killed, x402Settled, mainnet }: { t: Dict; onOpen: (key: PanelKey) => void; connected: boolean; revealIdx: number; killed?: boolean; x402Settled?: boolean; mainnet?: boolean }) {
   // Light up in sequence, in lockstep with the authority chain (revealIdx = the same staged index):
-  // 4337 on connect, then 7710 (granted = stage 0) → A2A (redelegated = 1) → TEE (analyzing = 2). Each
+  // 4337 on connect, then 7710 (granted = stage 0) → A2A (redelegated = 1) → TEE (analyzing = 2) →
+  // 7702 (mainnet only: the voter EOA's in-place upgrade rides the cast relay call, voting = 4). Each
   // chip pops + glows as it lights (see .mc-chip.met), so the proofs cascade instead of flipping at once.
   // Once the chain is severed they all go dark — the mandate (and its proofs) is dead.
   const met = [
     { label: '4337', on: connected && !killed, tip: t.trackTips['4337'] },
     { label: '7710', on: revealIdx >= 0 && !killed, tip: t.trackTips['7710'] },
+    { label: '7702', on: !!mainnet && revealIdx >= 4 && !killed, tip: t.trackTips['7702'] },
     { label: 'A2A', on: revealIdx >= 1 && !killed, tip: t.trackTips.A2A },
     { label: 'TEE', on: revealIdx >= 2 && !killed, tip: t.trackTips.TEE },
   ];

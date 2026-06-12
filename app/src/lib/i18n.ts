@@ -98,6 +98,7 @@ const en = {
   trackTips: {
     '4337': 'Your MetaMask Smart Account (ERC-4337) signs and redeems the delegation for you.',
     '7710': "ERC-7710 scoped permission: vote-only, can't move funds, revocable, enforced on-chain.",
+    '7702': 'EIP-7702 in-place upgrade: the voter EOA becomes a smart account inside the SAME 1Shot relay call that casts its vote; the burner fee sponsor is a 7702 account too.',
     A2A: 'Agent-to-agent re-delegation: the orchestrator attenuates the scope, then re-delegates it to the analyst.',
     TEE: 'Venice sealed enclave (Intel TDX): private reasoning + remote attestation + per-response signature.',
   },
@@ -329,6 +330,7 @@ const zh: Dict = {
   trackTips: {
     '4337': 'MetaMask 智能账户 (ERC-4337) 替你签署并兑付这份委托。',
     '7710': 'ERC-7710 受限权限:仅投票、不能动资金、可随时撤销、由链上强制。',
+    '7702': 'EIP-7702 原地升级:投票 EOA 在铸票的同一笔 1Shot 中继调用里直接变成智能账户;垫付费用的 Burner 也是 7702 账户。',
     A2A: 'Agent 间再委托:编排器先收窄权限,再转授给分析员去投票。',
     TEE: 'Venice 密封飞地 (Intel TDX):私密推理 + 远程证明 + 每条响应签名。',
   },
