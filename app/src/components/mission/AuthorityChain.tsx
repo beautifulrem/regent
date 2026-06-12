@@ -855,6 +855,7 @@ function MainnetRelayFlow({
   };
 
   const upgraded = relayLit >= 0; // 7702-upgraded by the time it sponsors the relay
+  const retired = relayLit >= 1 && !killed; // vote landed → the one-shot key is retired (abandoned, not destroyed)
   return (
     <>
       {/* x402 toll: Burner → 终裁 (3D gold coin, rising), deposit ring at the seller */}
@@ -870,9 +871,9 @@ function MainnetRelayFlow({
       </div>
 
       {/* the agent wallet — a floating Burner node below the axis, the source of both fees */}
-      <div className={`burner-wallet${killed ? ' killed' : ''}`} style={{ left: g.burner.x, top: g.burner.y }}>
-        {upgraded && !killed && <span aria-hidden className="burner-wallet-ring" />}
-        <span className={`burner-wallet-disc${upgraded && !killed ? ' on' : ''}`}>
+      <div className={`burner-wallet${killed ? ' killed' : ''}${retired ? ' retired' : ''}`} style={{ left: g.burner.x, top: g.burner.y }}>
+        {upgraded && !retired && !killed && <span aria-hidden className="burner-wallet-ring" />}
+        <span className={`burner-wallet-disc${upgraded && !killed ? ' on' : ''}${retired ? ' retired' : ''}`}>
           <Cpu size={15} />
         </span>
         <span className="burner-wallet-meta">
@@ -882,7 +883,7 @@ function MainnetRelayFlow({
               {shortHex(burnerAddr, 4)} ↗
             </a>
           ) : null}
-          <span className="burner-wallet-chip">0 ETH</span>
+          {retired ? <span className="burner-wallet-retired">{t.burnerRetired}</span> : <span className="burner-wallet-chip">0 ETH</span>}
         </span>
         <span className="mc-node-tip" role="tooltip">
           <span className="mc-node-tip-k">{t.burnerNode.who}</span>
