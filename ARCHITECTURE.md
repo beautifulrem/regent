@@ -33,8 +33,8 @@ Standing mandate (the app): vote-only on the board, bounded, revocable.
   `AllowedTargets` and `AllowedMethods`. The agent can call `castVote` on this board and
   nothing else; it cannot move funds.
 - Standing bounds as caveats: `Timestamp` (expiry) and `LimitedCalls` (vote cap).
-- `proposalId` is left open, so one grant covers any current or future proposal. That breadth
-  is exactly why revocation matters.
+- `proposalId` is left open, so one grant covers any current or future proposal. The breadth of the grant is
+  what makes revocation necessary.
 
 Single-proposal variant (CLI `vote:2hop`, against the OpenZeppelin `Governor`): the same scope
 plus `allowedCalldata` locking the `proposalId` (bytes 4 to 35) while leaving `support`
@@ -101,7 +101,7 @@ upgrade rides that same call, and a separate burner account sponsors the USDC fe
 relayer's sponsored-fee pattern. Receipts are in `EVIDENCE.md`; reproduce with
 `pnpm 1shot:full --mainnet` after a free `--estimate` quote.
 
-## Decisions worth knowing
+## Implementation notes
 
 - Timestamp clock on the token and governor, with `votingDelay = 60s` and
   `votingPeriod = 300s`, keeps the demo window tight; `pnpm proposal --reseed` keeps a fresh

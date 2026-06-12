@@ -25,18 +25,18 @@
 
 | # | 赛道 | 状态 | 证据 |
 |---|---|---|---|
-| 1 | 通用资格:SAK 智能账户 + ERC-7710 在主流程中 | 完成 | 下方兑付交易通过 `@metamask/smart-accounts-kit` 投出真实一票 |
+| 1 | 通用资格:SAK 智能账户 + ERC-7710 在主流程中 | 完成 | 下方兑付交易通过 `@metamask/smart-accounts-kit` 投出链上一票 |
 | 2 | Best A2A coordination:两跳衰减再委托,链上兑付 | 完成 | 下方投票与撤销交易;三个参与方、两份签名委托、叶到根兑付 |
 | 3 | Best 1Shot relayer:一笔主网中继跑完整条链(三跳兑付、7702 随调用升级、赞助 USDC 费用) | 完成(主网) | 下方主网小节的 castVote 与 toll 交易 |
 | 4 | Best Venice AI:TEE 模型决定 `support`,attestation 已验证 | 完成 | 决策有区分度(高风险投反对,稳健投赞成);`x-venice-tee: true`;attestation 验证通过 |
 | 5 | x402 + ERC-7710:自建卖方按次收费,买方经受限委托付费 | 完成 | 402,签 `Erc20TransferAmount` 受限委托,链上结算,拿到数据(`pnpm x402:demo`) |
 | 6 | Best Agent:一次授权后自主分析、决策、投票 | 完成 | `pnpm orchestrate`;链上计票桶与决策一致 |
-| 7 | 撕链:撤销禁用根委托,下一次兑付 revert | 完成 | 下方 disable UserOp 与因果明确的 revert |
+| 7 | 一键断链:撤销禁用根委托,下一次兑付 revert | 完成 | 下方 disable UserOp 与因果明确的 revert |
 | 8 | 合规:开源仓库、地址、视频 | 视频待录 | 本仓库与本文件 |
 
 ## A2A 再委托(实跑,Base Sepolia)
 
-- 两跳衰减、终点是真实 `castVote`(分析师兑付整条链,DelegationManager 以用户 SA 身份执行):
+- 两跳衰减、终点是 `castVote`(分析师兑付整条链,DelegationManager 以用户 SA 身份执行):
   [`0xc9f49a3ba3020deb40cdb2fc27c9247caabf8333adea15ce6edf6d4ff2ef4841`](https://sepolia.basescan.org/tx/0xc9f49a3ba3020deb40cdb2fc27c9247caabf8333adea15ce6edf6d4ff2ef4841),
   之后 `hasVoted(userSA) = true`,`proposalVotes.For = 1000e18`。复现:`pnpm vote:2hop`。
 - 因果明确的级联撤销(用户 SA 通过 UserOp 禁用根委托;同一条全新、未投票的链随后在模拟中
@@ -73,7 +73,7 @@
 一笔主网运行跑完整条链(2026-06-12)。复现:先 `pnpm 1shot:full --mainnet --estimate`
 免费报价,再 `pnpm 1shot:full --mainnet`:
 
-- A2A:真实的三跳衰减链。用户 SA 到编排器(根:本板、至多 3 票、7 天有效期),编排器到
+- A2A:三跳衰减链。用户 SA 到编排器(根:本板、至多 3 票、7 天有效期),编排器到
   分析师(追加 `limitedCalls 1`),分析师到 1Shot target,叶委托锁死为恰好
   `castVote(proposalId, decidedSupport)`。哈希:根 `0x206a9adc…`、中 `0x669df36a…`、
   叶 `0x42233d2f…`。

@@ -32,7 +32,7 @@ Regent。
 - `targets = [VoteBoard]`、`selectors = ['castVote(uint256,uint8)']`,由 `AllowedTargets`
   与 `AllowedMethods` 强制。代理只能在这个板上调 `castVote`,动不了资金。
 - 常设边界由 caveat 提供:`Timestamp`(有效期)与 `LimitedCalls`(票数上限)。
-- `proposalId` 不锁定,一次授权覆盖现在和将来的任意提案。正因为覆盖面广,可撤销才重要。
+- `proposalId` 不锁定,一次授权覆盖现在和将来的任意提案。授权范围越广,撤销能力越是前提。
 
 单提案变体(CLI `vote:2hop`,对 OpenZeppelin `Governor`):同一 scope 之上,用
 `allowedCalldata` 锁住 `proposalId`(第 4 至 35 字节),`support`(第 36 字节)留空。代理
@@ -91,7 +91,7 @@ EIP-7702 升级搭载同一笔调用,另有一个 burner 账户按中继器的 s
 费用。收据见 `EVIDENCE.zh-CN.md`;先用 `--estimate` 免费报价,再以
 `pnpm 1shot:full --mainnet` 复现。
 
-## 值得了解的取舍
+## 实现备注
 
 - 代币与 governor 使用时间戳时钟,`votingDelay = 60s`、`votingPeriod = 300s`,演示窗口
   紧凑;`pnpm proposal --reseed` 维持一个新鲜的活跃提案。

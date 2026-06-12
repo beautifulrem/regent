@@ -27,7 +27,7 @@ On-chain receipts for each hackathon track. Testnet artifacts live on Base Sepol
 
 | # | Track | Status | Proof |
 |---|---|---|---|
-| 1 | General qualification: SAK smart account + ERC-7710 in the main flow | done | the redeem tx below casts a real vote via `@metamask/smart-accounts-kit` |
+| 1 | General qualification: SAK smart account + ERC-7710 in the main flow | done | the redeem tx below casts an on-chain vote via `@metamask/smart-accounts-kit` |
 | 2 | Best A2A coordination: 2-hop attenuated re-delegation, redeemed on-chain | done | vote and revoke txs below; 3 participants, 2 signed delegations, leaf-to-root redemption |
 | 3 | Best 1Shot relayer: the full chain in one mainnet relay (3-hop redemption, 7702 in-call upgrade, sponsored USDC fee) | done, mainnet | castVote and toll txs in the mainnet section below |
 | 4 | Best Venice AI: the TEE model decides `support`; attestation verified | done | decisions discriminate (risky proposals go Against, sound ones For); `x-venice-tee: true`; attestation verified |
@@ -38,7 +38,7 @@ On-chain receipts for each hackathon track. Testnet artifacts live on Base Sepol
 
 ## A2A re-delegation (live, Base Sepolia)
 
-- 2-hop attenuated vote ending in a real `castVote` (the analyst redeems the chain; the
+- 2-hop attenuated vote ending in `castVote` (the analyst redeems the chain; the
   DelegationManager executes as the user SA):
   [`0xc9f49a3ba3020deb40cdb2fc27c9247caabf8333adea15ce6edf6d4ff2ef4841`](https://sepolia.basescan.org/tx/0xc9f49a3ba3020deb40cdb2fc27c9247caabf8333adea15ce6edf6d4ff2ef4841),
   after which `hasVoted(userSA) = true` and `proposalVotes.For = 1000e18`. Reproduce with
@@ -78,7 +78,7 @@ The same Governor and token are deployed on Base mainnet; the token name carries
 The full chain in one mainnet run (2026-06-12). Reproduce with
 `pnpm 1shot:full --mainnet --estimate` for a free quote, then `pnpm 1shot:full --mainnet`:
 
-- A2A: a real 3-hop attenuated chain. User SA to orchestrator (root: this board, at most 3
+- A2A: a 3-hop attenuated chain. User SA to orchestrator (root: this board, at most 3
   votes, 7-day expiry), orchestrator to analyst (adds `limitedCalls 1`), analyst to the 1Shot
   target with the leaf locked to exactly `castVote(proposalId, decidedSupport)`. Hashes: root
   `0x206a9adc…`, mid `0x669df36a…`, leaf `0x42233d2f…`.

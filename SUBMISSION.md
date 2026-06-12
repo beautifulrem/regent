@@ -17,8 +17,8 @@
 
 DAOs already let you delegate voting power, but only to an address you must trust to vote
 however it likes, indefinitely, until you move your tokens. Meanwhile, the AI products that
-could do the voting for you want either your private key (one prompt injection from disaster)
-or a co-signature on every action, which is not autonomy at all.
+could do the voting for you want either your private key, which one prompt injection can leak,
+or a co-signature on every action, which rules out autonomy.
 
 ### The answer
 
@@ -80,7 +80,7 @@ DelegationManager, where the honest castVote passes and the tampered fund transf
 | Best Smart Accounts Agent | `pnpm orchestrate`: one grant, a TEE decision, a real castVote; the tally bucket equals the decision |
 | Kill-the-chain (the core) | disable UserOp [`0x1475…c74b`](https://sepolia.basescan.org/tx/0x147517e3b3120bb2bc60ee98a0de2017b4d4412ad9cbf58d06954a8e4d4dc74b); `canRedeem` flips from true to false |
 
-### Limitations, stated plainly
+### Limitations
 
 - The app's standing mandate runs on a self-built `VoteBoard`; the OZ `Governor` path is the
   CLI reproduction with the scope tightened to one locked `proposalId`. `votingPeriod` is 300
