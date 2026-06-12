@@ -25,6 +25,26 @@
 > OpenZeppelin `Governor`, with the scope tightened further to a single **locked `proposalId`** — an
 > even narrower variant of the same delegation, kept for the on-chain Governor receipts in `EVIDENCE.md`.
 
+### Zero-gas membership — what the mainnet run proves for a real DAO
+
+The recorded Base-mainnet cast ([`0xc486…5092`](https://basescan.org/tx/0xc48632ca8bc72db8c68eabd3e7dde90c5eae37b6afef60e70b1e686a8f8b5092))
+splits the vote into **two delegations inside one atomic relay transaction** — and that split is a
+product shape, not a demo trick:
+
+- **Members sign authority, nothing else.** The voter's key holds **0 ETH and 0 USDC**; even its
+  EIP-7702 upgrade rides the same relay call. The on-chain voter of record is the member's own
+  smart account.
+- **The DAO runs the fee sponsor.** A treasury-funded account signs a *USDC-transfer-only*
+  delegation (cappable per-tx / cumulative budget / expiry). It can reimburse relay fees and do
+  nothing else — and it gains zero voting power.
+- **1Shot glues the two atomically** and fronts the real ETH gas: either the vote lands *and* the
+  fee is paid, or neither happens.
+
+So a DAO can stand up a "voting-gas account" once, and members never think about gas again. The
+sponsor subsidises *participation*, not *direction* — it signs before any decision exists and
+cannot condition payment on how the vote goes. (In this repo the sponsor role is played by the
+disposable burner; in production it would be the DAO's ops treasury.)
+
 ## Why ERC-7710 — nothing weaker gives all four at once
 
 Letting an AI vote *your* governance demands **four properties at the same time**, and only a
@@ -88,7 +108,7 @@ hop-count).
 | **Best use of Venice AI** — the TEE model decides `support` per proposal; attestation verified; **4 Venice endpoints** in the main flow (`/models` · `/chat/completions` · `/tee/attestation` · `/audio/speech` — the arbiter *speaks* its verdict) | ✅ live | decisions discriminate (risky → Against, sound → For); `x-venice-tee: true`; attestation `verified: true`; spoken verdict via `tts-kokoro` — [EVIDENCE](./EVIDENCE.md#best-venice-ai-live) |
 | **Best Agent** — one grant → autonomous analyze → decide → vote, proposal after proposal | ✅ live | `pnpm orchestrate`; the on-chain tally bucket == the Venice decision, redeem tx [`0xd830…1356`](https://sepolia.basescan.org/tx/0xd8303a62b68b21e8f9578e054061de64fcab5880084973feb30026326b6c1356) |
 | Best A2A coordination — 2-hop attenuated re-delegation (the mechanism behind the mandate) | ✅ live | 3 participants, 2 signed delegations, leaf→root redemption — [EVIDENCE](./EVIDENCE.md#checkpoint-a--best-a2a-live-base-sepolia) |
-| **Best 1Shot Permissionless Relayer** — mainnet `castVote` via 7702 + 7710 (USDC gas); **webhook status feed** (signed Ed25519 events → `POST /webhooks/1shot`, verified against the relayer JWKS) | ✅ live on Base **mainnet** | castVote tx [`0x3b54…6a07`](https://basescan.org/tx/0x3b5448aaac605e1416be48e238c12a755532b762d392dd70f4025e5a152a6a07); burner code `0xef0100…` (7702-upgraded through 1Shot); fee 0.01 USDC, burner holds 0 ETH; webhook receiver [`server.ts`](./agent/orchestrator/src/server.ts) + verifier [`oneshot.ts`](./packages/shared/src/oneshot.ts) |
+| **Best 1Shot Permissionless Relayer** — the FULL chain in one mainnet relay: 3-hop A2A redeemed, `castVote` executes **as the user SA**, the user's 7702 upgrade rides the same call, the burner **sponsors the USDC fee** (sponsored-fee pattern); **webhook status feed** (signed Ed25519 events → `POST /webhooks/1shot`, verified against the relayer JWKS) | ✅ live on Base **mainnet** | castVote tx [`0xc486…5092`](https://basescan.org/tx/0xc48632ca8bc72db8c68eabd3e7dde90c5eae37b6afef60e70b1e686a8f8b5092) (`getVote(proposal, userSA)=2`); x402 toll tx [`0xb244…6174`](https://basescan.org/tx/0xb244c3e4b9c701bea6eb8812caf0b71f6d23ab29c6c3084d69bc421deefd6174); fee 0.01 USDC, every authority key holds 0 ETH; webhook receiver [`server.ts`](./agent/orchestrator/src/server.ts) + verifier [`oneshot.ts`](./packages/shared/src/oneshot.ts) |
 | **Best x402 + ERC-7710** — self-built seller; the agent pays per-query via a scoped delegation | ✅ live | `pnpm x402:demo` → `402 → scoped Erc20TransferAmount delegation → on-chain settle → data` |
 
 Full receipts per track: [`EVIDENCE.md`](./EVIDENCE.md).
@@ -178,8 +198,9 @@ Documented choices, not hidden stubs:
 - **Venice inference is prepaid.** x402 pays the proposal-data toll; the Venice TEE call itself is
   billed to a prepaid API key.
 - **The app's mainnet panel is an honest replay.** It replays pinned, real Base-mainnet artifacts
-  (the castVote tx and USDC fee, linked to Basescan) with a genuinely **live** `eth_getCode` 7702
-  check; live mainnet execution stays opt-in via CLI (`pnpm 1shot:vote`).
+  (the full-chain castVote + x402 toll txs, linked to Basescan) with a genuinely **live**
+  `eth_getCode` 7702 check; live mainnet execution stays opt-in via CLI
+  (`pnpm 1shot:full --mainnet`, free dry-quote via `--estimate`).
 - The mainnet Governor and every proposal carry `HACKATHON DEMO — NO REAL VALUE` and a 0 treasury.
 
 ## Safety / boundaries
