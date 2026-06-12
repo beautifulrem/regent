@@ -633,6 +633,19 @@ html, body { height: 100%; overflow: hidden; }
   transition: opacity 0.3s, filter 0.3s; }
 .pay-wallet.pulse { animation: walletPulse 0.5s var(--ease-snappy); }
 @keyframes walletPulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 35% { transform: translate(-50%, -50%) scale(1.22); } }
+/* receipt tick — stamps in like an inked seal (overshoot + rotate-to-true) with a one-shot gold ring,
+   echoing the seller-wallet pulse so "paid → receipt" reads as a single beat. */
+.receipt-stamp { animation: receiptStamp 0.42s var(--ease-snappy) both; }
+@keyframes receiptStamp {
+  0% { transform: translate(-50%, -50%) scale(0) rotate(-22deg); opacity: 0; }
+  55% { transform: translate(-50%, -50%) scale(1.18) rotate(4deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; } }
+.receipt-ring { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; border-radius: 999px;
+  pointer-events: none; transform: translate(-50%, -50%); border: 2px solid #ffd470;
+  box-shadow: 0 0 18px 5px rgba(255, 212, 112, 0.5); animation: payRing 0.6s ease-out 0.12s forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .receipt-stamp { animation: none; }
+  .receipt-ring { animation: none; opacity: 0; } }
 /* the AI data the buyer paid for, streaming BACK seller→you: cyan SQUARES (color+shape+size+direction
    all differ from the gold coin, so pay vs data reads at a glance and stays colorblind-safe). */
 .data-packet { position: absolute; z-index: 2; width: 6px; height: 6px; border-radius: 1.5px; pointer-events: none;

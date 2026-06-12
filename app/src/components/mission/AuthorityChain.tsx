@@ -679,7 +679,10 @@ function ReceiptTick({ container, nodeRef, txHash, basescan = BASESCAN, title = 
     </span>
   );
   return (
-    <div style={{ position: 'absolute', left: p.x, top: p.y, transform: 'translate(-50%,-50%)', zIndex: 4, pointerEvents: txHash ? 'auto' : 'none' }}>
+    <div className="receipt-stamp" style={{ position: 'absolute', left: p.x, top: p.y, transform: 'translate(-50%,-50%)', zIndex: 4, pointerEvents: txHash ? 'auto' : 'none' }}>
+      {/* gold "clink" ring that blooms once as the receipt stamps in — same vocabulary as the
+          pay-ring at the seller wallet, so "paid" and "receipt" read as one event. */}
+      <span className="receipt-ring" aria-hidden />
       {txHash ? (
         <a href={`${basescan}/tx/${txHash}`} target="_blank" rel="noreferrer" title={title}>
           {tick}
@@ -1083,9 +1086,12 @@ export function AuthorityChain({
           relayer covers ETH gas, and two real receipt ticks link the x402 toll + the 1Shot castVote. */}
       {oneShot && relay && (
         <>
-          {/* the SAME payment vocabulary as the testnet — wallets on 你 + 终裁, the 3D toll coin
-              arcing 你→终裁 (strictly left→right; on this leg 你 IS the burner: the recorded
-              toll.buyer equals the 你 node's address), the Venice enclave + the synthesis query. */}
+          {/* the SAME payment vocabulary as the testnet: wallets on 你 + 终裁, the 3D toll coin arcing
+              你→终裁 (strictly left→right), the Venice enclave + synthesis query. The coin shows the
+              PRODUCT story — the user's authorized x402 budget paying the data source — consistent
+              across both networks. On-chain the recorded mainnet buyer is the deployed burner SA
+              (a counterfactual user SA can't sign a standalone redeem); the x402 panel + EVIDENCE
+              carry that exact buyer address for verification. */}
           <PaymentFlow container={containerRef} youRef={youRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} decidedLit={nodeLit('decided')} live={!instant} killed={killed} veniceTip={t.nodeTips.venice} />
           <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} relayLit={relayLit} paced={!instant && !killed} relay={relay} t={t} />
           {/* receipts pop at their causal beats during a paced replay (toll paid → 终裁 tick;
