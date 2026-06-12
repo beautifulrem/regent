@@ -1,27 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
-  <!-- Mandate mark, in the MetaMask faceted low-poly language (flat triangular planes, the fox
-       orange ramp + navy + beige): a shield of facets carrying a navy check (governance, approved),
-       its tip CUT and offset — the on-chain kill switch. White rounded tile like the org avatar. -->
+  <!-- Mandate mark v2 — the mechanism IS the symbol, in the MetaMask faceted flat-poly language:
+       a bold governance CHECK built as chain-link bars; the root delegation is a closed faceted
+       link threaded on the down-stroke; the long arm carries a machined RELEASE JOINT (parallel
+       cut faces capped navy — deliberate, not broken) holding a floating bright locking wedge:
+       the one-click kill switch, removable by design. Fox-orange ramp + navy, white tile. -->
   <rect width="128" height="128" rx="28" fill="#ffffff"/>
-  <!-- upper facets -->
-  <polygon points="32,30 64,20 64,46" fill="#e2761b" stroke="#e2761b" stroke-width="0.6"/>
-  <polygon points="64,20 96,30 64,46" fill="#f6851b" stroke="#f6851b" stroke-width="0.6"/>
-  <polygon points="32,30 64,46 48,52" fill="#cd6116" stroke="#cd6116" stroke-width="0.6"/>
-  <polygon points="96,30 80,52 64,46" fill="#e4751f" stroke="#e4751f" stroke-width="0.6"/>
-  <polygon points="32,30 48,52 36,64" fill="#e2761b" stroke="#e2761b" stroke-width="0.6"/>
-  <polygon points="96,30 92,64 80,52" fill="#cd6116" stroke="#cd6116" stroke-width="0.6"/>
-  <!-- the beige face plate (diamond), fox-style -->
-  <polygon points="48,52 64,46 80,52 64,72" fill="#d7c1b3" stroke="#d7c1b3" stroke-width="0.6"/>
-  <!-- flank facets -->
-  <polygon points="36,64 48,52 64,72" fill="#f6851b" stroke="#f6851b" stroke-width="0.6"/>
-  <polygon points="80,52 92,64 64,72" fill="#e2761b" stroke="#e2761b" stroke-width="0.6"/>
-  <!-- lower band, tapering to the severed seam -->
-  <polygon points="36,64 64,72 50.5,88" fill="#cd6116" stroke="#cd6116" stroke-width="0.6"/>
-  <polygon points="64,72 92,64 77.5,88" fill="#763d16" stroke="#763d16" stroke-width="0.6"/>
-  <polygon points="64,72 77.5,88 50.5,88" fill="#e4751f" stroke="#e4751f" stroke-width="0.6"/>
-  <!-- the severed tip: cut clean off and shifted — revocation is part of the mark -->
-  <polygon points="56.5,93 66.5,93 66.5,113" fill="#e2761b" stroke="#e2761b" stroke-width="0.6"/>
-  <polygon points="66.5,93 76.5,93 66.5,113" fill="#763d16" stroke="#763d16" stroke-width="0.6"/>
-  <!-- the navy check on the plate (the vote that the mandate exists to cast) -->
-  <polygon points="55,59 62,66 74,51.5 70,48.5 62,57.5 58.5,54.5" fill="#233447" stroke="#233447" stroke-width="0.6"/>
+
+  <!-- the root link: the check's starting stroke ends in a closed chain eye — the delegation
+       chain starts at a link and lands as a vote. Drawn under the bar so the stroke threads it. -->
+  <path fill-rule="evenodd" d="M41,60 L34,47.9 L20,47.9 L13,60 L20,72.1 L34,72.1 Z M33.5,60 L30.3,54.4 L23.8,54.4 L20.5,60 L23.8,65.6 L30.3,65.6 Z" fill="#cd6116"/>
+  <polygon points="20,47.9 13,60 20.5,60 23.8,54.4" fill="#f6851b" stroke="#f6851b" stroke-width="0.5"/>
+  <polygon points="20,72.1 34,72.1 30.3,65.6 23.8,65.6" fill="#763d16" stroke="#763d16" stroke-width="0.5"/>
+
+  <!-- the check, down-stroke (two lighting planes) -->
+  <polygon points="24,72 38,58 56,104" fill="#f6851b" stroke="#f6851b" stroke-width="0.5"/>
+  <polygon points="38,58 56,76 56,104" fill="#e2761b" stroke="#e2761b" stroke-width="0.5"/>
+
+  <!-- the check, long arm · elbow segment -->
+  <polygon points="56,76 74.7,54.5 88.7,66.7" fill="#f6851b" stroke="#f6851b" stroke-width="0.5"/>
+  <polygon points="56,76 88.7,66.7 56,104" fill="#e2761b" stroke="#e2761b" stroke-width="0.5"/>
+  <!-- machined cut face (navy = a hard, intentional stop) -->
+  <polygon points="73.1,56.4 87.1,68.6 88.7,66.7 74.7,54.5" fill="#233447" stroke="#233447" stroke-width="0.5"/>
+
+  <!-- the check, long arm · tip segment -->
+  <polygon points="79.3,49.3 90,36 104,50 93.3,61.5" fill="#f6851b" stroke="#f6851b" stroke-width="0.5"/>
+  <polygon points="79.3,49.3 93.3,61.5 91,63 80,52" fill="#e2761b" stroke="#e2761b" stroke-width="0.5"/>
+  <!-- its facing cut face -->
+  <polygon points="79.3,49.3 93.3,61.5 94.9,59.6 80.9,47.4" fill="#233447" stroke="#233447" stroke-width="0.5"/>
+
+  <!-- the locking wedge: a separate bright pin floating in the release joint — pull it, the chain opens -->
+  <polygon points="80.2,54.7 85.3,62.6 88.7,58.7" fill="#f6851b" stroke="#f6851b" stroke-width="0.5"/>
 </svg>

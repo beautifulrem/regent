@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.svg" width="96" alt="Mandate 标志——切面盾牌承载对勾,盾尖断开(链上撤销开关)">
+<img src="docs/assets/logo.svg" width="96" alt="Mandate 标志——切面对勾:起笔是一节链环,长臂上嵌着可拔出的锁定销(链上撤销开关)">
 
 # Mandate
 

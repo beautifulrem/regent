@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.svg" width="96" alt="Mandate — a faceted shield carrying a check, its tip severed (the on-chain kill switch)">
+<img src="docs/assets/logo.svg" width="96" alt="Mandate — a faceted governance check that begins in a chain link and carries a removable locking pin (the on-chain kill switch)">
 
 # Mandate
 
