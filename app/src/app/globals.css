@@ -491,6 +491,7 @@ html, body { height: 100%; overflow: hidden; }
    inside it. Bumping the whole wrapper is what actually puts the bubble on top. */
 .mc-node-hit:hover, .mc-node-hit:focus-within { transform: translateY(-3px); z-index: 36; }
 .pay-venice:hover, .pay-venice:focus-within { z-index: 36; }
+.burner-wallet:hover, .burner-wallet:focus-within { z-index: 36; }
 
 /* x402 mini-diagram payment dash: fine, rim-to-rim, with a seamless crawl (period == dasharray sum)
    so the motion reads as flow without any discrete light dot on these very short segments. */
@@ -515,7 +516,8 @@ html, body { height: 100%; overflow: hidden; }
 .mc-node-tip-k { display: block; margin-bottom: 2px; font-family: var(--font-display); font-size: 11px; font-weight: 700;
   letter-spacing: 0.04em; color: var(--color-ink); }
 .mc-node-hit:hover .mc-node-tip, .mc-node-hit:focus-within .mc-node-tip,
-.pay-venice:hover .mc-node-tip, .pay-venice:focus-within .mc-node-tip {
+.pay-venice:hover .mc-node-tip, .pay-venice:focus-within .mc-node-tip,
+.burner-wallet:hover .mc-node-tip, .burner-wallet:focus-within .mc-node-tip {
   opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0) scale(1);
   transition: opacity 0.16s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s; }
 @media (prefers-reduced-motion: reduce) { .mc-node-tip { transition: none; } }
@@ -672,6 +674,28 @@ html, body { height: 100%; overflow: hidden; }
   box-shadow: 0 0 0 5px rgba(110, 168, 254, 0.1), 0 0 18px rgba(110, 168, 254, 0.4); }
 .pay-venice-label { position: absolute; top: calc(100% + 3px); left: 50%; transform: translateX(-50%); white-space: nowrap;
   font-family: var(--font-display); font-size: 9.5px; font-weight: 700; letter-spacing: 0.03em; color: var(--color-info); }
+
+/* the off-axis Burner "agent wallet" — a floating node docked below the cast leg. Info-toned (it is
+   the agent's deployed account), with a 7702 upgrade ring, a 0-ETH chip, and the two fee coins
+   rising out of it. Distinct from the gold pay-coin so "the wallet pays" reads cleanly. */
+.burner-wallet { position: absolute; z-index: 2; transform: translate(-50%, -50%); display: grid; place-items: center;
+  transition: opacity 0.3s, filter 0.3s; }
+.burner-wallet.killed { opacity: 0.35; filter: grayscale(1); }
+.burner-wallet-disc { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px;
+  border: 1.5px solid rgba(110, 168, 254, 0.35); background: rgba(20, 25, 37, 0.92); color: var(--color-info);
+  box-shadow: 0 0 0 4px rgba(110, 168, 254, 0.05); transition: box-shadow 0.4s var(--ease-fluid), border-color 0.4s var(--ease-fluid); }
+.burner-wallet-disc.on { border-color: rgba(110, 168, 254, 0.6);
+  box-shadow: 0 0 0 5px rgba(110, 168, 254, 0.1), 0 0 18px rgba(110, 168, 254, 0.4); }
+.burner-wallet-ring { position: absolute; top: 50%; left: 50%; width: 34px; height: 34px; border-radius: 999px;
+  pointer-events: none; border: 2px solid var(--color-cyan); animation: nodeUpgrade 0.7s var(--ease-fluid) forwards; }
+.burner-wallet-meta { position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: row; align-items: center; gap: 6px; white-space: nowrap; }
+.burner-wallet-name { font-family: var(--font-display); font-size: 10px; font-weight: 700; letter-spacing: 0.03em; color: var(--color-info); }
+.burner-wallet-addr { font-family: var(--font-mono); font-size: 9px; color: var(--color-info); text-decoration: none; opacity: 0.85; }
+.burner-wallet-addr:hover { text-decoration: underline; }
+.burner-wallet-chip { font-family: var(--font-mono); font-size: 8.5px; font-weight: 700; color: var(--color-ok);
+  border: 1px solid rgba(74, 222, 128, 0.4); border-radius: 999px; padding: 0.5px 5px; background: rgba(74, 222, 128, 0.08); }
+@media (prefers-reduced-motion: reduce) { .burner-wallet-ring { animation: none; opacity: 0; } }
 
 /* 1Shot flow graph — compact horizontal chain in the popover */
 .oneshot-disc { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 999px;

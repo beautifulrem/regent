@@ -444,6 +444,7 @@ function PaymentFlow({
   live,
   killed,
   veniceTip,
+  showCoin = true,
 }: {
   container: DivRef;
   youRef: DivRef;
@@ -459,6 +460,9 @@ function PaymentFlow({
   killed: boolean;
   /** hover bubble for the Venice AI satellite node. */
   veniceTip?: string;
+  /** draw the user->seller wallets + 3D coin. OFF on mainnet, where the off-axis Burner wallet pays,
+   *  so PaymentFlow contributes only the Venice enclave + node + synthesis query. */
+  showCoin?: boolean;
 }) {
   const reduce = useReducedMotion();
   const coinRef = useRef<HTMLDivElement>(null);
@@ -555,7 +559,7 @@ function PaymentFlow({
       timers.push(setTimeout(() => setSynthPhase('resp'), 560));
       timers.push(setTimeout(() => setSynthPhase('done'), 1120));
     };
-    if (reduce || !coin) {
+    if (reduce || !coin || !showCoin) {
       startSynthQuery();
       return () => timers.forEach(clearTimeout);
     }
@@ -581,7 +585,7 @@ function PaymentFlow({
       fly.stop();
       timers.forEach(clearTimeout);
     };
-  }, [geom, decidedLit, live, killed, reduce]);
+  }, [geom, decidedLit, live, killed, reduce, showCoin]);
 
   if (!geom) return null;
   const ro = revealed ? 1 : 0; // reveal opacity multiplier — 0 on first frame, CSS transitions fade in
@@ -622,19 +626,23 @@ function PaymentFlow({
       <svg className="beam-svg" width={geom.w} height={geom.h} viewBox={`0 0 ${geom.w} ${geom.h}`} fill="none" aria-hidden="true">
         <line x1={geom.synthSeg.from.x} y1={geom.synthSeg.from.y} x2={geom.synthSeg.to.x} y2={geom.synthSeg.to.y} stroke="var(--color-info)" strokeWidth={1.5} strokeDasharray="3 5" style={{ opacity: (killed ? 0.12 : 0.32) * ro, transition: 'opacity 0.5s var(--ease-fluid)' }} />
       </svg>
-      {/* flat wallets at You + the seller */}
-      <span ref={youWalletRef} className="pay-wallet" style={{ left: geom.youWallet.x, top: geom.youWallet.y, opacity: dim ? dim.opacity : ro, filter: dim?.filter }}>
-        <Wallet size={12} />
-      </span>
-      <span ref={synthWalletRef} className="pay-wallet" style={{ left: geom.synthWallet.x, top: geom.synthWallet.y, opacity: dim ? dim.opacity : ro, filter: dim?.filter }}>
-        <Wallet size={12} />
-      </span>
-      {/* the flat coin (driven imperatively by the one-shot fly) */}
-      <div ref={coinRef} className="pay-coin" style={{ opacity: 0 }}>
-        <div className="pay-coin-face" />
-      </div>
-      {/* deposit ring at the seller + the transient 终裁↔Venice synthesis data (request → response) */}
-      {!killed && synthPhase === 'req' && <span key="pay-ring" className="pay-ring" style={{ left: geom.synthWallet.x, top: geom.synthWallet.y }} />}
+      {/* user + seller wallets and the flying coin — testnet only (mainnet pays from the off-axis
+          Burner agent wallet, so showCoin is off and these are skipped) */}
+      {showCoin && (
+        <>
+          <span ref={youWalletRef} className="pay-wallet" style={{ left: geom.youWallet.x, top: geom.youWallet.y, opacity: dim ? dim.opacity : ro, filter: dim?.filter }}>
+            <Wallet size={12} />
+          </span>
+          <span ref={synthWalletRef} className="pay-wallet" style={{ left: geom.synthWallet.x, top: geom.synthWallet.y, opacity: dim ? dim.opacity : ro, filter: dim?.filter }}>
+            <Wallet size={12} />
+          </span>
+          <div ref={coinRef} className="pay-coin" style={{ opacity: 0 }}>
+            <div className="pay-coin-face" />
+          </div>
+          {!killed && synthPhase === 'req' && <span key="pay-ring" className="pay-ring" style={{ left: geom.synthWallet.x, top: geom.synthWallet.y }} />}
+        </>
+      )}
+      {/* transient 终裁<->Venice synthesis data (request -> response) — both networks */}
       {!killed && synthPhase === 'req' && particles(geom.synthSeg, 'req', 'sreq')}
       {!killed && synthPhase === 'resp' && particles(geom.synthSeg, 'resp', 'sresp')}
     </>
@@ -704,58 +712,72 @@ export interface ChainParties {
 }
 
 /**
- * The mainnet payment sub-flow. The BURNER's USDC budget pays two real fees, each animated as a
- * coin in its true direction at its true story beat:
- *   - x402 toll, Burner→终裁 (the seller), fired when the Arbiter's decision lights — the same
- *     beat the testnet PaymentFlow uses for its You→seller coin
- *   - 1Shot relay fee, Burner→1Shot, fired when the relay hop lights on the cast leg
- * The 7710 bundle handoff (终裁→Burner) is carried by the morphing scope chip, NOT by a coin:
- * gold means money in this app, and the bundle is not money. A label under the 1Shot→VoteBoard
- * beam marks that the relayer fronts the ETH gas (violet pulse). Mainnet-only.
+ * The mainnet payment sub-flow, with the BURNER drawn as a floating "agent wallet" docked BELOW the
+ * axis, centred between 终裁 and 1Shot. It is the agent's deployed USDC account (EIP-7702-upgraded,
+ * 0 ETH); it pays two real fees, each a coin RISING to its payee so money reads as supply from the
+ * wallet, never an axis backflow:
+ *   - x402 toll: Burner → 终裁 (the seller), a 3D coin on the arbiter's decision beat
+ *   - 1Shot relay fee: Burner → 1Shot, when the relay hop lights
+ *   - the ETH gas 1Shot fronts: 1Shot → VoteBoard (violet), when the cast lands
+ * Mainnet-only; the testnet x402 lives in PaymentFlow.
  */
 function MainnetRelayFlow({
   container,
-  burnerRef,
   synthRef,
   oneShotRef,
   boardRef,
   relayLit,
+  decidedLit,
   paced,
   relay,
+  burnerAddr,
+  basescan,
+  killed,
   t,
 }: {
   container: DivRef;
-  burnerRef: DivRef;
   synthRef: DivRef;
   oneShotRef: DivRef;
   boardRef: DivRef;
-  /** the cast-leg ratchet: -1 idle, 0 Burner lit, 1 1Shot lit, 2 VoteBoard reached. Drives each segment. */
+  /** the cast-leg ratchet: -1 idle, 0 = 1Shot lit, 1 = VoteBoard reached. */
   relayLit: number;
-  /** true while the ratchet is CLIMBING (a live paced replay). When the cockpit snaps the ratchet to
-   *  its target (clock ended / flipping back to a finished run), the travel particles stay off —
-   *  a snap is "show the finished state", and firing every pending hop at once reads as chaos. */
+  /** the arbiter has decided — fire the x402 toll coin (Burner → 终裁). */
+  decidedLit: boolean;
+  /** true while the ratchet is climbing (a paced replay); a snapped ratchet fires no travel particles. */
   paced: boolean;
   relay: { basescan: string; tollTx?: string; castTx?: string; tollUsdc: string; feeUsdc: string };
+  burnerAddr?: string;
+  basescan: string;
+  killed: boolean;
   t: Dict;
 }) {
+  const reduce = useReducedMotion();
   const [g, setG] = useState<{
-    burner: { x: number; y: number };
     synth: { x: number; y: number };
     oneShot: { x: number; y: number };
     board: { x: number; y: number };
+    burner: { x: number; y: number };
     gasMid: { x: number; y: number };
   } | null>(null);
+  const coinRef = useRef<HTMLDivElement>(null);
+  const tollFired = useRef(false);
+  const [ring, setRing] = useState(false);
+
   useEffect(() => {
     const compute = () => {
-      if (!container.current || !burnerRef.current || !synthRef.current || !oneShotRef.current || !boardRef.current) return;
+      if (!container.current || !synthRef.current || !oneShotRef.current || !boardRef.current) return;
       const cr = container.current.getBoundingClientRect();
       const c = (n: HTMLDivElement, dy = 30) => {
         const r = n.getBoundingClientRect();
         return { x: r.left - cr.left + r.width / 2, y: r.top - cr.top + dy };
       };
+      const synth = c(synthRef.current);
       const oneShot = c(oneShotRef.current);
       const board = c(boardRef.current);
-      setG({ burner: c(burnerRef.current), synth: c(synthRef.current), oneShot, board, gasMid: { x: (oneShot.x + board.x) / 2, y: (oneShot.y + board.y) / 2 } });
+      // wallet BELOW the axis, between 终裁 and 1Shot — both fees rise to their payee (x402 up-left to
+      // 终裁, relay fee up-right to 1Shot): supply, never an axis backflow.
+      const burner = { x: (synth.x + oneShot.x) / 2, y: synth.y + 86 };
+      setG({ synth, oneShot, board, burner, gasMid: { x: (oneShot.x + board.x) / 2, y: (oneShot.y + board.y) / 2 } });
     };
     compute();
     const ro = new ResizeObserver(compute);
@@ -765,10 +787,52 @@ function MainnetRelayFlow({
       ro.disconnect();
       window.removeEventListener('resize', compute);
     };
-  }, [container, burnerRef, synthRef, oneShotRef, boardRef]);
-  // Each segment's particle fires the moment ITS hop lights (relayLit climbs 0→1→2), so the relay reads
-  // strictly left→right in true tx order instead of all the coins leaving at once. `epoch` bumps on every
-  // fresh cast (relayLit goes from idle back to live) so the one-shot CSS animations re-mount and replay.
+  }, [container, synthRef, oneShotRef, boardRef]);
+
+  // reset the one-shot toll coin when the run rewinds / is severed
+  useEffect(() => {
+    if (!decidedLit || killed) {
+      tollFired.current = false;
+      setRing(false);
+      if (coinRef.current) coinRef.current.style.opacity = '0';
+    }
+  }, [decidedLit, killed]);
+  // x402 toll: a 3D coin arcs UP from the agent wallet to 终裁 (the seller) on the decision beat
+  useEffect(() => {
+    const coin = coinRef.current;
+    if (!g || !decidedLit || killed || tollFired.current || !paced) return;
+    tollFired.current = true;
+    let ringTimer: ReturnType<typeof setTimeout> | undefined;
+    const payY = g.synth.y + 20; // land just below the 终裁 circle, not on its centre
+    if (reduce || !coin) {
+      setRing(true);
+      ringTimer = setTimeout(() => setRing(false), 700);
+      return () => clearTimeout(ringTimer);
+    }
+    const arcH = 44;
+    const fly = animate(0, 1, {
+      duration: 0.95,
+      ease: [0.4, 0, 0.2, 1],
+      onUpdate: (pr) => {
+        const x = g.burner.x + (g.synth.x - g.burner.x) * pr;
+        const y = g.burner.y + (payY - g.burner.y) * pr - arcH * Math.sin(Math.PI * pr);
+        const pop = pr < 0.16 ? pr / 0.16 : pr > 0.84 ? (1 - pr) / 0.16 : 1;
+        coin.style.transform = `translate3d(${x - 9}px, ${y - 9}px, 0) scale(${0.45 + 0.55 * pop})`;
+        coin.style.opacity = `${pop}`;
+      },
+      onComplete: () => {
+        coin.style.opacity = '0';
+        setRing(true);
+        ringTimer = setTimeout(() => setRing(false), 700);
+      },
+    });
+    return () => {
+      fly.stop();
+      if (ringTimer) clearTimeout(ringTimer);
+    };
+  }, [g, decidedLit, killed, paced, reduce]);
+
+  // cyan relay-fee + violet gas coins re-mount per fresh relay (epoch bumps when relayLit goes live)
   const [epoch, setEpoch] = useState(0);
   const prevLive = useRef(false);
   useEffect(() => {
@@ -777,10 +841,9 @@ function MainnetRelayFlow({
     prevLive.current = live;
   }, [relayLit]);
   if (!g) return null;
-  // A particle travels ONLY in the gap between two node circles (offset to the rims, not the centres),
-  // so it never pierces a node. The CSS fades it in/out at both ends.
-  const R = 37; // main-node radius (30) + clearance
-  const travel = (from: { x: number; y: number }, to: { x: number; y: number }, cls: string, key: string, delay?: number) => {
+
+  const R = 37;
+  const travel = (from: { x: number; y: number }, to: { x: number; y: number }, cls: string, key: string) => {
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const len = Math.hypot(dx, dy) || 1;
@@ -788,20 +851,43 @@ function MainnetRelayFlow({
     const sy = from.y + (dy / len) * R;
     const ex = to.x - (dx / len) * R;
     const ey = to.y - (dy / len) * R;
-    return <span key={key} className={cls} style={{ left: sx, top: sy, '--dx': `${ex - sx}px`, '--dy': `${ey - sy}px`, ...(delay ? { animationDelay: `${delay}s` } : {}) } as CSSProperties} />;
+    return <span key={key} className={cls} style={{ left: sx, top: sy, '--dx': `${ex - sx}px`, '--dy': `${ey - sy}px` } as CSSProperties} />;
   };
+
+  const upgraded = relayLit >= 0; // 7702-upgraded by the time it sponsors the relay
   return (
     <>
-      {/* MONEY on the cast leg moves strictly LEFT→RIGHT at its true beat (the x402 toll is the
-          testnet PaymentFlow's 你→终裁 coin, rendered separately):
-            Burner→1Shot = the USDC relay fee (cyan), when the relay hop lights
-            1Shot→Board  = the ETH gas 1Shot fronts (violet hexagon), when the cast lands.
-          The 终裁→Burner bundle handoff is carried by the scope chip — it is not money. */}
-      {paced && relayLit >= 1 && travel(g.burner, g.oneShot, 'relay-coin cyan', `fee-${epoch}`)}
-      {paced && relayLit >= 2 && travel(g.oneShot, g.board, 'relay-fuel', `eth-${epoch}`)}
-      {/* the gas-abstraction label, tucked UNDER the 1Shot→VoteBoard beam; glows as the ETH pulse fires */}
-      <div className={`relay-gas-label${relayLit >= 2 ? ' firing' : ''}`} style={{ left: g.gasMid.x, top: g.gasMid.y + 24 }}>
+      {/* x402 toll: Burner → 终裁 (3D gold coin, rising), deposit ring at the seller */}
+      <div ref={coinRef} className="pay-coin" style={{ opacity: 0 }}>
+        <div className="pay-coin-face" />
+      </div>
+      {ring && !killed && <span key="mn-x402-ring" className="pay-ring" style={{ left: g.synth.x, top: g.synth.y + 20 }} />}
+      {/* 1Shot relay fee: Burner → 1Shot (cyan, rising right); ETH gas: 1Shot → VoteBoard (violet) */}
+      {paced && relayLit >= 0 && travel(g.burner, g.oneShot, 'relay-coin cyan', `fee-${epoch}`)}
+      {paced && relayLit >= 1 && travel(g.oneShot, g.board, 'relay-fuel', `eth-${epoch}`)}
+      <div className={`relay-gas-label${relayLit >= 1 ? ' firing' : ''}`} style={{ left: g.gasMid.x, top: g.gasMid.y + 24 }}>
         <Fuel size={9} /> {t.relayGasLabel}
+      </div>
+
+      {/* the agent wallet — a floating Burner node below the axis, the source of both fees */}
+      <div className={`burner-wallet${killed ? ' killed' : ''}`} style={{ left: g.burner.x, top: g.burner.y }}>
+        {upgraded && !killed && <span aria-hidden className="burner-wallet-ring" />}
+        <span className={`burner-wallet-disc${upgraded && !killed ? ' on' : ''}`}>
+          <Cpu size={15} />
+        </span>
+        <span className="burner-wallet-meta">
+          <span className="burner-wallet-name">{t.burnerNode.who}</span>
+          {burnerAddr ? (
+            <a className="burner-wallet-addr" href={`${basescan}/address/${burnerAddr}`} target="_blank" rel="noreferrer">
+              {shortHex(burnerAddr, 4)} ↗
+            </a>
+          ) : null}
+          <span className="burner-wallet-chip">0 ETH</span>
+        </span>
+        <span className="mc-node-tip" role="tooltip">
+          <span className="mc-node-tip-k">{t.burnerNode.who}</span>
+          {t.nodeTips.burner}
+        </span>
       </div>
     </>
   );
@@ -862,7 +948,6 @@ export function AuthorityChain({
   const youRef = useRef<HTMLDivElement>(null);
   const orchRef = useRef<HTMLDivElement>(null);
   const synthRef = useRef<HTMLDivElement>(null);
-  const burnerRef = useRef<HTMLDivElement>(null);
   const oneShotRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const lensRefs = useMemo<DivRef[]>(() => LENSES.map(() => ({ current: null })), []);
@@ -884,13 +969,14 @@ export function AuthorityChain({
   const beamLive = (target: string) => effIdx >= idxOf(target);
   const nodeLit = (target: string) => litIdx >= idxOf(target);
 
-  // Mainnet cast leg: once the vote is cast, the relayed hops light one-by-one (终裁 → Burner → 1Shot →
-  // VoteBoard) instead of all at once. relayLit 0=Burner, 1=1Shot, 2=VoteBoard reached.
-  const relayTarget = oneShot && beamLive('voted') ? 2 : -1;
+  // Mainnet cast leg: the relayed hops light one-by-one (终裁 → 1Shot → VoteBoard); the Burner is now
+  // a floating agent wallet off the axis (it sponsors the fee, it is not a cast-leg hop). relayLit
+  // 0 = 1Shot lit, 1 = VoteBoard reached.
+  const relayTarget = oneShot && beamLive('voted') ? 1 : -1;
   const relayLit = useRatchet(relayTarget, RELAY_STAGGER_MS, killed || !!instant);
   // receipts pop when their paying coin LANDS (~1.1s flight), not when it launches
   const tollLanded = useLanded(nodeLit('decided'), 1100);
-  const castLanded = useLanded(relayLit >= 2, 1100);
+  const castLanded = useLanded(relayLit >= 1, 1100);
   // On the testnet leg (no relay nodes), the single cast beam still lights at 'voted' as before.
   const castBeamLive = (hop: number) => (oneShot ? relayLit >= hop : beamLive('voted'));
 
@@ -905,13 +991,11 @@ export function AuthorityChain({
   // narrowed → adjudicated → signed (7710 bundle) → relaying → voted.
   const chipPos: ChipPos =
     oneShot && beamLive('voted')
-      ? relayLit >= 2
+      ? relayLit >= 1
         ? 'board'
-        : relayLit >= 1
+        : relayLit >= 0
           ? 'oneShot'
-          : relayLit >= 0
-            ? 'burner'
-            : 'synth'
+          : 'synth'
       : beamLive('voted')
         ? 'board'
         : beamLive('decided')
@@ -980,40 +1064,21 @@ export function AuthorityChain({
         killed={killed}
         tip={t.nodeTips.synthesis}
       />
-      {/* the 1Shot relay leg (mainnet only): the Arbiter's decision is cast by a 7702-upgraded BURNER
-          whose 7710 bundle is relayed through 1Shot — gas paid by the relayer, fees paid in USDC. */}
+      {/* the 1Shot relay node (mainnet only): the analyst's 7710 bundle is relayed through 1Shot —
+          gas fronted by the relayer, fees paid in USDC by the off-axis Burner agent wallet. */}
       {oneShot && (
-        <>
-          <ChainNode
-            nodeRef={burnerRef}
-            icon={Cpu}
-            who={t.burnerNode.who}
-            role={t.burnerNode.role}
-            addr={parties.burner}
-            basescan={bs}
-            badge="0 ETH"
-            active={relayLit >= 0}
-            working={relayLit === 0}
-            upgrade={relayLit === 0}
-            idle={relayLit >= 2}
-            tone="info"
-            floatBelow
-            killed={killed}
-            tip={t.nodeTips.burner}
-          />
-          <ChainNode
-            nodeRef={oneShotRef}
-            icon={Rocket}
-            who="1Shot"
-            role={t.oneShotNodeRole}
-            active={relayLit >= 1}
-            working={relayLit === 1}
-            tone="info"
-            floatBelow
-            killed={killed}
-            tip={t.nodeTips.oneShot}
-          />
-        </>
+        <ChainNode
+          nodeRef={oneShotRef}
+          icon={Rocket}
+          who="1Shot"
+          role={t.oneShotNodeRole}
+          active={relayLit >= 0}
+          working={relayLit === 0}
+          tone="info"
+          floatBelow
+          killed={killed}
+          tip={t.nodeTips.oneShot}
+        />
       )}
       <ChainNode nodeRef={boardRef} icon={Boxes} who={t.nodes.board.who} role={t.nodes.board.role} addr={parties.board} basescan={bs} active={connected} board tone={boardTone} floatBelow pips={pips} tip={t.nodeTips.board} />
 
@@ -1039,11 +1104,10 @@ export function AuthorityChain({
       {/* the cast leg: Arbiter → VoteBoard, routed through the Burner + 1Shot relay on the mainnet path */}
       {oneShot ? (
         <>
-          {/* packet OFF: the MainnetRelayFlow coins (bundle/fee/gas) are the cast leg's travelling
-              lights — one per segment, launching only when ITS hop lights, landing before the next. */}
-          <Beam container={containerRef} from={synthRef} to={burnerRef} live={castBeamLive(0)} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} packet={false}  flowing={!instant} />
-          <Beam container={containerRef} from={burnerRef} to={oneShotRef} live={castBeamLive(1)} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} packet={false}  flowing={!instant} />
-          <Beam container={containerRef} from={oneShotRef} to={boardRef} live={castBeamLive(2)} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} packet={false}  flowing={!instant} />
+          {/* packet OFF: the cast leg is 终裁 → 1Shot → VoteBoard; the off-axis Burner wallet supplies
+              the fee coins. Each beam lights on its hop (relayLit 0 → 1). */}
+          <Beam container={containerRef} from={synthRef} to={oneShotRef} live={castBeamLive(0)} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} packet={false} flowing={!instant} />
+          <Beam container={containerRef} from={oneShotRef} to={boardRef} live={castBeamLive(1)} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)} packet={false} flowing={!instant} />
         </>
       ) : (
         <Beam container={containerRef} from={synthRef} to={boardRef} live={beamLive('voted')} killed={killed} cutting={cutting} tone={decisionToneKey(synthDecision)}  flowing={!instant} />
@@ -1055,7 +1119,7 @@ export function AuthorityChain({
           youRef={youRef}
           orchRef={orchRef}
           synthRef={synthRef}
-          burnerRef={oneShot ? burnerRef : undefined}
+          burnerRef={undefined}
           oneShotRef={oneShot ? oneShotRef : undefined}
           boardRef={boardRef}
           pos={chipPos}
@@ -1086,14 +1150,11 @@ export function AuthorityChain({
           relayer covers ETH gas, and two real receipt ticks link the x402 toll + the 1Shot castVote. */}
       {oneShot && relay && (
         <>
-          {/* the SAME payment vocabulary as the testnet: wallets on 你 + 终裁, the 3D toll coin arcing
-              你→终裁 (strictly left→right), the Venice enclave + synthesis query. The coin shows the
-              PRODUCT story — the user's authorized x402 budget paying the data source — consistent
-              across both networks. On-chain the recorded mainnet buyer is the deployed burner SA
-              (a counterfactual user SA can't sign a standalone redeem); the x402 panel + EVIDENCE
-              carry that exact buyer address for verification. */}
-          <PaymentFlow container={containerRef} youRef={youRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} decidedLit={nodeLit('decided')} live={!instant} killed={killed} veniceTip={t.nodeTips.venice} />
-          <MainnetRelayFlow container={containerRef} burnerRef={burnerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} relayLit={relayLit} paced={!instant && !killed} relay={relay} t={t} />
+          {/* PaymentFlow draws ONLY the Venice enclave + node + synthesis query on mainnet (showCoin
+              off): the x402 coin is supplied by the off-axis Burner agent wallet in MainnetRelayFlow,
+              where buyer = the real on-chain burner SA, fees rising to their payees (no backflow). */}
+          <PaymentFlow container={containerRef} youRef={youRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} decidedLit={nodeLit('decided')} live={!instant} killed={killed} veniceTip={t.nodeTips.venice} showCoin={false} />
+          <MainnetRelayFlow container={containerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} relayLit={relayLit} decidedLit={nodeLit('decided')} paced={!instant && !killed} relay={relay} burnerAddr={parties.burner} basescan={bs ?? BASESCAN} killed={killed} t={t} />
           {/* receipts pop at their causal beats during a paced replay (toll paid → 终裁 tick;
               cast confirmed → 1Shot tick); at rest / on snap they show immediately */}
           {relay.tollTx && (instant || tollLanded) && <ReceiptTick container={containerRef} nodeRef={synthRef} txHash={relay.tollTx} basescan={relay.basescan} title="x402 toll ↗" />}
