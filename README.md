@@ -116,6 +116,34 @@ The orchestrator→analyst hop is not decoration — remove `parentDelegation` a
   so one `disableDelegation(root)` revokes every downstream agent at once — that's Recall. With N
   flat grants you'd be hunting down N separate revocations while a rogue agent keeps voting.
 
+## 🔭 Testnet vs mainnet — two networks, two jobs
+
+<div align="center">
+
+<img src="docs/assets/demo-testnet.gif" width="880" alt="A live Base-Sepolia vote under the standing mandate: one click, no new signature — re-delegation, Venice TEE committee, x402 toll, on-chain cast">
+
+<sub>A <b>live Base-Sepolia</b> vote under a standing mandate, recorded as it ran: one click, <b>no new
+signature</b> — attenuated re-delegation → the Venice TEE committee deliberates → the x402 toll settles
+(receipt stamps on the Arbiter) → the vote lands on the VoteBoard.</sub>
+
+</div>
+
+The app ships both networks deliberately — they answer different questions:
+
+| | **Base Sepolia** (default) | **Base mainnet** |
+|---|---|---|
+| What it is | The **live, interactive demo** — connect MetaMask, grant, watch each vote run, Recall anytime | An **honest replay** of a real recorded run, plus a live `eth_getCode` 7702 check; execution stays CLI opt-in (`pnpm 1shot:full --mainnet`) |
+| Delegation chain | 2-hop: you → orchestrator → analyst (standing: any proposal · ≤N votes · expiry) | 3-hop: user → orchestrator → analyst → **1Shot target**, the leaf locked to exactly `castVote(proposal, decidedSupport)` |
+| Who casts · who pays gas | the analyst redeems the chain and pays **testnet ETH** (free faucet) | the **1Shot relayer** redeems — **nobody holds ETH**: the burner sponsors the fee in USDC, 1Shot fronts the real gas |
+| x402 toll | 1 **mUSDC** (our 6-dec mock) per query, pulled from the budget **you** signed at grant | 0.001 **real USDC**, paid by the deployed agent wallet (the burner) |
+| EIP-7702 | not used — Hybrid (ERC-4337) smart accounts, so no 7702 chip | the voter EOA upgrades **in-place inside the cast relay call**; the 7702 chip lights at that beat |
+| Recall | ✅ one click, live (keyless UserOp) | recorded evidence; reproduce live on Sepolia |
+| Why it exists | judges can **drive every mechanic, free, in minutes** | proof the same mechanism survives **real-money conditions** |
+
+Same product, same code path up to the cast: the testnet proves you can *touch* it; the mainnet proves
+it's *real*. (Tip: open `localhost:3000/?run=<runId>` to watch any orchestrator run live in the cockpit —
+the CLI verify scripts print the id.)
+
 ## 🌐 Deployed contracts
 
 **Base Sepolia (84532)** — the live demo:
