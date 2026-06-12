@@ -1089,7 +1089,9 @@ export function AuthorityChain({
   const bs = relay?.basescan;
 
   return (
-    <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center' }}>
+    // mainnet: the absolutely-positioned Burner satellite hangs deeper than the main-node labels —
+    // pad the container bottom so its retired chip clears the TeeConsole that flows below.
+    <div className={`chain${killed ? ' killed' : ''}`} ref={containerRef} style={{ width: '100%', maxWidth: 1120, alignItems: 'center', paddingBottom: oneShot ? 44 : undefined }}>
       <ChainNode nodeRef={youRef} icon={User} who={t.nodes.you.who} role={t.nodes.you.role} addr={parties.you} basescan={bs} active={connected} floatBelow killed={killed} tip={t.nodeTips.you} />
       <ChainNode nodeRef={orchRef} icon={Bot} who={t.nodes.orch.who} role={t.nodes.orch.role} addr={parties.orch} basescan={bs} active={nodeLit('redelegated')} working={orchWorking} floatBelow killed={killed} tip={t.nodeTips.orch} />
 
