@@ -445,6 +445,7 @@ function PaymentFlow({
   killed,
   veniceTip,
   showCoin = true,
+  midRef,
 }: {
   container: DivRef;
   youRef: DivRef;
@@ -463,6 +464,9 @@ function PaymentFlow({
   /** draw the user->seller wallets + 3D coin. OFF on mainnet, where the off-axis Burner wallet pays,
    *  so PaymentFlow contributes only the Venice enclave + node + synthesis query. */
   showCoin?: boolean;
+  /** optional second anchor: when set (mainnet → the 1Shot node), the Venice satellite docks at the
+   *  终裁↔anchor midpoint column — the exact mirror of the Burner wallet below the axis. */
+  midRef?: DivRef;
 }) {
   const reduce = useReducedMotion();
   const coinRef = useRef<HTMLDivElement>(null);
@@ -506,10 +510,12 @@ function PaymentFlow({
       const ex1 = Math.max(...lensRects.map((r) => r.right)) - cr.left + PAD;
       const ey1 = Math.max(...lensRects.map((r) => r.bottom)) - cr.top + PAD;
       const enclave = { x: ex0, y: ey0, w: ex1 - ex0, h: ey1 - ey0 };
-      // the Venice AI node sits at 终裁's upper-right — in the open 终裁→VoteBoard span, above the spine
+      // the Venice AI node sits at 终裁's upper-right — in the open span right of 终裁, above the spine
       // beam and clear of the fan-in (which all arrives on 终裁's left) and the TeeConsole below. The box
-      // stays its TEE (committee runs inside); 终裁 taps up-right to it.
-      const venice: PayPoint = { x: synthC.x + 78, y: synthC.y - 72 };
+      // stays its TEE (committee runs inside); 终裁 taps up-right to it. With a second anchor (mainnet →
+      // the 1Shot node) it docks at the exact 终裁↔1Shot midpoint, mirroring the Burner wallet below.
+      const midC = midRef?.current ? center(midRef.current.getBoundingClientRect()) : undefined;
+      const venice: PayPoint = { x: midC ? (synthC.x + midC.x) / 2 : synthC.x + 78, y: synthC.y - 72 };
       const synthSeg: PaySeg = {
         from: along(synthC, venice, rad(synthRef.current!.getBoundingClientRect()) + 4),
         to: along(venice, synthC, 19),
@@ -532,7 +538,7 @@ function PaymentFlow({
       ro.disconnect();
       window.removeEventListener('resize', compute);
     };
-  }, [container, youRef, synthRef, lensRefs]);
+  }, [container, youRef, synthRef, lensRefs, midRef]);
 
   // reset the one-shot ratchet when the run rewinds (a fresh vote) or the chain is severed
   useEffect(() => {
@@ -788,10 +794,10 @@ function MainnetRelayFlow({
       const synth = c(synthRef.current);
       const oneShot = c(oneShotRef.current);
       const board = c(boardRef.current);
-      // wallet BELOW the axis, the EXACT mirror of the Venice satellite above: same column
-      // (synth.x + 78) and the same vertical offset (Venice −72 / burner +72). Both fees rise to
-      // their payee (x402 up-left to 终裁, relay fee up-right to 1Shot): supply, never a backflow.
-      const burner = { x: synth.x + 78, y: synth.y + 72 };
+      // wallet BELOW the axis at the exact 终裁↔1Shot midpoint, the mirror of the Venice satellite
+      // above (−72 / +72, same column — PaymentFlow gets midRef on mainnet). Both fees rise to their
+      // payee (x402 up-left to 终裁, relay fee up-right to 1Shot): supply, never a backflow.
+      const burner = { x: (synth.x + oneShot.x) / 2, y: synth.y + 72 };
       setG({
         w: cr.width,
         h: cr.height,
@@ -1220,7 +1226,7 @@ export function AuthorityChain({
           {/* PaymentFlow draws ONLY the Venice enclave + node + synthesis query on mainnet (showCoin
               off): the x402 coin is supplied by the off-axis Burner agent wallet in MainnetRelayFlow,
               where buyer = the real on-chain burner SA, fees rising to their payees (no backflow). */}
-          <PaymentFlow container={containerRef} youRef={youRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} decidedLit={nodeLit('decided')} live={!instant} killed={killed} veniceTip={t.nodeTips.venice} showCoin={false} />
+          <PaymentFlow container={containerRef} youRef={youRef} synthRef={synthRef} lensRefs={lensRefs} active={lensLit >= 0} decidedLit={nodeLit('decided')} live={!instant} killed={killed} veniceTip={t.nodeTips.venice} showCoin={false} midRef={oneShotRef} />
           <MainnetRelayFlow container={containerRef} synthRef={synthRef} oneShotRef={oneShotRef} boardRef={boardRef} relayLit={relayLit} decidedLit={nodeLit('decided')} paced={!instant && !killed} relay={relay} burnerAddr={parties.burner} basescan={bs ?? BASESCAN} killed={killed} t={t} />
           {/* receipts pop at their causal beats during a paced replay (toll paid → 终裁 tick;
               cast confirmed → 1Shot tick); at rest / on snap they show immediately */}
