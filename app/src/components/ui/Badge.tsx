@@ -14,7 +14,7 @@ const badge = cva(
         warn: 'border-warn/35 bg-warn/12 text-warn',
         bad: 'border-bad/35 bg-bad/12 text-bad',
         info: 'border-info/35 bg-info/12 text-info',
-        eth: 'border-[#627eea]/40 bg-[#627eea]/12 text-[#8aa0f0]',
+        eth: 'border-eth/40 bg-eth/12 text-eth',
       },
     },
     defaultVariants: { tone: 'neutral' },
@@ -52,7 +52,14 @@ export function StatusDot({
   const c = DOT_BG[tone];
   return (
     <span className={cn('relative inline-flex size-2.5', className)}>
-      {pulse && <span className={cn('absolute inline-flex size-full rounded-full opacity-60 motion-safe:animate-ping', c)} />}
+      {pulse && (
+        <span
+          className={cn(
+            'absolute inline-flex size-full rounded-full opacity-60 motion-safe:animate-ping',
+            c,
+          )}
+        />
+      )}
       <span className={cn('relative inline-flex size-2.5 rounded-full', c)} />
     </span>
   );
@@ -66,7 +73,7 @@ const trackTag = cva(
       tone: {
         brand: 'border-brand/40 bg-brand/10 text-brand',
         info: 'border-info/40 bg-info/10 text-info',
-        eth: 'border-[#627eea]/40 bg-[#627eea]/10 text-[#8aa0f0]',
+        eth: 'border-eth/40 bg-eth/10 text-eth',
         ok: 'border-ok/40 bg-ok/10 text-ok',
       },
     },
@@ -78,7 +85,10 @@ export function TrackTag({
   tone,
   icon: Icon,
   children,
-}: VariantProps<typeof trackTag> & { icon?: ComponentType<{ className?: string }>; children: ReactNode }) {
+}: VariantProps<typeof trackTag> & {
+  icon?: ComponentType<{ className?: string }>;
+  children: ReactNode;
+}) {
   return (
     <span className={trackTag({ tone })}>
       {Icon && <Icon className="size-3" />}

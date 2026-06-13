@@ -3,7 +3,12 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { Address } from 'viem';
 import { Activity, Coins, Vote, Wallet } from 'lucide-react';
-import { VOTE_BOARD_ADDRESS, type DaoProposal, type Delegation, type RunStatus } from '@mandate/shared';
+import {
+  VOTE_BOARD_ADDRESS,
+  type DaoProposal,
+  type Delegation,
+  type RunStatus,
+} from '@mandate/shared';
 import type { DemoConfig } from '../lib/orchestrator';
 import type { SmartAccount } from '../lib/wallet';
 import type { Dict, Lang } from '../lib/i18n';
@@ -11,7 +16,12 @@ import { ORDER, reached } from '../lib/runState';
 import { useRatchet } from '../lib/useRatchet';
 import { sfxCoin, sfxTick, sfxVote } from '../lib/sfx';
 import { DEFAULT_QUERY_BUDGET } from '../lib/x402-toll';
-import { decisionToSupport, useLiveTally, withOptimisticVote, type TallySource } from '../lib/useLiveTally';
+import {
+  decisionToSupport,
+  useLiveTally,
+  withOptimisticVote,
+  type TallySource,
+} from '../lib/useLiveTally';
 import { ErrorToast } from './panels/ErrorToast';
 import { type VoteRecord } from './panels/VoteLog';
 import { NetworkField } from './mission/NetworkField';
@@ -235,7 +245,14 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
       <NetworkField />
       <div className="mc-spotlight" aria-hidden="true" />
 
-      <TopBar lang={vm.lang} toggleLang={vm.toggleLang} t={t} network={vm.network} toggleNetwork={vm.toggleNetwork} mainnetAvailable={vm.mainnetAvailable} />
+      <TopBar
+        lang={vm.lang}
+        toggleLang={vm.toggleLang}
+        t={t}
+        network={vm.network}
+        toggleNetwork={vm.toggleNetwork}
+        mainnetAvailable={vm.mainnetAvailable}
+      />
       <IconRail items={rail} active={panel} onSelect={toggle} />
 
       <main className="mc-center hud-scroll">
@@ -252,7 +269,13 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
         <div ref={vm.graphStageRef} className="flex w-full justify-center">
           <AuthorityChain
             t={t}
-            parties={{ you: vm.youAddr, orch: vm.orchAddr, analyst: vm.analystAddr, board: vm.boardAddr ?? VOTE_BOARD_ADDRESS, burner: vm.burnerAddr }}
+            parties={{
+              you: vm.youAddr,
+              orch: vm.orchAddr,
+              analyst: vm.analystAddr,
+              board: vm.boardAddr ?? VOTE_BOARD_ADDRESS,
+              burner: vm.burnerAddr,
+            }}
             shownIdx={revealIdx}
             instant={!liveRun}
             status={sEff}
@@ -263,7 +286,9 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
             lenses={vm.runOnActive ? vm.lenses : undefined}
             synthDecision={vm.runOnActive ? vm.venice?.decision : undefined}
             votedHere={youVotedHere}
-            paymentCap={vm.grantRunId ? (vm.boundMode === 'days' ? DEFAULT_QUERY_BUDGET : vm.maxVotes) : 0}
+            paymentCap={
+              vm.grantRunId ? (vm.boundMode === 'days' ? DEFAULT_QUERY_BUDGET : vm.maxVotes) : 0
+            }
             tollSettled={!!vm.run?.toll && youVotedHere && !vm.killed}
             tollTxHash={vm.run?.toll?.txHash}
             oneShot={vm.replayMode}
@@ -271,11 +296,29 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
           />
         </div>
 
-        <TeeConsole venice={vm.runOnActive ? vm.venice : undefined} status={sEff} stageIdx={revealIdx} lenses={vm.runOnActive ? vm.lenses : undefined} txHash={vm.runOnActive ? vm.run?.vote?.txHash : undefined} basescan={vm.relayInfo?.basescan} audioSrc={verdictAudioSrc(vm)} killed={vm.killed} t={t} />
+        <TeeConsole
+          venice={vm.runOnActive ? vm.venice : undefined}
+          status={sEff}
+          stageIdx={revealIdx}
+          lenses={vm.runOnActive ? vm.lenses : undefined}
+          txHash={vm.runOnActive ? vm.run?.vote?.txHash : undefined}
+          basescan={vm.relayInfo?.basescan}
+          audioSrc={verdictAudioSrc(vm)}
+          killed={vm.killed}
+          t={t}
+        />
 
         <ScopeBlock vm={vm} />
 
-        <CapabilityDock t={t} onOpen={setPanel} connected={vm.isConnected} revealIdx={revealIdx} killed={vm.killed} x402Settled={x402Settled} mainnet={vm.replayMode} />
+        <CapabilityDock
+          t={t}
+          onOpen={setPanel}
+          connected={vm.isConnected}
+          revealIdx={revealIdx}
+          killed={vm.killed}
+          x402Settled={x402Settled}
+          mainnet={vm.replayMode}
+        />
 
         {/* mainnet replay: the full 1Shot relay detail inline (relay lifecycle + live 7702 check + proof wall) */}
         {vm.replayMode && (
@@ -285,11 +328,22 @@ export function MissionControl({ vm }: { vm: MissionVM }) {
         )}
       </main>
 
-      <Popover side="right" open={!!panel} anchorTop={anchorTop} title={panel ? t.panels[panel] : ''} icon={activeItem?.icon} onClose={() => setPanel(null)}>
+      <Popover
+        side="right"
+        open={!!panel}
+        anchorTop={anchorTop}
+        title={panel ? t.panels[panel] : ''}
+        icon={activeItem?.icon}
+        onClose={() => setPanel(null)}
+      >
         {panel && <PopoverBody panel={panel} vm={vm} tally={tally} voters={voters} live={live} />}
       </Popover>
 
-      <ErrorToast error={vm.error ? humanizeError(vm.error, t) : null} onClose={vm.clearError} dismissLabel={t.errDismiss} />
+      <ErrorToast
+        error={vm.error ? humanizeError(vm.error, t) : null}
+        onClose={vm.clearError}
+        dismissLabel={t.errDismiss}
+      />
     </div>
   );
 }

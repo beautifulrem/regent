@@ -33,8 +33,10 @@ const en = {
   errDismiss: 'Dismiss',
   hearVerdict: 'Hear the verdict',
   hearVerdictPlaying: 'Speaking…',
-  hearVerdictTitle: 'The arbiter reads its rationale aloud — Venice /audio/speech (a second Venice modality)',
-  connectHint: 'Connect any wallet. Your MetaMask Smart Account is auto-deployed so your agent can join the vote.',
+  hearVerdictTitle:
+    'The arbiter reads its rationale aloud — Venice /audio/speech (a second Venice modality)',
+  connectHint:
+    'Connect any wallet. Your MetaMask Smart Account is auto-deployed so your agent can join the vote.',
   saHeadline: 'MetaMask Smart Account (ERC-4337 · Hybrid)',
   eoaSubline: 'signer EOA · {address}',
   sigCaption: 'signs via userSA.signDelegation (EIP-712)',
@@ -55,7 +57,8 @@ const en = {
   tamperProbeRevertDead: '✗ reverts · mandate no longer valid',
   tamperProbeFallback: 'cached fallback',
   executedBanner: 'Cast as your Smart Account {address}',
-  executedSubtext: 'The on-chain voter is you, not the AI. The agent just pressed the button on your behalf.',
+  executedSubtext:
+    'The on-chain voter is you, not the AI. The agent just pressed the button on your behalf.',
   executedMethod: 'via DelegationManager.redeemDelegations(leaf→root)',
   viewTx: 'view tx',
 
@@ -81,24 +84,39 @@ const en = {
   nodeTips: {
     you: 'Your MetaMask smart account. It signs a single ERC-7710 delegation that is vote-only, capped and expiring, and Recall can kill the whole chain at any time.',
     orch: 'Agent #1. It holds your root delegation and re-delegates a narrower scope to the analyst. A child grant can only shrink authority, never grow it.',
-    fiscal: 'TEE lens 1 of 4. Audits budget discipline: spend size, payout structure, treasury impact.',
+    fiscal:
+      'TEE lens 1 of 4. Audits budget discipline: spend size, payout structure, treasury impact.',
     growth: 'TEE lens 2 of 4. Weighs ecosystem upside: builder value, adoption, long-term growth.',
     security: 'TEE lens 3 of 4. Hunts risk: attack surface, accountability gaps, fund safety.',
-    participation: 'TEE lens 4 of 4. Checks governance health: community access, transparency, precedent.',
-    synthesis: 'Agent #2, the analyst. It weighs the four lens verdicts inside the Venice TEE and rules For, Against or Abstain. That ruling is exactly what gets cast on-chain.',
-    burner: 'A throwaway relay account — its own independent key, self-upgraded in place to a smart account via EIP-7702 (same address, NOT derived from you). Holds 0 ETH, pays every fee in USDC; once the vote lands its key is retired — abandoned off-chain, not destroyed on-chain.',
-    oneShot: 'The 1Shot permissionless relayer. It fronts the real ETH gas, broadcasts the castVote bundle on Base mainnet, and is repaid in USDC.',
-    board: 'The on-chain board that tallies every vote. The AI casts here as your smart account, and any wallet can join the same proposal.',
-    venice: 'Venice AI: private inference inside an Intel TDX enclave with verified attestation. It can even speak the verdict via /audio/speech.',
+    participation:
+      'TEE lens 4 of 4. Checks governance health: community access, transparency, precedent.',
+    synthesis:
+      'Agent #2, the analyst. It weighs the four lens verdicts inside the Venice TEE and rules For, Against or Abstain. That ruling is exactly what gets cast on-chain.',
+    burner:
+      'A throwaway relay account — its own independent key, self-upgraded in place to a smart account via EIP-7702 (same address, NOT derived from you). Holds 0 ETH, pays every fee in USDC; once the vote lands its key is retired — abandoned off-chain, not destroyed on-chain.',
+    oneShot:
+      'The 1Shot permissionless relayer. It fronts the real ETH gas, broadcasts the castVote bundle on Base mainnet, and is repaid in USDC.',
+    board:
+      'The on-chain board that tallies every vote. The AI casts here as your smart account, and any wallet can join the same proposal.',
+    venice:
+      'Venice AI: private inference inside an Intel TDX enclave with verified attestation. It can even speak the verdict via /audio/speech.',
   },
   burnerNode: { who: 'Burner', role: 'fee sponsor' },
-  panels: { wallet: 'Smart Account', tally: 'DAO tally', x402: 'x402 toll gate', oneshot: '1Shot relay', run: 'Run detail' },
+  panels: {
+    wallet: 'Smart Account',
+    tally: 'DAO tally',
+    x402: 'x402 toll gate',
+    oneshot: '1Shot relay',
+    run: 'Run detail',
+  },
   capOneShot: 'mainnet relay · instant',
   capOneShotTestnet: 'mainnet only',
   trackTips: {
     '4337': 'Your MetaMask Smart Account (ERC-4337) signs and redeems the delegation for you.',
-    '7710': "ERC-7710 scoped permission: vote-only, can't move funds, revocable, enforced on-chain.",
-    '7702': 'EIP-7702 in-place upgrade: the voter EOA becomes a smart account inside the SAME 1Shot relay call that casts its vote; the burner fee sponsor is a 7702 account too.',
+    '7710':
+      "ERC-7710 scoped permission: vote-only, can't move funds, revocable, enforced on-chain.",
+    '7702':
+      'EIP-7702 in-place upgrade: the voter EOA becomes a smart account inside the SAME 1Shot relay call that casts its vote; the burner fee sponsor is a 7702 account too.',
     A2A: 'Agent-to-agent re-delegation: the orchestrator attenuates the scope, then re-delegates it to the analyst.',
     TEE: 'Venice sealed enclave (Intel TDX): private reasoning + remote attestation + per-response signature.',
   },
@@ -127,8 +145,17 @@ const en = {
   boundModeDays: 'Time',
   boundModeBoth: 'Both',
   mandateStats: { votes: 'Vote budget', validity: 'Valid for', authority: 'Authority' },
-  presets: { label: 'Voting stance', default: 'Default', fiscal: 'Fiscal', growth: 'Growth', security: 'Security', participation: 'Access', actingAs: 'acting as' },
-  revokedRejected: 'Revoke worked. The agent tried to vote again, but the redemption was rejected on-chain. That is the kill-switch.',
+  presets: {
+    label: 'Voting stance',
+    default: 'Default',
+    fiscal: 'Fiscal',
+    growth: 'Growth',
+    security: 'Security',
+    participation: 'Access',
+    actingAs: 'acting as',
+  },
+  revokedRejected:
+    'Revoke worked. The agent tried to vote again, but the redemption was rejected on-chain. That is the kill-switch.',
   voteRejected: 'Vote rejected on-chain (revoked)',
   signing: 'Signing…',
 
@@ -140,7 +167,8 @@ const en = {
     'Vote cast on Base',
   ],
   teeAttested: 'TEE attested ✓',
-  teeAttestExplain: 'Intel TDX confidential compute enclave. Remote attestation verified by Venice. Nonce binds this exact run; the signing address (below) is the attested TEE key that produced the verdict.',
+  teeAttestExplain:
+    'Intel TDX confidential compute enclave. Remote attestation verified by Venice. Nonce binds this exact run; the signing address (below) is the attested TEE key that produced the verdict.',
   teeLensMore: 'click for full TEE detail',
   castVoteTx: 'castVote tx',
   rootHash: 'Root delegation hash',
@@ -172,11 +200,13 @@ const en = {
   oneShotMechFee: 'relay fee · 1Shot',
   oneShotMechGas: 'gas from burner',
   oneShotMechGasAmt: '0 ETH ✓',
-  oneShotMechNote: '1Shot fronts the real ETH gas (357,994 gas); the burner never spends a wei of ETH and repays the relay in USDC.',
+  oneShotMechNote:
+    '1Shot fronts the real ETH gas (357,994 gas); the burner never spends a wei of ETH and repays the relay in USDC.',
   oneShotX402Tx: 'x402 toll',
   netSepolia: 'Base Sepolia',
   netMainnet: 'Base Mainnet · replay',
-  mainnetReplayNote: 'Replay of a real Base-mainnet run: the Venice-decided vote was relayed through 1Shot (7702 + 7710) onto the on-chain VoteBoard. Live tally below.',
+  mainnetReplayNote:
+    'Replay of a real Base-mainnet run: the Venice-decided vote was relayed through 1Shot (7702 + 7710) onto the on-chain VoteBoard. Live tally below.',
   proofVote: '1Shot vote',
   proofBurner: '7702 burner',
   oneShotNodeRole: 'relay · gas in USDC',
@@ -200,39 +230,53 @@ const en = {
   oneShotRelayDesc: {
     pending: 'The signed 7710 bundle is handed to the 1Shot relayer (eth_sendRawTransaction).',
     submitted: 'The relayer broadcasts it to Base mainnet and returns the tx hash.',
-    confirmed: 'Mined in a block. The vote is cast and the USDC fee paid, while the burner holds zero ETH.',
+    confirmed:
+      'Mined in a block. The vote is cast and the USDC fee paid, while the burner holds zero ETH.',
   },
   x402: {
     title: 'x402 toll gate',
     hint: 'You pre-fund the AI a small mUSDC budget; its data feed pulls per query, settled by a scoped ERC-7710 delegation, not an open allowance. Your MVOTE voting power is never touched.',
     require: 'HTTP 402 · Payment Required',
     scopeTitle: 'Scoped payment delegation (ERC-7710)',
-    scopeNote: 'Erc20TransferAmount lets the seller pull AT MOST the cumulative budget, to itself, and nothing else. It can never drain you, and it can never touch your MVOTE.',
+    scopeNote:
+      'Erc20TransferAmount lets the seller pull AT MOST the cumulative budget, to itself, and nothing else. It can never drain you, and it can never touch your MVOTE.',
     perQuery: 'query',
     buyerYou: 'Your budget',
     seller: 'Data feed',
     spent: 'used',
-    budgetLine: '{spent} of {cap} queries used · total budget {budget} {symbol}, enforced on-chain by Erc20TransferAmount',
-    locked: 'Locked. Grant a mandate and let the AI complete one vote; the real x402 settlement + Venice data flow unlock then.',
+    budgetLine:
+      '{spent} of {cap} queries used · total budget {budget} {symbol}, enforced on-chain by Erc20TransferAmount',
+    locked:
+      'Locked. Grant a mandate and let the AI complete one vote; the real x402 settlement + Venice data flow unlock then.',
     lockedShort: 'unlocks after the first vote settles',
     sellerBalance: 'seller balance',
     settled: 'settled on-chain',
     liveRead: 'live on-chain',
-    result: 'Settled: the seller pulled EXACTLY 1 mUSDC through the scoped delegation. Nothing more was reachable. Its live balance below is the real proof; the feed then returns 200 + data.',
-    phases: { require: '402 Required', sign: 'Sign scope', settle: 'Seller redeems', data: '200 Data' },
+    result:
+      'Settled: the seller pulled EXACTLY 1 mUSDC through the scoped delegation. Nothing more was reachable. Its live balance below is the real proof; the feed then returns 200 + data.',
+    phases: {
+      require: '402 Required',
+      sign: 'Sign scope',
+      settle: 'Seller redeems',
+      data: '200 Data',
+    },
     phaseDesc: {
       require: 'The data feed answers the AI with 402. Pay before any data is served.',
       sign: 'At grant you signed a cumulative Erc20TransferAmount budget: at most N mUSDC, payable only to the seller.',
-      settle: 'The seller redeems it, pulling exactly 1 mUSDC from YOUR smart account, and nothing else.',
+      settle:
+        'The seller redeems it, pulling exactly 1 mUSDC from YOUR smart account, and nothing else.',
       data: 'Toll settled. The feed returns 200 with the requested context.',
     },
     buyerBurner: 'Burner budget',
-    hintMainnet: 'On mainnet the agent runs from a 7702 burner you pre-fund with a small USDC budget; its data feed pulls per query via a scoped ERC-7710 delegation, settled on Base mainnet. Your MVOTE voting power is never touched.',
-    resultMainnet: 'Settled on Base mainnet: the seller pulled EXACTLY 0.001 USDC through the scoped delegation. Nothing more was reachable. Its live balance below is the real on-chain proof; the feed then returns 200 + data.',
+    hintMainnet:
+      'On mainnet the agent runs from a 7702 burner you pre-fund with a small USDC budget; its data feed pulls per query via a scoped ERC-7710 delegation, settled on Base mainnet. Your MVOTE voting power is never touched.',
+    resultMainnet:
+      'Settled on Base mainnet: the seller pulled EXACTLY 0.001 USDC through the scoped delegation. Nothing more was reachable. Its live balance below is the real on-chain proof; the feed then returns 200 + data.',
     phaseDescMainnet: {
       require: 'The data feed answers the agent with 402. Pay before any data is served.',
       sign: 'The 7702 burner signed a cumulative Erc20TransferAmount budget: at most 0.1 USDC, payable only to the seller.',
-      settle: 'The seller redeems it on Base mainnet, pulling exactly 0.001 USDC from the burner, and nothing else.',
+      settle:
+        'The seller redeems it on Base mainnet, pulling exactly 0.001 USDC from the burner, and nothing else.',
       data: 'Toll settled on-chain. The feed returns 200 with the requested context.',
     },
   },
@@ -317,20 +361,31 @@ const zh: Dict = {
     growth: 'TEE 四视角之二。看生态收益：开发者价值、采用度、长期增长。',
     security: 'TEE 四视角之三。查风险：攻击面、问责缺口、资金安全。',
     participation: 'TEE 四视角之四。看治理健康：社区参与、透明度、先例。',
-    synthesis: '二号代理，即分析师。在 Venice TEE 内权衡四个视角的结论，裁定赞成、反对或弃权，这一裁决就是上链的那一票。',
-    burner: '一次性中继账户——独立的私钥，经 EIP-7702 原地自升级为智能账户（同地址，并非从你派生）。持有 0 ETH，所有费用用 USDC 支付；投票落地后该密钥即弃用——链下抛弃，并非链上销毁。',
-    oneShot: '1Shot 无许可中继。垫付真实的 ETH gas，在 Base 主网广播 castVote bundle，事后以 USDC 结算。',
+    synthesis:
+      '二号代理，即分析师。在 Venice TEE 内权衡四个视角的结论，裁定赞成、反对或弃权，这一裁决就是上链的那一票。',
+    burner:
+      '一次性中继账户——独立的私钥，经 EIP-7702 原地自升级为智能账户（同地址，并非从你派生）。持有 0 ETH，所有费用用 USDC 支付；投票落地后该密钥即弃用——链下抛弃，并非链上销毁。',
+    oneShot:
+      '1Shot 无许可中继。垫付真实的 ETH gas，在 Base 主网广播 castVote bundle，事后以 USDC 结算。',
     board: '链上投票板，记录每一票。AI 以你的智能账户身份在此投票，任何钱包都能加入同一提案。',
-    venice: 'Venice AI。在 Intel TDX 飞地内做私密推理，证明已验证，还能通过 /audio/speech 宣读裁决。',
+    venice:
+      'Venice AI。在 Intel TDX 飞地内做私密推理，证明已验证，还能通过 /audio/speech 宣读裁决。',
   },
   burnerNode: { who: 'Burner', role: '费用赞助' },
-  panels: { wallet: '智能账户', tally: 'DAO 计票', x402: 'x402 收费门', oneshot: '1Shot 中继', run: '运行详情' },
+  panels: {
+    wallet: '智能账户',
+    tally: 'DAO 计票',
+    x402: 'x402 收费门',
+    oneshot: '1Shot 中继',
+    run: '运行详情',
+  },
   capOneShot: '主网中继 · 即时',
   capOneShotTestnet: '仅主网',
   trackTips: {
     '4337': 'MetaMask 智能账户 (ERC-4337) 替你签署并兑付这份委托。',
     '7710': 'ERC-7710 受限权限:仅投票、不能动资金、可随时撤销、由链上强制。',
-    '7702': 'EIP-7702 原地升级:投票 EOA 在铸票的同一笔 1Shot 中继调用里直接变成智能账户;垫付费用的 Burner 也是 7702 账户。',
+    '7702':
+      'EIP-7702 原地升级:投票 EOA 在铸票的同一笔 1Shot 中继调用里直接变成智能账户;垫付费用的 Burner 也是 7702 账户。',
     A2A: 'Agent 间再委托:编排器先收窄权限,再转授给分析员去投票。',
     TEE: 'Venice 密封飞地 (Intel TDX):私密推理 + 远程证明 + 每条响应签名。',
   },
@@ -359,7 +414,15 @@ const zh: Dict = {
   boundModeDays: '天数',
   boundModeBoth: '两者',
   mandateStats: { votes: '投票额度', validity: '有效期', authority: '权限' },
-  presets: { label: '投票立场', default: '默认', fiscal: '财政', growth: '增长', security: '安全', participation: '参与', actingAs: '立场' },
+  presets: {
+    label: '投票立场',
+    default: '默认',
+    fiscal: '财政',
+    growth: '增长',
+    security: '安全',
+    participation: '参与',
+    actingAs: '立场',
+  },
   revokedRejected: '撤销生效。AI 想再投，但兑现被链上拒绝了。这正是斩断授权的意义。',
   voteRejected: '投票被链上拒绝(已撤销)',
   signing: '签名中…',
@@ -372,7 +435,8 @@ const zh: Dict = {
     '已在 Base 上投票',
   ],
   teeAttested: 'TEE 证明 ✓',
-  teeAttestExplain: 'Intel TDX 机密计算飞地。Venice 已验证远程证明。nonce 绑定本次确切运行；下方的签名地址是经证实的 TEE 密钥，用于产出该裁决。',
+  teeAttestExplain:
+    'Intel TDX 机密计算飞地。Venice 已验证远程证明。nonce 绑定本次确切运行；下方的签名地址是经证实的 TEE 密钥，用于产出该裁决。',
   teeLensMore: '点击查看完整 TEE 详情',
   castVoteTx: 'castVote 交易',
   rootHash: '根委托哈希',
@@ -408,7 +472,8 @@ const zh: Dict = {
   oneShotX402Tx: 'x402 通行费',
   netSepolia: 'Base Sepolia',
   netMainnet: 'Base 主网 · 回放',
-  mainnetReplayNote: '一次真实 Base 主网运行的回放：Venice 决定的票经 1Shot（7702 + 7710）中继投到链上 VoteBoard。下方为实时计票。',
+  mainnetReplayNote:
+    '一次真实 Base 主网运行的回放：Venice 决定的票经 1Shot（7702 + 7710）中继投到链上 VoteBoard。下方为实时计票。',
   proofVote: '1Shot 投票',
   proofBurner: '7702 burner',
   oneShotNodeRole: '中继 · gas 用 USDC',
@@ -439,18 +504,21 @@ const zh: Dict = {
     hint: '你预先给 AI 一小笔 mUSDC 预算，它的数据源按次扣费，用受限的 ERC-7710 委托结算，而非敞开授权。你的 MVOTE 投票权全程不动。',
     require: 'HTTP 402 · 需要付款',
     scopeTitle: '受限支付委托(ERC-7710)',
-    scopeNote: 'Erc20TransferAmount 让卖方至多取走累计预算、且只付给自己，别的都不行。永远掏不空你，也永远碰不到你的 MVOTE。',
+    scopeNote:
+      'Erc20TransferAmount 让卖方至多取走累计预算、且只付给自己，别的都不行。永远掏不空你，也永远碰不到你的 MVOTE。',
     perQuery: '次查询',
     buyerYou: '你的预算',
     seller: '数据源',
     spent: '已用',
-    budgetLine: '已用 {spent}/{cap} 次查询 · 总预算 {budget} {symbol}，由 Erc20TransferAmount 在链上强制',
+    budgetLine:
+      '已用 {spent}/{cap} 次查询 · 总预算 {budget} {symbol}，由 Erc20TransferAmount 在链上强制',
     locked: '未激活，先授予授权并让 AI 完成一次投票；届时会显示真实 x402 结算与 Venice 数据流。',
     lockedShort: '首次投票结算后激活',
     sellerBalance: '卖方余额',
     settled: '已链上结算',
     liveRead: '实时链上',
-    result: '已结算：卖方凭受限委托精确划走 1 mUSDC，别的一概取不走。下方实时余额即为真实凭证；随后数据源返回 200 与内容。',
+    result:
+      '已结算：卖方凭受限委托精确划走 1 mUSDC，别的一概取不走。下方实时余额即为真实凭证；随后数据源返回 200 与内容。',
     phases: { require: '402 需付款', sign: '签署范围', settle: '卖方 redeem', data: '200 数据' },
     phaseDesc: {
       require: '数据源对 AI 的请求回以 402:取数据前先付费。',
@@ -459,8 +527,10 @@ const zh: Dict = {
       data: '通行费已结算:数据源返回 200 与所请求的内容。',
     },
     buyerBurner: 'Burner 预算',
-    hintMainnet: '主网上代理跑在一个 7702 burner 上,你预先给它一小笔 USDC 预算;它的数据源按次扣费,用受限的 ERC-7710 委托在 Base 主网上结算。你的 MVOTE 投票权全程不动。',
-    resultMainnet: '已在 Base 主网结算:卖方凭受限委托精确划走 0.001 USDC,别的一概取不走。下方实时余额即为真实链上凭证;随后数据源返回 200 与内容。',
+    hintMainnet:
+      '主网上代理跑在一个 7702 burner 上,你预先给它一小笔 USDC 预算;它的数据源按次扣费,用受限的 ERC-7710 委托在 Base 主网上结算。你的 MVOTE 投票权全程不动。',
+    resultMainnet:
+      '已在 Base 主网结算:卖方凭受限委托精确划走 0.001 USDC,别的一概取不走。下方实时余额即为真实链上凭证;随后数据源返回 200 与内容。',
     phaseDescMainnet: {
       require: '数据源对代理的请求回以 402:取数据前先付费。',
       sign: '7702 burner 签了一张累计的 Erc20TransferAmount 预算:至多 0.1 USDC、且只能付给卖方。',

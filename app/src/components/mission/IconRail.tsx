@@ -42,7 +42,7 @@ export function IconRail({
             title={it.title}
             aria-label={it.title}
             aria-pressed={active === it.key}
-            aria-disabled={it.disabled}
+            disabled={it.disabled}
             onClick={() => !it.disabled && onSelect(it.key)}
           >
             <Icon className="size-[19px]" strokeWidth={1.9} />

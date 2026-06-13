@@ -51,7 +51,7 @@ export function TopBar({
 
       <div className="flex items-center gap-2.5">
         <a
-          href="https://github.com/beautifulrem/mandate"
+          href="https://github.com/beautifulrem/regent"
           target="_blank"
           rel="noreferrer"
           title={t.repoTitle}
@@ -66,6 +66,7 @@ export function TopBar({
             if (!nowMuted) sfxTick(); // audible confirmation only when turning sound ON
           }}
           title={sfxOff ? t.soundOff : t.soundOn}
+          aria-label={sfxOff ? t.soundOff : t.soundOn}
           className="grid size-8 place-items-center rounded-chip border border-hairline bg-none bg-surface/60 p-0 text-ink-soft shadow-none backdrop-blur transition-colors hover:border-brand/40 hover:text-ink"
         >
           {sfxOff ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
@@ -76,6 +77,8 @@ export function TopBar({
             type="button"
             onClick={toggleNetwork}
             title="Switch network"
+            aria-label={isMainnet ? t.netMainnet : t.netSepolia}
+            aria-pressed={isMainnet}
             className={`inline-flex items-center gap-2 rounded-chip border bg-none px-3.5 py-1.5 text-xs font-semibold shadow-none backdrop-blur transition-colors ${
               isMainnet
                 ? 'border-info/45 bg-info/10 text-info hover:border-info/70'
@@ -108,7 +111,11 @@ export function TopBar({
             }
             if (chain.unsupported) {
               return (
-                <button type="button" onClick={openChainModal} className="mc-btn danger !px-3.5 !py-1.5 !text-[13px]">
+                <button
+                  type="button"
+                  onClick={openChainModal}
+                  className="mc-btn danger !px-3.5 !py-1.5 !text-[13px]"
+                >
                   Wrong network
                 </button>
               );

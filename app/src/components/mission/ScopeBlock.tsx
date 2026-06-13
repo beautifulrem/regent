@@ -3,7 +3,20 @@
 import type { ComponentType } from 'react';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { CheckCircle2, Cpu, ExternalLink, Minus, Play, Plus, Scissors, ShieldCheck, Sparkles, Vote, Zap } from 'lucide-react';
+import {
+  CheckCircle2,
+  Cpu,
+  ExternalLink,
+  Loader2,
+  Minus,
+  Play,
+  Plus,
+  Scissors,
+  ShieldCheck,
+  Sparkles,
+  Vote,
+  Zap,
+} from 'lucide-react';
 import { grantDisabled, voteActiveDisabled } from '../../lib/flow';
 import { sfxPress, sfxRelay } from '../../lib/sfx';
 import { MandateStats } from '../panels/MandateStats';
@@ -44,23 +57,41 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
   const killed = vm.killed;
   const voted = vm.runOnActive && vm.statusKey === 'voted';
 
-  const grantOff = grantDisabled({ busy: vm.busy, hasConfig: !!vm.cfg, connected: vm.isConnected, status: vm.s, killed });
-  const voteOff = voteActiveDisabled({ hasGrant: granted, busy: vm.busy, running: vm.running, killed });
+  const grantOff = grantDisabled({
+    busy: vm.busy,
+    hasConfig: !!vm.cfg,
+    connected: vm.isConnected,
+    status: vm.s,
+    killed,
+  });
+  const voteOff = voteActiveDisabled({
+    hasGrant: granted,
+    busy: vm.busy,
+    running: vm.running,
+    killed,
+  });
 
   const sentence = !granted && !killed ? t.scopeSentence : null;
   const noMotion = !!useReducedMotion();
 
   const revealIn = noMotion ? false : { opacity: 0, y: 24, filter: 'blur(8px)' };
   const revealAnimate = {
-    opacity: 1, y: 0, filter: 'blur(0px)',
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
     transition: { duration: noMotion ? 0 : 0.5, ease: EASE_FLUID },
   };
   const revealOut = noMotion
     ? { opacity: 0, transition: { duration: 0 } }
-    : { opacity: 0, y: -16, filter: 'blur(6px)', transition: { duration: 0.28, ease: EASE_SNAPPY } };
+    : {
+        opacity: 0,
+        y: -16,
+        filter: 'blur(6px)',
+        transition: { duration: 0.28, ease: EASE_SNAPPY },
+      };
 
   return (
-    <div className="flex w-full max-w-[720px] flex-col items-center gap-3.5">
+    <div className="mc-stack flex w-full max-w-[720px] flex-col items-center">
       <AnimatePresence mode="wait" initial={false}>
         {granted ? (
           <motion.div
@@ -68,7 +99,7 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
             initial={revealIn}
             animate={revealAnimate}
             exit={revealOut}
-            className="flex w-full flex-col items-center gap-3.5"
+            className="mc-stack flex w-full flex-col items-center"
           >
             {/* live mandate readout / severed notice — the vote-budget/TTL/authority stats are a TESTNET
                 standing-grant concept; the mainnet replay is a one-shot recorded run, so they're hidden. */}
@@ -102,12 +133,41 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
               <ReplayControls vm={vm} />
             ) : (
               <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
-                <button type="button" className="mc-btn" onClick={() => { sfxPress(); vm.onVoteActive(); }} disabled={voteOff}>
-                  <Vote className="size-[17px]" strokeWidth={2.5} /> {vm.busy && vm.running ? t.signing : t.voteActive}
+                <button
+                  type="button"
+                  className="mc-btn"
+                  onClick={() => {
+                    sfxPress();
+                    vm.onVoteActive();
+                  }}
+                  disabled={voteOff}
+                  aria-busy={vm.busy && vm.running}
+                >
+                  {vm.busy && vm.running ? (
+                    <Loader2 className="size-[17px] motion-safe:animate-spin" strokeWidth={2.5} />
+                  ) : (
+                    <Vote className="size-[17px]" strokeWidth={2.5} />
+                  )}{' '}
+                  {vm.busy && vm.running ? t.signing : t.voteActive}
                 </button>
                 {!killed && (
-                  <button type="button" className="mc-btn danger" onClick={() => { sfxPress(); vm.onRecall(); }} disabled={vm.recalling} title={t.recallTitle}>
-                    <Scissors className="size-[17px]" strokeWidth={2.5} /> {vm.recalling ? t.severing : t.recall}
+                  <button
+                    type="button"
+                    className="mc-btn danger"
+                    onClick={() => {
+                      sfxPress();
+                      vm.onRecall();
+                    }}
+                    disabled={vm.recalling}
+                    title={t.recallTitle}
+                    aria-busy={vm.recalling}
+                  >
+                    {vm.recalling ? (
+                      <Loader2 className="size-[17px] motion-safe:animate-spin" strokeWidth={2.5} />
+                    ) : (
+                      <Scissors className="size-[17px]" strokeWidth={2.5} />
+                    )}{' '}
+                    {vm.recalling ? t.severing : t.recall}
                   </button>
                 )}
               </div>
@@ -119,10 +179,12 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
             initial={revealIn}
             animate={revealAnimate}
             exit={revealOut}
-            className="flex w-full flex-col items-center gap-3.5"
+            className="mc-stack flex w-full flex-col items-center"
           >
             {/* scope sentence */}
-            {sentence && <p className="m-0 max-w-[560px] text-center text-[15px] text-ink-soft">{sentence}</p>}
+            {sentence && (
+              <p className="m-0 max-w-[560px] text-center text-[15px] text-ink-soft">{sentence}</p>
+            )}
 
             {/* on-chain-enforced chip row */}
             <div className="flex flex-wrap items-center justify-center gap-x-3.5 gap-y-1 text-[12.5px] font-semibold text-brand">
@@ -138,7 +200,12 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
             {/* pre-grant configurator */}
             <div className="mc-seg" role="tablist">
               {MODES.map((m) => (
-                <button key={m.key} type="button" className={vm.boundMode === m.key ? 'on' : ''} onClick={() => vm.setBoundMode(m.key)}>
+                <button
+                  key={m.key}
+                  type="button"
+                  className={vm.boundMode === m.key ? 'on' : ''}
+                  onClick={() => vm.setBoundMode(m.key)}
+                >
                   {t[m.labelKey] as string}
                 </button>
               ))}
@@ -171,16 +238,38 @@ export function ScopeBlock({ vm }: { vm: MissionVM }) {
                 neutral warming CTA: "Connect" would mislead, and Grant would be a silent no-op. */}
             <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
               {vm.reconnecting || (vm.isConnected && !vm.userSA) ? (
-                <button type="button" className="mc-btn big" disabled>
-                  <Zap className="size-[18px]" strokeWidth={2.5} /> {t.preparingAccount}
+                <button type="button" className="mc-btn big" disabled aria-busy="true">
+                  <Loader2 className="size-[18px] motion-safe:animate-spin" strokeWidth={2.5} />{' '}
+                  {t.preparingAccount}
                 </button>
               ) : !vm.isConnected ? (
-                <button type="button" className="mc-btn big" onClick={() => { sfxPress(); openConnectModal?.(); }}>
+                <button
+                  type="button"
+                  className="mc-btn big"
+                  onClick={() => {
+                    sfxPress();
+                    openConnectModal?.();
+                  }}
+                >
                   <Zap className="size-[18px]" strokeWidth={2.5} /> {t.connect}
                 </button>
               ) : (
-                <button type="button" className="mc-btn big" onClick={() => { sfxPress(); vm.onGrant(); }} disabled={grantOff}>
-                  <Zap className="size-[18px]" strokeWidth={2.5} /> {vm.busy ? t.signing : t.grant}
+                <button
+                  type="button"
+                  className="mc-btn big"
+                  onClick={() => {
+                    sfxPress();
+                    vm.onGrant();
+                  }}
+                  disabled={grantOff}
+                  aria-busy={vm.busy}
+                >
+                  {vm.busy ? (
+                    <Loader2 className="size-[18px] motion-safe:animate-spin" strokeWidth={2.5} />
+                  ) : (
+                    <Zap className="size-[18px]" strokeWidth={2.5} />
+                  )}{' '}
+                  {vm.busy ? t.signing : t.grant}
                 </button>
               )}
             </div>
@@ -198,16 +287,42 @@ function ReplayControls({ vm }: { vm: MissionVM }) {
   const bs = snap?.chain.basescan ?? 'https://basescan.org';
   return (
     <div className="mt-1 flex flex-col items-center gap-3">
-      <button type="button" className="mc-btn big" onClick={() => { sfxRelay(); vm.onReplay?.(); }} disabled={vm.replaying}>
-        <Play className="size-[18px]" strokeWidth={2.5} /> {vm.replaying ? t.replaying : t.replayRun}
+      <button
+        type="button"
+        className="mc-btn big"
+        onClick={() => {
+          sfxRelay();
+          vm.onReplay?.();
+        }}
+        disabled={vm.replaying}
+        aria-busy={vm.replaying}
+      >
+        {vm.replaying ? (
+          <Loader2 className="size-[18px] motion-safe:animate-spin" strokeWidth={2.5} />
+        ) : (
+          <Play className="size-[18px]" strokeWidth={2.5} />
+        )}{' '}
+        {vm.replaying ? t.replaying : t.replayRun}
       </button>
       {snap && (
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11.5px]">
-          <a className="inline-flex items-center gap-1.5 text-info hover:underline" href={`${bs}/tx/${snap.vote.txHash}`} target="_blank" rel="noreferrer">
-            <Sparkles className="size-3.5" /> {t.proofVote} {shortHex(snap.vote.txHash, 5)} <ExternalLink className="size-3" />
+          <a
+            className="inline-flex items-center gap-1.5 text-info hover:underline"
+            href={`${bs}/tx/${snap.vote.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Sparkles className="size-3.5" /> {t.proofVote} {shortHex(snap.vote.txHash, 5)}{' '}
+            <ExternalLink className="size-3" />
           </a>
-          <a className="inline-flex items-center gap-1.5 text-info hover:underline" href={`${bs}/address/${snap.oneshot.burner}`} target="_blank" rel="noreferrer">
-            <Cpu className="size-3.5" /> {t.proofBurner} {shortHex(snap.oneshot.burner, 4)} <ExternalLink className="size-3" />
+          <a
+            className="inline-flex items-center gap-1.5 text-info hover:underline"
+            href={`${bs}/address/${snap.oneshot.burner}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Cpu className="size-3.5" /> {t.proofBurner} {shortHex(snap.oneshot.burner, 4)}{' '}
+            <ExternalLink className="size-3" />
           </a>
         </div>
       )}
@@ -254,7 +369,13 @@ function StepBtn({
   label: string;
 }) {
   return (
-    <button type="button" className="mc-step" onClick={onClick} disabled={disabled} aria-label={label}>
+    <button
+      type="button"
+      className="mc-step"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+    >
       <Icon className="size-4" strokeWidth={2.5} />
     </button>
   );

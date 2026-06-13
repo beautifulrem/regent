@@ -151,10 +151,17 @@ function ChainNode({ nodeRef, icon: Icon, who, role, addr, active, working, kill
         </span>
       )}
       <div style={floatBelow ? { position: 'absolute', top: '100%', left: 0, right: 0 } : undefined}>
-      <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: small ? 10.5 : 15.5, color: ringActive ? accent : 'var(--color-ink)', marginTop: small ? 3 : 9 }}>
+      <div
+        className={small ? 'mc-gnode-name mc-gnode-name-sm' : 'mc-gnode-name'}
+        style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: ringActive ? accent : 'var(--color-ink)', marginTop: small ? 3 : 9 }}
+      >
         {who}
       </div>
-      {role && <div style={{ marginTop: 2, fontSize: 12, color: 'var(--color-ink-mute)' }}>{role}</div>}
+      {role && (
+        <div className="mc-gnode-role" style={{ marginTop: 2, color: 'var(--color-ink-mute)' }}>
+          {role}
+        </div>
+      )}
       {badge && (
         <div style={{ marginTop: 5 }}>
           <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.02em', color: 'var(--color-cyan)', background: 'rgba(56,224,255,.1)', border: '1px solid rgba(56,224,255,.35)', whiteSpace: 'nowrap' }}>

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentType, ReactNode } from 'react';
+import { useEffect, useId, type ComponentType, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 /**
@@ -25,13 +25,23 @@ export function Popover({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const titleId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div
       className={`mc-pop ${side}`}
       role="dialog"
-      aria-modal="true"
-      aria-label={title}
+      aria-labelledby={titleId}
       style={{ top: anchorTop, maxHeight: `calc(100vh - ${anchorTop}px - 22px)` }}
     >
       <span className="mc-pop-tail" aria-hidden="true" />
@@ -42,7 +52,9 @@ export function Popover({
               <Icon className="size-[15px]" strokeWidth={2} />
             </span>
           )}
-          <span className="mc-side-title truncate">{title}</span>
+          <span id={titleId} className="mc-side-title truncate">
+            {title}
+          </span>
         </div>
         <button type="button" className="mc-x" onClick={onClose} aria-label="close">
           <X className="size-[15px]" strokeWidth={2} />

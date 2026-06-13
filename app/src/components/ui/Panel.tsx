@@ -3,13 +3,11 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/cn';
 
 /**
- * Glassmorphic surface — the container for every module in the redesign.
- * Frosted dark glass + hairline border + soft elevation; brand/eth/state tones
- * shift the border to signal status. `glow` swaps the panel shadow for the
- * MetaMask brand halo (used on the active/centerpiece module).
+ * Product surface — restrained dark card with a hairline border and soft elevation.
+ * Tone variants shift only the border/status cue; content stays readable.
  */
 const panel = cva(
-  'relative rounded-panel border bg-surface/70 backdrop-blur-xl transition-[border-color,box-shadow,transform] duration-300 ease-fluid',
+  'relative rounded-panel border bg-card/90 shadow-panel transition-[border-color,box-shadow,transform] duration-300 ease-fluid',
   {
     variants: {
       tone: {
@@ -67,7 +65,9 @@ export function PanelHeader({
         )}
         <div className="min-w-0">
           {kicker && (
-            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-mute">{kicker}</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-mute">
+              {kicker}
+            </div>
           )}
           <h3 className="font-display text-[15px] font-semibold leading-tight text-ink">{title}</h3>
         </div>
