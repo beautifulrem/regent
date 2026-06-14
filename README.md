@@ -10,13 +10,14 @@ bounded, and revocable on-chain in one click.
 [**English**](./README.md) · [简体中文](./README.zh-CN.md)
 
 [![Live demo](https://img.shields.io/badge/live_demo-vercel-f6851b?logo=vercel&logoColor=white)](https://mandate-app-murex.vercel.app)
+[![Demo video](https://img.shields.io/badge/demo-watch_on_YouTube-ff0000?logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=55HJ_LHQdqY)
 [![Base mainnet](https://img.shields.io/badge/Base-mainnet_8453-0052ff?logo=coinbase&logoColor=white)](https://basescan.org/tx/0xc48632ca8bc72db8c68eabd3e7dde90c5eae37b6afef60e70b1e686a8f8b5092)
 [![ERC-7710](https://img.shields.io/badge/ERC--7710-delegation-e2761b)](https://eips.ethereum.org/EIPS/eip-7710)
 [![EIP-7702](https://img.shields.io/badge/EIP--7702-in--place_upgrade-e2761b)](https://eips.ethereum.org/EIPS/eip-7702)
 [![Tests](https://img.shields.io/badge/tests-201_passing-2ea043)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-8b95a7)](./LICENSE)
 
-[Live demo](https://mandate-app-murex.vercel.app) · [On-chain evidence](./EVIDENCE.md) · [Architecture](./ARCHITECTURE.md) · [Submission](./SUBMISSION.md)
+[Live demo](https://mandate-app-murex.vercel.app) · [Demo video](https://www.youtube.com/watch?v=55HJ_LHQdqY) · [On-chain evidence](./EVIDENCE.md) · [Architecture](./ARCHITECTURE.md) · [Submission](./SUBMISSION.md)
 
 <img src="docs/assets/hero.gif" width="880" alt="The recorded Base mainnet run replaying in the app: grant, re-delegation, Venice TEE committee, x402 toll, 1Shot relay, vote landing on-chain">
 
@@ -38,6 +39,12 @@ Built for the MetaMask Smart Accounts Kit x 1Shot API x Venice AI Dev Cook-Off (
 2026-06-15).
 
 ## ▶️ Try it
+
+Prefer to watch first? Here is the full walkthrough:
+
+<a href="https://www.youtube.com/watch?v=55HJ_LHQdqY">
+  <img src="https://i.ytimg.com/vi/55HJ_LHQdqY/maxresdefault.jpg" width="640" alt="Regent demo walkthrough on YouTube: grant a scoped mandate, the Venice TEE committee decides, the agent votes, the x402 toll settles, and a one-click recall reverts the chain">
+</a>
 
 **[Open the live demo →](https://mandate-app-murex.vercel.app)** and drive the whole thing in your
 browser, no install and no wallet funding needed: connect any wallet, grant one scoped ERC-7710
