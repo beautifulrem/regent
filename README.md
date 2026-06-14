@@ -39,30 +39,25 @@ Built for the MetaMask Smart Accounts Kit x 1Shot API x Venice AI Dev Cook-Off (
 
 ## ▶️ Try it
 
-**[Open the live demo →](https://mandate-app-murex.vercel.app)**. With nothing installed it opens
-the **mainnet replay**: a recorded, fully self-contained Base mainnet run (the 3-hop delegation
-chain, the Venice TEE committee, the x402 toll, the 1Shot relay). Every artifact is real and links
-to Basescan, so this is the zero-setup path; start here.
+**[Open the live demo →](https://mandate-app-murex.vercel.app)** and drive the whole thing in your
+browser, no install and no wallet funding needed: connect any wallet, grant one scoped ERC-7710
+mandate, watch the Venice TEE committee decide and the agent cast on Base Sepolia, see the x402 toll
+settle per vote, then recall the chain in one click. The app is wired to a hosted orchestrator, so
+the live flow works for anyone who opens the link. Toggle the network pill to **Base Mainnet** for
+the recorded real-funds run. The deploy, the gas and the recall are all sponsored, and the
+orchestrator mints the connected smart account its mUSDC x402 budget at grant, so a brand-new wallet
+needs nothing.
 
-The **live Base Sepolia flow** (connect your own wallet, grant a scoped mandate, watch the AI vote,
-the x402 toll settle per vote, then recall) runs against the **orchestrator**, a stateful service
-that holds the live delegation chain and the signing keys, so it is **not hosted**. You run it
-locally, the app talks to it at `http://localhost:8787`, and the deployed link automatically falls
-back to the replay whenever no orchestrator is reachable. To drive the live flow yourself:
+To run the full stack yourself (development, or to point the app at your own orchestrator):
 
 ```bash
 git clone https://github.com/beautifulrem/regent && cd regent
 pnpm install
-pnpm bootstrap:accounts          # throwaway keys into .env + a faucet checklist; fund the printed addresses
+pnpm bootstrap:accounts          # throwaway keys into .env + a faucet checklist
 pnpm proposal --reseed --wait    # open a fresh 300s Active proposal
 pnpm --filter @mandate/orchestrator serve   # the orchestrator on :8787
 pnpm --filter @mandate/app dev              # the app on :3000
 ```
-
-Then open `http://localhost:3000` (or the deployed link on the same machine, where browsers allow
-an `https` page to reach `http://localhost`), import the `.env` `USER_DEMO_PK` into MetaMask, and
-grant. The toll settles per vote: the orchestrator mints the connected smart account its mUSDC x402
-budget at grant, so a freshly connected wallet works too.
 
 ## ✨ What's in the box
 
@@ -185,11 +180,10 @@ The app ships both networks on purpose; they answer different questions.
 | Why it exists | Judges can drive every mechanic, free, in minutes | Shows the same mechanism working with real funds |
 
 Same product, same code path up to the cast: the testnet is where you verify the mechanics by
-hand, and the mainnet run shows them working with real funds. The live Base Sepolia column needs
-the orchestrator running locally (see **▶️ Try it** above); on the deployed link with no
-orchestrator reachable, the app opens the mainnet replay instead. Tip: open
-`localhost:3000/?run=<runId>` to watch any orchestrator run live in the cockpit; the CLI verify
-scripts print the id.
+hand, and the mainnet run shows them working with real funds. The live Base Sepolia flow is wired
+to a hosted orchestrator, so it works straight from the deployed link (you can also run your own
+locally; see **▶️ Try it** above). Tip: open `localhost:3000/?run=<runId>` to watch any orchestrator
+run live in the cockpit; the CLI verify scripts print the id.
 
 ## 🌐 Deployed contracts
 
