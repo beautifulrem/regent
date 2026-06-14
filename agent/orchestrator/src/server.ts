@@ -116,7 +116,10 @@ async function handleProvision(req: http.IncomingMessage, res: http.ServerRespon
   const eoa = body?.eoa;
   if (!eoa || !/^0x[0-9a-fA-F]{40}$/.test(eoa)) return send(res, 400, { error: 'invalid eoa' });
   try {
-    const result = await provisionSmartAccount({ rpcUrl: cfg.rpcUrl, deployerPk }, eoa as Address);
+    const result = await provisionSmartAccount(
+      { rpcUrl: cfg.rpcUrl, deployerPk, paymentToken: cfg.paymentToken as Address },
+      eoa as Address,
+    );
     send(res, 200, result);
   } catch (err) {
     send(res, 500, { error: err instanceof Error ? err.message : String(err) });

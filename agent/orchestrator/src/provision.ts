@@ -10,6 +10,7 @@
 import {
   createPublicClient,
   createWalletClient,
+  erc20Abi,
   http,
   parseEther,
   type Address,
@@ -23,6 +24,10 @@ import { Implementation, toMetaMaskSmartAccount } from '@metamask/smart-accounts
 export interface ProvisionConfig {
   rpcUrl: string;
   deployerPk: Hex;
+  /** the mUSDC token (the x402 budget). The deployer is the MockUSDC owner, so it mints the buyer SA a
+   *  budget here — without it a freshly-derived judge SA holds 0 mUSDC, the per-vote toll pull reverts,
+   *  and the x402 gate stays "locked" even after a vote lands. */
+  paymentToken: Address;
 }
 
 export interface ProvisionResult {
@@ -33,11 +38,30 @@ export interface ProvisionResult {
   /** Top-up transfer so the SA can prefund its own kill-the-chain UserOp (judge wallets arrive empty). */
   fundTx?: Hex;
   funded?: boolean;
+  /** mUSDC mint tx, when the buyer SA's x402 budget needed topping up. */
+  mUSDCTx?: Hex;
 }
 
 /** Float sent to a provisioned SA so it can pay for one recall (disableDelegation) UserOp. */
 const SA_TOP_UP = parseEther('0.003');
 const MIN_SA_BALANCE = parseEther('0.0015');
+
+/** x402 budget floor / top-up (mUSDC, 6 decimals): keep the buyer SA above ~60 mUSDC, mint 1000 when low. */
+const MUSDC_MIN = 60_000_000n;
+const MUSDC_TOPUP = 1_000_000_000n;
+/** MockUSDC.mint(to, amount) — owner-only; the deployer (DEPLOYER_PK) is the owner. */
+const MINT_ABI = [
+  {
+    type: 'function',
+    name: 'mint',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [],
+  },
+] as const;
 
 export async function provisionSmartAccount(cfg: ProvisionConfig, eoa: Address): Promise<ProvisionResult> {
   const client = createPublicClient({ chain: baseSepolia, transport: http(cfg.rpcUrl) }) as PublicClient;
@@ -86,5 +110,31 @@ export async function provisionSmartAccount(cfg: ProvisionConfig, eoa: Address):
     await client.waitForTransactionReceipt({ hash: fundTx });
   }
 
-  return { sa: sa.address, deployed: true, alreadyDeployed, txHash, fundTx, funded: !!fundTx };
+  // Fund the SA's x402 budget in mUSDC so the per-vote toll can actually SETTLE on-chain: the seller
+  // pulls mUSDC from this SA via the cumulative ERC-7710 payment delegation. A freshly-derived judge SA
+  // holds 0 mUSDC, so without this the toll reverts (the vote still lands, since the analyst pays gas)
+  // and the x402 gate stays "locked" even after voting. Non-fatal: an already-funded SA or a non-owner
+  // deployer simply skips it; the vote itself never depends on this.
+  let mUSDCTx: Hex | undefined;
+  try {
+    const musdc = (await client.readContract({
+      address: cfg.paymentToken,
+      abi: erc20Abi,
+      functionName: 'balanceOf',
+      args: [sa.address],
+    })) as bigint;
+    if (musdc < MUSDC_MIN) {
+      mUSDCTx = await wallet.writeContract({
+        address: cfg.paymentToken,
+        abi: MINT_ABI,
+        functionName: 'mint',
+        args: [sa.address, MUSDC_TOPUP],
+      });
+      await client.waitForTransactionReceipt({ hash: mUSDCTx });
+    }
+  } catch (err) {
+    console.error('provision: mUSDC budget top-up failed (non-fatal):', err instanceof Error ? err.message : err);
+  }
+
+  return { sa: sa.address, deployed: true, alreadyDeployed, txHash, fundTx, funded: !!fundTx, mUSDCTx };
 }
