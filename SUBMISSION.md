@@ -95,9 +95,10 @@ DelegationManager, where the honest castVote passes and the tampered fund transf
 
 - Repo: https://github.com/beautifulrem/regent (MIT)
 - Per-track on-chain receipts: `EVIDENCE.md`
-- Demo video: (pending)
-- Live app: https://mandate-app-murex.vercel.app (no public orchestrator, so it lands on the
-  mainnet replay; the live Sepolia flow runs locally per the README)
+- Demo video: https://www.youtube.com/watch?v=55HJ_LHQdqY
+- Live app: https://mandate-app-murex.vercel.app (wired to a hosted orchestrator, so the live
+  Sepolia flow runs for anyone who opens the link; toggle the network pill to Base mainnet for
+  the recorded real-funds replay)
 - Reproduce: `pnpm vote:2hop`, `pnpm revoke:2hop`, `pnpm orchestrate`, `pnpm x402:demo`,
   `pnpm 1shot:full --mainnet --estimate`
 
@@ -194,7 +195,8 @@ refuse. Repo and receipts: [link]
 # Appendix C: remaining checklist
 
 - [ ] Record the sub-3-minute demo video (each track capability on screen, per the judge
-      requirement; the video must show the SAK integration in the main flow)
+      requirement; the video must show the SAK integration in the main flow). Uploaded at
+      https://www.youtube.com/watch?v=55HJ_LHQdqY but currently 5:18; trim to under 3:00.
 - [ ] Optional: record the separate pitch video (HackQuest has a second video slot)
 - [x] Deploy the app and fill the live-app link (done: mandate-app-murex.vercel.app)
 - [x] File the Appendix-A issues and list them in the form (filed 2026-06-11)
