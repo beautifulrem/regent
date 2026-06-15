@@ -75,8 +75,11 @@ pnpm --filter @mandate/app dev              # the app on :3000
   the next redemption reverts on-chain.
 - Agent-to-agent attenuation: user to orchestrator to analyst, each hop strictly narrower,
   validated on-chain at redemption.
-- A Venice TEE committee. Four analysis lenses plus an arbiter decide every vote inside a
-  sealed Intel TDX enclave, with remote attestation and a spoken verdict over `/audio/speech`.
+- A Venice TEE committee. Four analysis lenses plus an arbiter decide every vote on Venice's
+  attested Intel TDX confidential-compute endpoints (`x-venice-tee: true`, `/tee/attestation`:
+  verified flag, enclave signing address, fresh nonce, TDX quote), with a spoken verdict over
+  `/audio/speech`. We rely on Venice's attested enclave; we do not independently bind the quote
+  to each individual completion or verify a MRENCLAVE measurement.
 - x402 pay-per-query: the agent buys proposal data with a 0.001 USDC toll from a scoped
   `Erc20TransferAmount` budget, settled on-chain.
 - Zero-ETH voting on Base mainnet through the 1Shot permissionless relayer. The 3-hop chain is
@@ -302,6 +305,13 @@ Every delegation primitive is the real SDK, verified against
 Enforcers exercised: `AllowedTargetsEnforcer`, `AllowedMethodsEnforcer`, `TimestampEnforcer`,
 `LimitedCallsEnforcer`, plus `AllowedCalldataEnforcer` on the single-proposal CLI path. The
 decoded scope renders live in the app's Permission X-Ray.
+
+Regent composes the **audited** stock MetaMask enforcers (no bespoke Solidity to trust) and
+proves the scope holds on-chain: the committed Foundry fork test
+[`MandateDelegation.fork.t.sol`](./packages/contracts/test/MandateDelegation.fork.t.sol) redeems a
+real 2-hop delegation chain through the live Base Sepolia `DelegationManager` and asserts that an
+honest `castVote` passes while wrong-method, wrong-`proposalId`, and post-`disableDelegation`
+redemptions each revert at the named enforcer.
 
 ## ⚖️ Limitations
 
