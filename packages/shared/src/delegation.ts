@@ -162,26 +162,6 @@ export function buildStandingVoteDelegation(args: {
   } as CreateDelegationParams) as Delegation;
 }
 
-/** REDELEGATION (standing, attenuated): same vote-only scope on `governor`, linked to its parent.
- *  The root's timestamp + limitedCalls bound the whole chain, so the leaf only needs target+method. */
-export function redelegateStandingVote(args: {
-  governor: Address;
-  delegate: Address;
-  delegator: Address;
-  environment: SmartAccountsEnvironment;
-  parentDelegation: Delegation;
-  salt?: Hex;
-}): Delegation {
-  return createDelegation({
-    scope: voteOnlyScope(args.governor),
-    to: args.delegate,
-    from: args.delegator,
-    environment: args.environment,
-    parentDelegation: args.parentDelegation,
-    salt: args.salt ?? freshSalt(),
-  } as CreateDelegationParams) as Delegation;
-}
-
 /** Encode the redemption of a delegation chain (LEAF→ROOT) that casts `support`. */
 export function redeemVoteCalldata(args: {
   chain: Delegation[]; // leaf-first, root-last

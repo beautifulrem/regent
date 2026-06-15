@@ -21,7 +21,6 @@ export {
   freshSalt,
   redeemTamperCalldata,
   redeemVoteCalldata,
-  redelegateStandingVote,
   redelegateVote,
   revokeRootCalldata,
 } from './delegation.js';
