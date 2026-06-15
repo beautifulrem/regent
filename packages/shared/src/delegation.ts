@@ -1,5 +1,5 @@
 /**
- * ERC-7710 governance delegation helpers — the heart of Mandate.
+ * ERC-7710 governance delegation helpers: the heart of Mandate.
  *
  * A root FunctionCall delegation grants the right to call `Governor.castVote(proposalId, support)`
  * with proposalId LOCKED (via allowedCalldata) and `support` LEFT FREE (so Venice decides
@@ -116,12 +116,12 @@ export function redelegateVote(args: {
 // ---------------------------------------------------------------------------
 // STANDING delegation: any proposal on `governor`, vote-only, bounded by votes + expiry.
 // Used by the VoteBoard judge flow (the single-proposal builders above stay for the CLI
-// scripts that vote on the real Governor). proposalId is NO LONGER locked — the agent may
-// vote on any current/future proposal — so revoking the grant has real teeth, while the
+// scripts that vote on the real Governor). proposalId is NO LONGER locked (the agent may
+// vote on any current/future proposal), so revoking the grant has real teeth, while the
 // scope is still "castVote only, this board only, ≤maxVotes, until expiry, revocable".
 // ---------------------------------------------------------------------------
 
-/** FunctionCall scope: `castVote` on `governor`, ANY proposalId (no calldata lock) — vote-only,
+/** FunctionCall scope: `castVote` on `governor`, ANY proposalId (no calldata lock), vote-only,
  *  this board only. AllowedTargets + AllowedMethods caveats, but NOT AllowedCalldata. */
 function voteOnlyScope(governor: Address) {
   return { type: ScopeType.FunctionCall, targets: [governor], selectors: [CASTVOTE_SIGNATURE] };
@@ -184,7 +184,7 @@ export function redeemVoteCalldata(args: {
   }) as Hex;
 }
 
-/** Encode a redemption attempting an ARBITRARY (tampered) execution — used by the Tamper Probe to
+/** Encode a redemption attempting an ARBITRARY (tampered) execution, used by the Tamper Probe to
  *  prove the standing scope rejects anything but castVote on the board (e.g. moving funds). */
 export function redeemTamperCalldata(args: { chain: Delegation[]; target: Address; callData: Hex }): Hex {
   const execution = createExecution({ target: args.target, callData: args.callData });
@@ -195,7 +195,7 @@ export function redeemTamperCalldata(args: { chain: Delegation[]; target: Addres
   }) as Hex;
 }
 
-/** Encode disabling the root delegation — cascade-revokes the whole chain. */
+/** Encode disabling the root delegation: cascade-revokes the whole chain. */
 export function revokeRootCalldata(rootDelegation: Delegation): Hex {
   return contracts.DelegationManager.encode.disableDelegation({
     delegation: rootDelegation,
