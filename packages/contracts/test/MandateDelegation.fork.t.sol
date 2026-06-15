@@ -13,7 +13,12 @@ import {Vm} from "forge-std/Vm.sol";
  *   1. honest castVote(lockedProposalId, support)        -> SUCCEEDS (lands on the target)
  *   2. transfer(...) on the same target                  -> REVERTS at AllowedMethodsEnforcer
  *   3. castVote(WRONG proposalId, support)               -> REVERTS at AllowedCalldataEnforcer
- *   4. after disableDelegation(root), honest redeem      -> REVERTS (kill switch cascades)
+ *   4. after disableDelegation(root), honest redeem      -> REVERTS (CannotUseADisabledDelegation)
+ *   5. castVote pointed at a DIFFERENT contract          -> REVERTS at AllowedTargetsEnforcer
+ *
+ * Negative cases assert the SPECIFIC revert reason (enforcer string / DelegationManager custom
+ * error), so a pass proves the gate fired at the named enforcer, not somewhere earlier in the call.
+ * The fork is pinned to a block for deterministic, reproducible runs (see DEFAULT_FORK_BLOCK).
  *
  * Mirrors packages/shared/src/delegation.ts `castVoteScope`: targets=[governor],
  * selectors=[castVote(uint256,uint8)], allowedCalldata locks proposalId at byte offset 4.
@@ -63,6 +68,10 @@ interface IDelegationManager {
     ) external;
     function disableDelegation(Delegation calldata delegation) external;
 }
+
+/// Thrown by the DelegationManager when redeeming a delegation whose root has been disabled
+/// (selector 0x05baa052). Declared here so the kill-switch test can assert it by name.
+error CannotUseADisabledDelegation();
 
 /// Smallest faithful root account: validates any signature (EIP-1271) and executes a single
 /// ERC-7579 call. Stands in for the production MetaMask Hybrid DeleGator for this enforcement test.
@@ -130,8 +139,13 @@ contract MandateDelegationForkTest is Test {
     uint256 internal constant LOCKED_PID = 4242;
     uint256 internal constant WRONG_PID = 9999;
 
+    // Pinned for deterministic, reproducible runs. The stock enforcers and DelegationManager are
+    // long-deployed, so any recent block works; serve a pinned historical block from an archive RPC
+    // (e.g. Alchemy Base Sepolia). Override with FORK_BLOCK to re-pin to your RPC's available window.
+    uint256 internal constant DEFAULT_FORK_BLOCK = 42881536;
+
     function setUp() public {
-        vm.createSelectFork(vm.envString("BASE_SEPOLIA_RPC_URL"));
+        vm.createSelectFork(vm.envString("BASE_SEPOLIA_RPC_URL"), vm.envOr("FORK_BLOCK", DEFAULT_FORK_BLOCK));
 
         dm = IDelegationManager(
             vm.envOr("DELEGATION_MANAGER", 0xdb9B1e94B5b69Df7e401DDbedE43491141047dB3)
@@ -242,7 +256,7 @@ contract MandateDelegationForkTest is Test {
     function test_transfer_revertsAtAllowedMethods() public {
         (bytes memory ctx,) = _buildChain(LOCKED_PID);
         bytes memory call = abi.encodeWithSelector(TRANSFER_SEL, address(0xdead), uint256(1e18));
-        vm.expectRevert();
+        vm.expectRevert("AllowedMethodsEnforcer:method-not-allowed");
         _redeem(ctx, _exec(address(gov), call));
     }
 
@@ -251,7 +265,7 @@ contract MandateDelegationForkTest is Test {
     function test_wrongProposalId_revertsAtAllowedCalldata() public {
         (bytes memory ctx,) = _buildChain(LOCKED_PID);
         bytes memory call = abi.encodeWithSelector(CAST_VOTE_SEL, WRONG_PID, uint8(1));
-        vm.expectRevert();
+        vm.expectRevert("AllowedCalldataEnforcer:invalid-calldata");
         _redeem(ctx, _exec(address(gov), call));
     }
 
@@ -268,7 +282,17 @@ contract MandateDelegationForkTest is Test {
         vm.prank(address(root));
         dm.disableDelegation(rootDel);
 
-        vm.expectRevert();
+        vm.expectRevert(CannotUseADisabledDelegation.selector);
         _redeem(ctx, _exec(address(gov), call));
+    }
+
+    /// 5. A castVote pointed at a DIFFERENT contract is rejected by the AllowedTargets caveat
+    ///    (honest selector + calldata, but the target is not the authorized governor).
+    function test_wrongTarget_revertsAtAllowedTargets() public {
+        (bytes memory ctx,) = _buildChain(LOCKED_PID);
+        bytes memory call = abi.encodeWithSelector(CAST_VOTE_SEL, LOCKED_PID, uint8(1));
+        address otherTarget = address(new MockGovernor());
+        vm.expectRevert("AllowedTargetsEnforcer:target-address-not-allowed");
+        _redeem(ctx, _exec(otherTarget, call));
     }
 }
