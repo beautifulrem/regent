@@ -14,7 +14,7 @@
 [![Base mainnet](https://img.shields.io/badge/Base-主网_8453-0052ff?logo=coinbase&logoColor=white)](https://basescan.org/tx/0xc48632ca8bc72db8c68eabd3e7dde90c5eae37b6afef60e70b1e686a8f8b5092)
 [![ERC-7710](https://img.shields.io/badge/ERC--7710-委托-e2761b)](https://eips.ethereum.org/EIPS/eip-7710)
 [![EIP-7702](https://img.shields.io/badge/EIP--7702-原地升级-e2761b)](https://eips.ethereum.org/EIPS/eip-7702)
-[![Tests](https://img.shields.io/badge/测试-201_全绿-2ea043)](#-快速开始)
+[![Tests](https://img.shields.io/badge/测试-206_全绿-2ea043)](#-快速开始)
 [![License](https://img.shields.io/badge/license-MIT-8b95a7)](./LICENSE)
 
 [在线演示](https://mandate-app-murex.vercel.app) · [演示视频](https://www.youtube.com/watch?v=55HJ_LHQdqY) · [链上证据](./EVIDENCE.zh-CN.md) · [架构](./ARCHITECTURE.zh-CN.md) · [提交文案](./SUBMISSION.md)
@@ -207,7 +207,7 @@ Base 主网(8453),录制的完整链运行:
 
 ```bash
 pnpm install
-pnpm -r build && pnpm -r test          # 201 个测试:108 shared、58 app、20 Foundry、15 agents
+pnpm -r build && pnpm -r test          # 206 个测试:108 shared、58 app、25 Foundry、15 agents
 
 # 一次性:生成一次性演示密钥写入 .env,并打印注资清单
 pnpm bootstrap:accounts                 # 然后从 Base Sepolia 水龙头给打印出的地址注资

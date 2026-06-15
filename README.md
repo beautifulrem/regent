@@ -14,7 +14,7 @@ bounded, and revocable on-chain in one click.
 [![Base mainnet](https://img.shields.io/badge/Base-mainnet_8453-0052ff?logo=coinbase&logoColor=white)](https://basescan.org/tx/0xc48632ca8bc72db8c68eabd3e7dde90c5eae37b6afef60e70b1e686a8f8b5092)
 [![ERC-7710](https://img.shields.io/badge/ERC--7710-delegation-e2761b)](https://eips.ethereum.org/EIPS/eip-7710)
 [![EIP-7702](https://img.shields.io/badge/EIP--7702-in--place_upgrade-e2761b)](https://eips.ethereum.org/EIPS/eip-7702)
-[![Tests](https://img.shields.io/badge/tests-201_passing-2ea043)](#-quick-start)
+[![Tests](https://img.shields.io/badge/tests-206_passing-2ea043)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-8b95a7)](./LICENSE)
 
 [Live demo](https://mandate-app-murex.vercel.app) · [Demo video](https://www.youtube.com/watch?v=55HJ_LHQdqY) · [On-chain evidence](./EVIDENCE.md) · [Architecture](./ARCHITECTURE.md) · [Submission](./SUBMISSION.md)
@@ -234,7 +234,7 @@ chain on-chain in one click. The A2A re-delegation, the Venice TEE, x402 and
 
 ```bash
 pnpm install
-pnpm -r build && pnpm -r test          # 201 tests: 108 shared, 58 app, 20 Foundry, 15 agents
+pnpm -r build && pnpm -r test          # 206 tests: 108 shared, 58 app, 25 Foundry, 15 agents
 
 # one-time: generate throwaway demo keys into .env and print a funding checklist
 pnpm bootstrap:accounts                 # then fund the printed addresses from a Base Sepolia faucet

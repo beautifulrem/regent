@@ -139,7 +139,9 @@ pass-and-revert pair with the enforcer named on screen). An MCP server (`agent/m
 lets any agent request a mandate; the request returns unsigned, and only the human's MetaMask
 account can grant.
 
-Engineering. 201 tests passing (108 shared, 58 app, 20 Foundry, 15 agents); strict TypeScript;
+Engineering. 206 tests passing (108 shared, 58 app, 25 Foundry, 15 agents), including a committed
+Base Sepolia fork test that redeems the real 2-hop delegation chain and asserts the scope holds at
+the live stock enforcers (cause-specific revert reasons); strict TypeScript;
 eslint; a browser-safe shared package (Web Crypto, no runtime `node:*`); throwaway keys and
 gitignored secrets; every mainnet action opt-in and quoted before signing.
 
