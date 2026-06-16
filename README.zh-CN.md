@@ -17,7 +17,7 @@
 [![Tests](https://img.shields.io/badge/测试-206_全绿-2ea043)](#-快速开始)
 [![License](https://img.shields.io/badge/license-MIT-8b95a7)](./LICENSE)
 
-[在线演示](https://mandate-app-murex.vercel.app) · [演示视频](https://www.youtube.com/watch?v=55HJ_LHQdqY) · [链上证据](./EVIDENCE.zh-CN.md) · [架构](./ARCHITECTURE.zh-CN.md) · [提交文案](./SUBMISSION.md)
+[在线演示](https://mandate-app-murex.vercel.app) · [演示视频](https://www.youtube.com/watch?v=55HJ_LHQdqY) · [链上证据](./EVIDENCE.zh-CN.md) · [架构](./ARCHITECTURE.zh-CN.md) · [提交文案](./SUBMISSION.md) · [反馈](./FEEDBACK.md)
 
 <img src="docs/assets/hero.gif" width="880" alt="应用回放真实的 Base 主网运行:授权、再委托、Venice TEE 委员会、x402 过路费、1Shot 中继、投票上链">
 

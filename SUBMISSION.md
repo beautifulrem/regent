@@ -156,7 +156,8 @@ collaboration with the MetaMask, Base, Venice and 1Shot ecosystems.
 # Appendix A: feedback-track GitHub issues (filed 2026-06-11)
 
 Real friction from the build, filed as actionable issues from the team account (@beautifulrem).
-Paste these links into the form's feedback field:
+The full writeup (what happened, why it matters, the fix, and our workaround for each) is in
+[FEEDBACK.md](./FEEDBACK.md). Paste these links into the form's feedback field:
 
 | # | Issue | Link |
 |---|---|---|

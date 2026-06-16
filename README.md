@@ -17,7 +17,7 @@ bounded, and revocable on-chain in one click.
 [![Tests](https://img.shields.io/badge/tests-206_passing-2ea043)](#-quick-start)
 [![License](https://img.shields.io/badge/license-MIT-8b95a7)](./LICENSE)
 
-[Live demo](https://mandate-app-murex.vercel.app) · [Demo video](https://www.youtube.com/watch?v=55HJ_LHQdqY) · [On-chain evidence](./EVIDENCE.md) · [Architecture](./ARCHITECTURE.md) · [Submission](./SUBMISSION.md)
+[Live demo](https://mandate-app-murex.vercel.app) · [Demo video](https://www.youtube.com/watch?v=55HJ_LHQdqY) · [On-chain evidence](./EVIDENCE.md) · [Architecture](./ARCHITECTURE.md) · [Submission](./SUBMISSION.md) · [Feedback](./FEEDBACK.md)
 
 <img src="docs/assets/hero.gif" width="880" alt="The recorded Base mainnet run replaying in the app: grant, re-delegation, Venice TEE committee, x402 toll, 1Shot relay, vote landing on-chain">
 
